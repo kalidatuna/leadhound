@@ -13,37 +13,52 @@ It is for freelance developers, small agencies, and anyone who builds websites o
 - **Local-first and free.** Data stays in a SQLite file on your machine. No account, no tracking, no API key needed.
 - **Zero dependencies.** Python 3.10+ standard library only.
 
-## Install
+## Install and open
 
 ```bash
 pipx install git+https://github.com/kalidatuna/leadhound
+leadhound
 ```
 
-Or without installing:
+That is all. `leadhound` opens the app in your browser. The first time, a short setup asks what you do and where you want clients, then starts your first search. Nothing else to configure.
+
+No pipx? `pip install git+https://github.com/kalidatuna/leadhound` works too, or clone the repo and run `python -m leadhound`.
+
+**Want an icon to double-click?** Run `leadhound shortcut` once. It puts a launcher on your desktop (Linux, macOS and Windows).
+
+Your leads and settings live in `~/.leadhound/` (set `LEADHOUND_HOME` to move them). Nothing is sent anywhere.
+
+## Using the app
+
+**Find clients** tab
+- **People hiring right now**: one click searches Reddit, Hacker News, GitHub and your job-board feeds.
+- **Local businesses**: type a city, click the kinds of business you want (dentists, cafes, plumbers...), choose "Only without a website" if you build sites, and go. Optionally checks each business's website for problems.
+- **Check one website**: paste any address and get the problems found, ready to use in a pitch, plus the contact details the site publishes.
+- A progress panel shows what is happening live. You can stop a search at any time.
+
+**Leads** tab
+- Leads are ranked best first, with a pipeline: Inbox, Shortlist, Contacted, Replied, Won, Lost, Skipped.
+- Click a lead to see why it scored what it did, the original post or website problems, and contact details with Copy and Open buttons.
+- **Write message** drafts a first message from the lead's own details. **Write with AI** uses your LLM if you set one up. **Copy & mark contacted** copies it and moves the lead along. **Open in email** starts an email in your mail app. You always send it yourself.
+- Moved a lead by mistake? Every move has an **Undo**.
+- Keyboard: `j`/`k` move, `s` shortlist, `c` contacted, `x` skip, `g` write message, `o` open original, `/` search.
+- Too many weak leads? **Skip low scores...** clears them in one go. **Export CSV** gives you a spreadsheet.
+
+**Settings** tab: your skills, pitch, minimum budget, words to avoid, which communities to watch, and the optional AI provider. Changes apply to the next search.
+
+## Terminal commands (optional)
+
+Everything above also works from the terminal:
 
 ```bash
-git clone https://github.com/kalidatuna/leadhound && cd leadhound
-python -m leadhound --help
-```
-
-## Quick start
-
-```bash
-leadhound init                 # writes leadhound.ini: set your skills, pitch, min budget
-leadhound scan                 # hiring posts + paid issues from all sources
-leadhound local "Tbilisi, Georgia" --category dentist,restaurant
-leadhound serve                # open the dashboard in your browser
-```
-
-Or stay in the terminal:
-
-```bash
+leadhound scan
+leadhound local "Tbilisi, Georgia" --category dentist,restaurant --website no
 leadhound list --min-score 50
-leadhound show 12              # full post, contact, score breakdown, audit
-leadhound draft 12             # first message from the lead's evidence
+leadhound show 12
+leadhound draft 12
 leadhound status 12 contacted --note "DM sent"
 leadhound export --format csv --out leads.csv
-leadhound audit https://example.com --booking   # audit any single site
+leadhound audit https://example.com --booking
 ```
 
 ## Where leads come from
@@ -111,15 +126,13 @@ Then run `leadhound draft 12 --llm`, or click **Draft with LLM** in the dashboar
 
 leadhound **never sends anything**. You copy the draft, edit it, and send it yourself.
 
-## Dashboard
+## Privacy and safety of the app
 
-`leadhound serve` opens a local web UI with a ranked lead list, filters, score breakdown, audit findings, a draft editor with copy, status buttons (new, shortlisted, contacted, replied, won, lost, ignored) and autosaved notes.
-
-The dashboard binds to `127.0.0.1` only. It also rejects foreign `Host` headers (blocks DNS rebinding) and requires a per-run token on every API call. Other websites open in your browser cannot read or change your leads.
+The app runs on `127.0.0.1` only, so nobody on your network can reach it. It also rejects foreign `Host` headers (blocks DNS rebinding), requires a per-run token on every API call, and sends a strict Content-Security-Policy with no inline scripts. Other websites open in your browser cannot read or change your leads. Text from posts and websites is never rendered as HTML.
 
 ## Configuration
 
-`leadhound init` writes a commented `leadhound.ini`. The settings that matter most:
+Use the Settings tab, or edit `~/.leadhound/config.ini` directly (`leadhound init` writes an example). The settings that matter most:
 
 ```ini
 [profile]
