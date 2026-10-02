@@ -1,0 +1,10 @@
+__pycache__/
+*.pyc
+*.egg-info/
+build/
+dist/
+.venv/
+# your data and config stay local
+leadhound.db
+leadhound.ini
+*.csv
