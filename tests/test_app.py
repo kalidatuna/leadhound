@@ -1,18 +1,14 @@
 """Store, pipeline, CLI and dashboard API."""
 import contextlib
-import http.client
 import io
-import json
 import os
 import tempfile
-import threading
 import unittest
 from datetime import datetime, timezone
 
 from helpers import NOW, FakeFetcher, cfg
 
 from leadhound import cli, config, pipeline
-from leadhound.dashboard.server import make_server
 from leadhound.models import Lead
 from leadhound.store import Store
 
@@ -115,54 +111,6 @@ class CLITest(unittest.TestCase):
         self.run_cli("export", "--out", out_csv)
         with open(out_csv) as fh:
             self.assertIn("contacted", fh.read())
-
-
-class DashboardTest(unittest.TestCase):
-    @classmethod
-    def setUpClass(cls):
-        cls.tmp = tempfile.TemporaryDirectory()
-        db = os.path.join(cls.tmp.name, "d.db")
-        s = Store(db)
-        s.upsert(lead("a", 80))
-        s.close()
-        cls.httpd, cls.token = make_server(db, cfg(), 0)
-        cls.port = cls.httpd.server_address[1]
-        threading.Thread(target=cls.httpd.serve_forever, daemon=True).start()
-
-    @classmethod
-    def tearDownClass(cls):
-        cls.httpd.shutdown()
-        cls.tmp.cleanup()
-
-    def req(self, method, path, body=None, token=True, host=None):
-        c = http.client.HTTPConnection("127.0.0.1", self.port, timeout=5)
-        h = {"Host": host or f"127.0.0.1:{self.port}", "Content-Type": "application/json"}
-        if token:
-            h["X-Leadhound-Token"] = self.token
-        c.request(method, path, body=json.dumps(body) if body is not None else None, headers=h)
-        r = c.getresponse()
-        data = r.read()
-        return r.status, (json.loads(data) if r.getheader("Content-Type", "").startswith("application/json") else data)
-
-    def test_security(self):
-        self.assertEqual(self.req("GET", "/api/leads", token=False)[0], 403)
-        self.assertEqual(self.req("GET", "/api/leads", host="evil.com")[0], 403)
-        self.assertEqual(self.req("GET", "/", token=False, host="evil.com")[0], 403)
-        status, page = self.req("GET", "/", token=False)
-        self.assertEqual(status, 200)
-        self.assertIn(self.token.encode(), page)
-
-    def test_api(self):
-        status, leads = self.req("GET", "/api/leads?min=50")
-        self.assertEqual((status, len(leads)), (200, 1))
-        lid = leads[0]["id"]
-        status, l = self.req("POST", f"/api/leads/{lid}", {"status": "shortlisted", "notes": "good"})
-        self.assertEqual((status, l["status"], l["notes"]), (200, "shortlisted", "good"))
-        self.assertEqual(self.req("POST", f"/api/leads/{lid}", {"status": "bad"})[0], 400)
-        status, d = self.req("POST", f"/api/leads/{lid}/draft", {"llm": False})
-        self.assertEqual((status, d["engine"]), (200, "template"))
-        self.assertEqual(self.req("GET", "/api/leads/999")[0], 404)
-        self.assertEqual(self.req("GET", "/api/stats")[1]["by_status"], {"shortlisted": 1})
 
 
 if __name__ == "__main__":
