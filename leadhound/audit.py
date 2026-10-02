@@ -11,6 +11,7 @@ from html.parser import HTMLParser
 from urllib.parse import urljoin, urlparse
 
 from .net import FetchError
+from .textutil import find_emails
 
 
 @dataclass
@@ -32,6 +33,7 @@ class AuditResult:
     findings: list = field(default_factory=list)
     tech: list = field(default_factory=list)
     blocked: bool = False  # site refused automated checks: inconclusive, never pitch it as broken
+    contacts: list = field(default_factory=list)  # emails and phones the site publishes itself
 
     @property
     def severity_total(self) -> int:
@@ -188,6 +190,32 @@ def analyze_html(res: AuditResult, html: str, booking_relevant: bool = False, no
     return p
 
 
+PHONE_RX = re.compile(r"^tel:\+?[\d\s().-]{6,}$", re.I)
+
+
+def extract_contacts(p: PageParser, limit: int = 4) -> list:
+    """Emails first (mailto: links, then visible text), then phone numbers. Only what the site publishes."""
+    emails = [h[7:].split("?")[0].strip().lower() for h in p.links if h.lower().startswith("mailto:")]
+    emails = [e for e in emails if find_emails(e)] + find_emails(p.text)
+    phones = [h[4:].strip() for h in p.links if PHONE_RX.match(h.strip())]
+    out = []
+    for c in emails + phones:
+        if c not in out:
+            out.append(c)
+    return out[:limit]
+
+
+def apply_contacts(lead, res: AuditResult) -> None:
+    """Fill in lead contact details from the website when the directory listing had none."""
+    if not res.contacts:
+        return
+    emails = [c for c in res.contacts if "@" in c]
+    if emails and not lead.extra.get("email"):
+        lead.extra["email"] = emails[0]
+    if not lead.contact:
+        lead.contact = ", ".join(res.contacts)
+
+
 def check_links(res: AuditResult, p: PageParser, fetcher, max_links: int) -> None:
     host = urlparse(res.final_url).netloc
     seen, broken = set(), []
@@ -253,6 +281,7 @@ def audit(url: str, fetcher, booking_relevant: bool = False, max_links: int = 8)
     if res.html_kb > 1500:
         _add(res, "heavy", 1, f"Heavy page ({res.html_kb} KB HTML)", "", "The page is very heavy and slow on mobile data.")
     p = analyze_html(res, r.text(), booking_relevant)
+    res.contacts = extract_contacts(p)
     if max_links:
         check_links(res, p, fetcher, max_links)
     res.findings.sort(key=lambda f: -f.severity)

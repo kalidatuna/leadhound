@@ -14,12 +14,17 @@ class RunReport:
     found: dict = field(default_factory=dict)  # source -> leads collected
     new: dict = field(default_factory=dict)  # source -> leads not seen before
     errors: dict = field(default_factory=dict)  # source -> message
+    stopped: bool = False
 
 
-def scan(store, cfg, fetcher, sources: list | None = None, now: float | None = None, log=print) -> RunReport:
+def scan(store, cfg, fetcher, sources: list | None = None, now: float | None = None, log=print,
+         should_stop=lambda: False) -> RunReport:
     now = now or time.time()
     rep = RunReport()
     for name in sources or list(SOURCES):
+        if should_stop():
+            rep.stopped = True
+            break
         if name not in SOURCES:
             rep.errors[name] = f"unknown source (choose from {', '.join(SOURCES)})"
             continue
@@ -44,7 +49,8 @@ def scan(store, cfg, fetcher, sources: list | None = None, now: float | None = N
 
 
 def local(store, cfg, fetcher, place: str, categories: list | None = None, radius: int | None = None,
-          do_audit: bool = True, limit: int | None = None, website: str = "any", log=print) -> RunReport:
+          do_audit: bool = True, limit: int | None = None, website: str = "any", log=print,
+          should_stop=lambda: False) -> RunReport:
     rep = RunReport()
     cats = categories or cfg.categories
     log(f"  osm: searching {', '.join(cats)} near '{place}'...")
@@ -62,12 +68,16 @@ def local(store, cfg, fetcher, place: str, categories: list | None = None, radiu
     leads = leads[: limit or cfg.max_businesses]
     new = 0
     for i, lead in enumerate(leads, 1):
+        if should_stop():
+            rep.stopped = True
+            break
         site = lead.extra.get("website")
         if do_audit and site:
             log(f"  audit {i}/{len(leads)}: {site}")
             res = audit_mod.audit(site, fetcher, booking_relevant=lead.extra.get("booking_relevant", False))
             lead.extra["audit"] = res.to_dict()
             lead.signals = [f.title for f in res.findings]
+            audit_mod.apply_contacts(lead, res)
         _, is_new = store.upsert(score(lead, cfg, time.time()))
         new += is_new
     rep.found["osm"], rep.new["osm"] = len(leads), new

@@ -168,7 +168,7 @@ def score_business(lead: Lead, cfg=None, now: float = 0) -> Lead:
         total += 10
         reasons.append("+10 public phone")
     else:
-        reasons.append("+0 no public contact in OSM")
+        reasons.append("+0 no public contact found")
     lead.score = max(0, min(100, total))
     lead.reasons = reasons
     return lead
