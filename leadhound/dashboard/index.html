@@ -1,0 +1,99 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>leadhound</title>
+<style>
+:root{--bg:#f7f7f8;--panel:#fff;--fg:#17191c;--mut:#666d78;--bd:#e1e3e7;--ac:#2563eb;--hi:#15803d;--mid:#b45309;--lo:#9aa1ab;--sel:#eef3ff}
+@media(prefers-color-scheme:dark){:root{--bg:#111316;--panel:#181b1f;--fg:#e7e9ec;--mut:#98a0ab;--bd:#2b3036;--ac:#6ea0ff;--hi:#4ade80;--mid:#fbbf24;--lo:#6b7280;--sel:#1f2a3d}}
+*{box-sizing:border-box}html,body{height:100%}body{margin:0;font:14px/1.45 system-ui,sans-serif;background:var(--bg);color:var(--fg);display:flex;flex-direction:column}
+header{display:flex;gap:8px;align-items:center;padding:10px 16px;border-bottom:1px solid var(--bd);background:var(--panel);flex-wrap:wrap}
+header b{font-size:16px;margin-right:8px}#stats{color:var(--mut);margin-left:auto;font-size:13px}
+input,select,button,textarea{font:inherit;color:var(--fg);background:var(--bg);border:1px solid var(--bd);border-radius:6px;padding:5px 8px}
+button{cursor:pointer}button:hover{border-color:var(--ac)}button.p{background:var(--ac);border-color:var(--ac);color:#fff}
+main{flex:1;display:grid;grid-template-columns:minmax(320px,42%) 1fr;min-height:0}
+#list{overflow:auto;border-right:1px solid var(--bd);background:var(--panel)}
+.row{display:flex;gap:10px;padding:9px 14px;border-bottom:1px solid var(--bd);cursor:pointer;align-items:flex-start}
+.row:hover{background:var(--bg)}.row.on{background:var(--sel)}
+.sc{flex:0 0 38px;text-align:center;font-weight:700;border-radius:6px;padding:2px 0;border:2px solid currentColor}
+.hi{color:var(--hi)}.mid{color:var(--mid)}.lo{color:var(--lo)}
+.row .t{flex:1;min-width:0}.row .t div:first-child{font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.meta{color:var(--mut);font-size:12px}
+#detail{overflow:auto;padding:16px 22px}#detail h2{margin:0 0 4px;font-size:18px}
+.chips{display:flex;gap:6px;flex-wrap:wrap;margin:10px 0}.chip{border:1px solid var(--bd);border-radius:99px;padding:2px 10px;font-size:13px;background:var(--panel)}
+.chip.cur{background:var(--ac);border-color:var(--ac);color:#fff}
+h3{font-size:13px;text-transform:uppercase;letter-spacing:.04em;color:var(--mut);margin:18px 0 6px}
+ul.r{margin:0;padding-left:18px}ul.r li.neg{color:#dc2626}
+.f{border-left:3px solid var(--bd);padding:4px 10px;margin:6px 0}.f.s3{border-color:#dc2626}.f.s2{border-color:var(--mid)}
+pre.body{white-space:pre-wrap;word-break:break-word;background:var(--panel);border:1px solid var(--bd);border-radius:8px;padding:10px;max-height:300px;overflow:auto;font:13px/1.5 system-ui}
+textarea{width:100%;min-height:200px;font:14px/1.5 system-ui}#notes{min-height:70px}
+.bar{display:flex;gap:8px;align-items:center;margin-top:6px;flex-wrap:wrap}.mut{color:var(--mut)}
+a{color:var(--ac)}.empty{padding:40px;color:var(--mut);text-align:center}
+@media(max-width:800px){main{grid-template-columns:1fr}#list{max-height:45vh;border-right:none;border-bottom:1px solid var(--bd)}}
+</style></head><body>
+<header><b>leadhound</b>
+<input id="q" placeholder="Search…" size="18">
+<select id="kind"><option value="">All kinds</option><option value="post">Posts</option><option value="issue">Issues</option><option value="business">Local businesses</option></select>
+<select id="status"><option value="">Open (not ignored)</option></select>
+<label class="mut">Min score <input id="min" type="number" value="0" min="0" max="100" style="width:64px"></label>
+<span id="stats"></span></header>
+<main><div id="list"></div><div id="detail"><div class="empty">Select a lead</div></div></main>
+<script>
+const TOKEN="__LEADHOUND_TOKEN__";
+const STATUSES=["new","shortlisted","contacted","replied","won","lost","ignored"];
+const $=id=>document.getElementById(id);
+let leads=[],cur=null,noteTimer=null;
+STATUSES.forEach(s=>{const o=document.createElement("option");o.value=s;o.textContent=s;$("status").appendChild(o);});
+async function api(path,body){
+  const r=await fetch(path,{method:body?"POST":"GET",headers:{"X-Leadhound-Token":TOKEN,"Content-Type":"application/json"},body:body?JSON.stringify(body):undefined});
+  if(!r.ok)throw new Error((await r.json()).error||r.status);return r.json();
+}
+const cls=s=>s>=60?"hi":s>=35?"mid":"lo";
+function age(ts){if(!ts)return"";const h=(Date.now()/1000-ts)/3600;return h<48?Math.round(h)+"h ago":Math.round(h/24)+"d ago";}
+function el(tag,attrs={},...kids){const e=document.createElement(tag);for(const[k,v]of Object.entries(attrs)){if(k==="class")e.className=v;else if(k.startsWith("on"))e[k]=v;else e.setAttribute(k,v);}kids.flat().forEach(k=>e.append(k instanceof Node?k:document.createTextNode(k??"")));return e;}
+async function load(){
+  const p=new URLSearchParams({q:$("q").value,kind:$("kind").value,status:$("status").value,min:$("min").value||0});
+  leads=await api("/api/leads?"+p);renderList();
+  const s=await api("/api/stats");$("stats").textContent=`${s.total} leads · `+Object.entries(s.by_status).map(([k,v])=>`${k} ${v}`).join(" · ");
+}
+function renderList(){
+  const L=$("list");L.textContent="";
+  if(!leads.length){L.append(el("div",{class:"empty"},"No leads match. Run `leadhound scan` or `leadhound local \"<city>\"`."));return;}
+  for(const l of leads){
+    L.append(el("div",{class:"row"+(cur&&cur.id===l.id?" on":""),onclick:()=>select(l.id)},
+      el("div",{class:"sc "+cls(l.score)},String(l.score)),
+      el("div",{class:"t"},el("div",{},l.title),el("div",{class:"meta"},[l.source,l.kind==="business"?(l.extra.category||"business"):age(l.created_at),l.budget,l.status!=="new"?"· "+l.status:""].filter(Boolean).join(" · ")))));
+  }
+}
+async function select(id){cur=await api("/api/leads/"+id);renderList();renderDetail();}
+function renderDetail(){
+  const l=cur,D=$("detail");D.textContent="";
+  D.append(el("h2",{},l.title));
+  const safe=/^https?:\/\//i.test(l.url)?l.url:"#"; // feeds are untrusted: never allow javascript: links
+  D.append(el("div",{class:"meta"},el("a",{href:safe,target:"_blank",rel:"noopener noreferrer"},l.url)," · ",l.source," · ",l.kind,l.created_at?" · "+age(l.created_at):""));
+  const chips=el("div",{class:"chips"});
+  STATUSES.forEach(s=>chips.append(el("button",{class:"chip"+(l.status===s?" cur":""),onclick:async()=>{cur=await api("/api/leads/"+l.id,{status:s});renderDetail();load();}},s)));
+  D.append(chips);
+  const info=[["Contact",l.contact],["Location",l.location],["Budget",l.budget],["Author",l.author]].filter(x=>x[1]);
+  if(info.length)D.append(el("div",{},...info.map(([k,v])=>el("div",{},el("span",{class:"mut"},k+": "),v))));
+  D.append(el("h3",{},`Why score ${l.score}`),el("ul",{class:"r"},...l.reasons.map(r=>el("li",{class:r.startsWith("-")?"neg":""},r))));
+  const a=l.extra.audit;
+  if(a){
+    D.append(el("h3",{},`Website audit · ${a.final_url||a.url} · ${a.seconds}s`+(a.tech.length?" · "+a.tech.join(", "):"")));
+    if(!a.findings.length)D.append(el("div",{class:"mut"},"No issues found."));
+    a.findings.forEach(f=>D.append(el("div",{class:"f s"+f.severity},el("b",{},f.title),el("div",{class:"meta"},f.detail),el("div",{},f.pitch))));
+  }
+  if(l.body)D.append(el("h3",{},"Post"),el("pre",{class:"body"},l.body));
+  const ta=el("textarea",{id:"draft",placeholder:"No draft yet"});ta.value=l.draft||"";
+  const msg=el("span",{class:"mut"});
+  D.append(el("h3",{},"First message (you send it)"),ta,el("div",{class:"bar"},
+    el("button",{class:"p",onclick:()=>gen(false,msg)},"Draft from template"),
+    el("button",{onclick:()=>gen(true,msg)},"Draft with LLM"),
+    el("button",{onclick:async()=>{await api("/api/leads/"+l.id,{draft:$("draft").value});msg.textContent="Saved";}},"Save"),
+    el("button",{onclick:()=>navigator.clipboard.writeText($("draft").value).then(()=>msg.textContent="Copied",()=>msg.textContent="Copy blocked")},"Copy"),msg));
+  const notes=el("textarea",{id:"notes",placeholder:"Notes (autosaved)"});notes.value=l.notes||"";
+  notes.oninput=()=>{clearTimeout(noteTimer);noteTimer=setTimeout(()=>api("/api/leads/"+l.id,{notes:notes.value}),600);};
+  D.append(el("h3",{},"Notes"),notes);
+}
+async function gen(useLlm,msg){msg.textContent=useLlm?"Asking LLM…":"";try{const r=await api(`/api/leads/${cur.id}/draft`,{llm:useLlm});$("draft").value=r.draft;cur.draft=r.draft;msg.textContent="Engine: "+r.engine;}catch(e){msg.textContent="Error: "+e.message;}}
+let t=null;["q","kind","status","min"].forEach(id=>$(id).addEventListener("input",()=>{clearTimeout(t);t=setTimeout(load,250);}));
+load().catch(e=>{$("list").textContent="Error: "+e.message;});
+</script></body></html>
