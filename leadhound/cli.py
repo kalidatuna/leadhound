@@ -8,7 +8,7 @@ import sys
 import time
 from dataclasses import asdict
 
-from . import __version__, config, pipeline
+from . import __version__, config, paths, pipeline, shortcut
 from .audit import audit
 from .draft import make_draft
 from .models import KINDS, STATUSES
@@ -26,7 +26,7 @@ def _age(ts: float) -> str:
 
 def cmd_init(a, cfg):
     if config.write_example(a.config):
-        print(f"wrote {a.config}. Edit [profile] skills and pitch, then run: leadhound scan")
+        print(f"wrote {a.config}. Run `leadhound` to open the app and finish setup there.")
     else:
         print(f"{a.config} already exists")
     return 0
@@ -146,18 +146,25 @@ def cmd_export(a, cfg):
     return 0
 
 
+def cmd_shortcut(a, cfg):
+    path = shortcut.create()
+    print(f"created {path}\nDouble-click it any time to open leadhound.")
+    return 0
+
+
 def cmd_serve(a, cfg):
     from .dashboard.server import serve
-    serve(a.db, cfg, a.port, open_browser=not a.no_browser)
+    serve(a.db, a.config, a.port, open_browser=not a.no_browser)
     return 0
 
 
 def build_parser() -> argparse.ArgumentParser:
     ap = argparse.ArgumentParser(prog="leadhound", description="Find clients by live intent, not stale lists.")
     ap.add_argument("--version", action="version", version=f"leadhound {__version__}")
-    ap.add_argument("--config", default=config.DEFAULT_PATH, help="config file (default leadhound.ini)")
-    ap.add_argument("--db", default="leadhound.db", help="lead database (default leadhound.db)")
-    sub = ap.add_subparsers(dest="cmd", required=True)
+    ap.add_argument("--config", help="config file (default ~/.leadhound/config.ini)")
+    ap.add_argument("--db", help="lead database (default ~/.leadhound/leadhound.db)")
+    sub = ap.add_subparsers(dest="cmd", metavar="command",
+                            help="run with no command to open the app in your browser")
 
     sub.add_parser("init", help="write an example leadhound.ini").set_defaults(fn=cmd_init)
 
@@ -213,6 +220,8 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("--min-score", type=int, default=0)
     p.set_defaults(fn=cmd_export)
 
+    sub.add_parser("shortcut", help="create a double-click launcher on your desktop").set_defaults(fn=cmd_shortcut)
+
     p = sub.add_parser("serve", help="open the local dashboard")
     p.add_argument("--port", type=int, default=8787)
     p.add_argument("--no-browser", action="store_true")
@@ -222,6 +231,9 @@ def build_parser() -> argparse.ArgumentParser:
 
 def main(argv=None) -> int:
     a = build_parser().parse_args(argv)
+    a.config, a.db = paths.resolve(a.config, a.db)
+    if a.cmd is None:  # double-click / bare `leadhound`: open the app
+        a.fn, a.port, a.no_browser = cmd_serve, 8787, False
     cfg = config.load(a.config)
     try:
         return a.fn(a, cfg)

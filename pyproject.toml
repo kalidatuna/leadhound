@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "leadhound"
-version = "0.1.0"
+version = "0.2.0"
 description = "Find freelance clients by live intent: hiring posts, paid issues, and local businesses with weak websites. Local-first, zero dependencies."
 readme = "README.md"
 license = { text = "MIT" }
@@ -31,4 +31,4 @@ leadhound = "leadhound.cli:main"
 packages = ["leadhound", "leadhound.sources", "leadhound.dashboard"]
 
 [tool.setuptools.package-data]
-"leadhound.dashboard" = ["index.html"]
+"leadhound.dashboard" = ["index.html", "app.css", "*.js"]
