@@ -36,7 +36,7 @@ from . import ed25519
 
 PUBLIC_KEY_HEX = os.environ.get("LEADHOUND_PUBLIC_KEY", "b87d8ad3a99c643ab15c3cd13978df8c5c609e5c01f12ce2a9a50e144b7c72d3")  # set by the seller: `leadhound license keygen`, then paste the public key here
 SERVER = os.environ.get("LEADHOUND_LICENSE_SERVER", "https://leadhound-license-nino.fly.dev").rstrip("/")  # the seller's license server (https://...)
-BUY_URL = os.environ.get("LEADHOUND_BUY_URL", "")  # where "Get Pro" goes (PayPal link, shop page...)
+BUY_URL = os.environ.get("LEADHOUND_BUY_URL", "https://supplierindexuk.gumroad.com/l/tfoewu")  # where "Get Pro" goes (PayPal link, shop page...)
 PRICE_MONTH = os.environ.get("LEADHOUND_PRICE_MONTH", "$12.99")
 PRICE_YEAR = os.environ.get("LEADHOUND_PRICE_YEAR", "$89.99")
 TRIAL_DAYS = 7
