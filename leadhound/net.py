@@ -41,6 +41,20 @@ class FetchError(Exception):
     pass
 
 
+def is_public_host(host: str) -> bool:
+    """False for localhost, private, link-local (cloud metadata) and reserved addresses."""
+    import ipaddress
+    try:
+        infos = socket.getaddrinfo(host, None)
+    except socket.gaierror:
+        return True  # unresolvable: the fetch itself will fail cleanly
+    for info in infos:
+        ip = ipaddress.ip_address(info[4][0].split("%")[0])
+        if ip.is_private or ip.is_loopback or ip.is_link_local or ip.is_reserved or ip.is_multicast or ip.is_unspecified:
+            return False
+    return True
+
+
 class Fetcher:
     def __init__(self, min_interval: float = 1.0, timeout: float = 20, retries: int = 2):
         self.min_interval = min_interval

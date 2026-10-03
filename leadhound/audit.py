@@ -10,6 +10,7 @@ from dataclasses import asdict, dataclass, field
 from html.parser import HTMLParser
 from urllib.parse import urljoin, urlparse
 
+from .langs import BOOKING_WORDS, CONTACT_WORDS
 from .net import FetchError
 from .textutil import find_emails
 
@@ -21,6 +22,7 @@ class Finding:
     title: str
     detail: str
     pitch: str
+    args: dict = field(default_factory=dict)  # numbers for translated pitches: year, n, code, secs
 
 
 @dataclass
@@ -34,6 +36,7 @@ class AuditResult:
     tech: list = field(default_factory=list)
     blocked: bool = False  # site refused automated checks: inconclusive, never pitch it as broken
     contacts: list = field(default_factory=list)  # emails and phones the site publishes itself
+    lang: str = ""  # <html lang>, used to write the pitch in the site's language
 
     @property
     def severity_total(self) -> int:
@@ -60,10 +63,13 @@ class PageParser(HTMLParser):
         self.text_parts: list[str] = []
         self._in_title = False
         self._skip = 0
+        self.lang = ""
 
     def handle_starttag(self, tag, attrs):
         a = {k: (v or "") for k, v in attrs}
-        if tag == "title":
+        if tag == "html" and not self.lang:
+            self.lang = a.get("lang", "")[:12]
+        elif tag == "title":
             self._in_title = True
         elif tag == "meta":
             key = (a.get("name") or a.get("property") or a.get("http-equiv") or "").lower()
@@ -110,17 +116,16 @@ class PageParser(HTMLParser):
 
 COPYRIGHT_RX = re.compile(r"(?:©|&copy;|copyright)\s*(?:\d{4}\s*[-–]\s*)?((?:19|20)\d{2})", re.I)
 JQUERY_RX = re.compile(r"jquery[.-]?(\d+)\.(\d+)(?:\.\d+)?(?:\.min)?\.js|jquery(?:\.min)?\.js\?ver=(\d+)\.(\d+)", re.I)
-BOOKING_RX = re.compile(r"\b(book|booking|reserve|reservation|appointment|schedule online|order online)\b|"
-                        r"calendly|opentable|resy|booksy|fresha|treatwell|simplybook|setmore|square\.site", re.I)
-CONTACT_RX = re.compile(r"\bcontact\b|kontakt|контакт", re.I)
+BOOKING_RX = re.compile(BOOKING_WORDS, re.I)
+CONTACT_RX = re.compile(CONTACT_WORDS, re.I)
 BLOCKED_STATUSES = (401, 403, 406, 429, 503)
 BROKEN_STATUSES = (404, 410)
 BUILDERS = {"wix.com": "Wix", "squarespace": "Squarespace", "wp-content": "WordPress",
             "shopify": "Shopify", "webflow": "Webflow", "weebly": "Weebly", "godaddy": "GoDaddy builder"}
 
 
-def _add(res: AuditResult, code, sev, title, detail, pitch):
-    res.findings.append(Finding(code, sev, title, detail, pitch))
+def _add(res: AuditResult, code, sev, title, detail, pitch, /, **args):
+    res.findings.append(Finding(code, sev, title, detail, pitch, args))
 
 
 def analyze_html(res: AuditResult, html: str, booking_relevant: bool = False, now_year: int | None = None) -> PageParser:
@@ -150,7 +155,7 @@ def analyze_html(res: AuditResult, html: str, booking_relevant: bool = False, no
     years = [int(y) for y in COPYRIGHT_RX.findall(p.text)]
     if years and max(years) < now_year - 1:
         _add(res, "stale", 2, f"Looks unmaintained (© {max(years)})", f"Latest copyright year {max(years)}.",
-             f"The footer still says {max(years)}, which makes visitors wonder if you're still open.")
+             f"The footer still says {max(years)}, which makes visitors wonder if you're still open.", year=max(years))
     wp = re.search(r"wordpress\s+(\d+)\.(\d+)", gen, re.I)
     if wp and int(wp.group(1)) < 6:
         _add(res, "old_wordpress", 3, f"Outdated WordPress {wp.group(1)}.{wp.group(2)}", gen,
@@ -239,7 +244,7 @@ def check_links(res: AuditResult, p: PageParser, fetcher, max_links: int) -> Non
             pass  # timeouts on one link are too noisy to pitch
     if broken:
         _add(res, "broken_links", 2, f"{len(broken)} broken link(s)", "; ".join(broken[:5]),
-             f"{len(broken)} link(s) on your homepage lead to error pages.")
+             f"{len(broken)} link(s) on your homepage lead to error pages.", n=len(broken))
 
 
 def audit(url: str, fetcher, booking_relevant: bool = False, max_links: int = 8) -> AuditResult:
@@ -264,7 +269,7 @@ def audit(url: str, fetcher, booking_relevant: bool = False, max_links: int = 8)
         return res
     if r.status >= 400:
         _add(res, "http_error", 3, f"Homepage returns HTTP {r.status}", r.url,
-             f"Your homepage returns an error ({r.status}) instead of your site.")
+             f"Your homepage returns an error ({r.status}) instead of your site.", code=r.status)
         return res
     if r.url.startswith("http://"):
         https_ok = False
@@ -277,11 +282,13 @@ def audit(url: str, fetcher, booking_relevant: bool = False, max_links: int = 8)
              "Chrome marks your site 'Not secure', which scares off visitors and hurts Google ranking.")
     if r.elapsed > 3:
         _add(res, "slow", 2, f"Slow response ({r.elapsed:.1f}s)", "Homepage HTML took over 3 seconds.",
-             f"Your homepage took {r.elapsed:.1f} seconds to load in my test; many visitors leave after 3.")
+             f"Your homepage took {r.elapsed:.1f} seconds to load in my test; many visitors leave after 3.",
+             secs=f"{r.elapsed:.1f}")
     if res.html_kb > 1500:
         _add(res, "heavy", 1, f"Heavy page ({res.html_kb} KB HTML)", "", "The page is very heavy and slow on mobile data.")
     p = analyze_html(res, r.text(), booking_relevant)
     res.contacts = extract_contacts(p)
+    res.lang = p.lang
     if max_links:
         check_links(res, p, fetcher, max_links)
     res.findings.sort(key=lambda f: -f.severity)
