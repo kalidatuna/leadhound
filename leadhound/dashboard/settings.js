@@ -1,7 +1,7 @@
 // Settings form, update panel and first-run wizard.
 import { $, api, el, emit, state, toast, openModal, closeModal } from './util.js';
 import { t, LANG, setLang, catName } from './i18n.js';
-import { runQueue, rememberPlace, startJob } from './find.js';
+import { runQueue, rememberPlace, startJob, defaultSources } from './find.js';
 
 const root = $('#view-settings');
 const list = v => (v || []).join(', ');
@@ -131,49 +131,35 @@ async function installUpdate(target) {
   }, 1000);
 }
 
-// ---- first-run wizard ----
+// ---- first-run setup: one screen ----
 export function showWizard() {
-  const data = { profession: '', name: '', city: '', cats: new Set() };
-  const step1 = () => {
-    const cards = el('div', { class: 'profs' }, state.meta.professions.map(p => el('button', { class: 'prof' + (data.profession === p.id ? ' on' : ''), type: 'button',
-      onclick: () => { data.profession = p.id; data.name = $('#w-name').value; data.cats = new Set(p.categories); step1(); } }, t('prof.' + p.id))));
+  const data = { profession: '' };
+  const draw = () => {
+    const cards = state.meta.professions.map(p => el('button', { class: 'prof' + (data.profession === p.id ? ' on' : ''), type: 'button',
+      onclick: () => { data.name = $('#w-name').value; data.city = $('#w-city').value; data.profession = p.id; draw(); } }, t('prof.' + p.id)));
     openModal([
-      el('div', { class: 'steps' }, t('wiz.step', { n: 1 })), el('h2', {}, t('wiz.welcome')), el('p', { class: 'mut' }, t('wiz.welcome_text')),
-      el('div', { class: 'row', style: 'margin:6px 0 2px' }, el('span', { class: 'mut' }, t('set.app_language')),
-        el('select', { onchange: e => setLang(e.target.value) }, options(Object.entries(state.meta.languages), LANG))),
-      el('label', { class: 'f' }, t('wiz.what')), cards,
-      field(t('wiz.name'), '', el('input', { id: 'w-name', value: data.name })),
-      el('div', { class: 'row', style: 'margin-top:18px' }, el('button', { class: 'btn primary', onclick: () => {
-        if (!data.profession) return toast(t('wiz.pick_one'), 'err');
-        data.name = $('#w-name').value.trim(); step2();
-      } }, t('wiz.next')), el('button', { class: 'btn ghost', onclick: skip }, t('wiz.skip'))),
+      el('h2', {}, t('wiz.welcome')), el('p', { class: 'mut' }, t('wiz.welcome_text')),
+      el('label', { class: 'f' }, t('wiz.what')), el('div', { class: 'profs' }, cards),
+      el('div', { class: 'two' }, field(t('wiz.name'), '', el('input', { id: 'w-name', value: data.name || '' })),
+        field(t('wiz.city'), t('wiz.city_hint'), el('input', { id: 'w-city', placeholder: t('find.city_ph'), value: data.city || '' }))),
+      el('div', { class: 'row', style: 'margin-top:18px' }, el('button', { class: 'btn primary big-btn', onclick: finish }, t('wiz.start'))),
+      el('div', { class: 'row', style: 'margin-top:14px' }, el('select', { style: 'width:auto', onchange: e => setLang(e.target.value) }, options(Object.entries(state.meta.languages), LANG)),
+        el('button', { class: 'btn ghost sm', onclick: skip }, t('wiz.skip'))),
     ]);
   };
-  const step2 = () => {
-    const prof = state.meta.professions.find(p => p.id === data.profession);
-    const cats = [...new Set([...(prof?.categories || []), 'restaurant', 'cafe', 'dentist', 'hairdresser', 'gym', 'hotel'])].slice(0, 12);
-    const draw = () => $('#w-cats').replaceChildren(...cats.map(c => el('button', { class: 'chip' + (data.cats.has(c) ? ' on' : ''), type: 'button',
-      onclick: () => { data.cats.has(c) ? data.cats.delete(c) : data.cats.add(c); draw(); } }, catName(c))));
-    openModal([
-      el('div', { class: 'steps' }, t('wiz.step', { n: 2 })), el('h2', {}, t('wiz.first')), el('p', { class: 'mut' }, t('wiz.first_text')),
-      field(t('wiz.city'), t('wiz.city_hint'), el('input', { id: 'w-city', placeholder: t('find.city_ph') })),
-      el('label', { class: 'f' }, t('wiz.which_biz')), el('div', { class: 'chips', id: 'w-cats' }),
-      el('div', { class: 'row', style: 'margin-top:18px' }, el('button', { class: 'btn primary', onclick: finish }, t('wiz.start')),
-        el('button', { class: 'btn ghost', onclick: step1 }, t('wiz.back'))),
-    ]);
-    draw();
-  };
-  const save = extra => persist({ name: data.name, signature: data.name, ...(data.profession ? { profession_defaults: data.profession } : {}), ...extra });
-  const skip = async () => { try { await save({}); } catch (e) { toast(e.message, 'err'); } closeModal(); emit('profile-changed'); };
+  const base = () => ({ name: $('#w-name').value.trim(), signature: $('#w-name').value.trim(),
+    ...(data.profession ? { profession_defaults: data.profession } : {}) });
+  const skip = async () => { try { await persist(base()); } catch (e) { toast(e.message, 'err'); } closeModal(); emit('profile-changed'); };
   const finish = async () => {
+    if (!data.profession) return toast(t('wiz.pick_one'), 'err');
     const city = $('#w-city').value.trim();
-    try { await save(data.cats.size ? { categories: [...data.cats] } : {}); } catch (e) { return toast(e.message, 'err'); }
+    try { await persist(base()); } catch (e) { return toast(e.message, 'err'); }
     closeModal();
     emit('profile-changed');
     if (city) rememberPlace(city);
-    const jobs = [{ kind: 'scan', params: {} }];
-    if (city && data.cats.size) jobs.push({ kind: 'local', params: { place: city, categories: [...data.cats], website: 'no', audit: false, limit: 40 } });
+    const jobs = [{ kind: 'scan', params: { sources: defaultSources() } }];
+    if (city && state.cfg.categories.length) jobs.push({ kind: 'local', params: { place: city, categories: state.cfg.categories, website: 'no', audit: false, limit: 40 } });
     runQueue(jobs);
   };
-  step1();
+  draw();
 }

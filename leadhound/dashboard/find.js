@@ -9,6 +9,13 @@ const QUICK = ['restaurant', 'cafe', 'dentist', 'hairdresser', 'beauty', 'gym', 
 const picked = new Set();
 const srcLabel = s => BRANDS[s] || t('src.' + s);
 
+export function defaultSources() {
+  const c = state.cfg;
+  const on_ = { freelancer: c.freelancer, github: c.github, hn: c.hn, mastodon: c.mastodon,
+    reddit: c.reddit_subreddits.length > 0, rss: c.rss_feeds.length > 0 };
+  return SOURCES.filter(id => on_[id]);
+}
+
 export function initFind() {
   (state.cfg.categories || ['restaurant', 'dentist']).forEach(c => picked.add(c));
   const enabled = { freelancer: state.cfg.freelancer, github: state.cfg.github, hn: state.cfg.hn, mastodon: state.cfg.mastodon,

@@ -7,15 +7,20 @@
 <header class="top">
   <div class="brand">leadhound</div>
   <nav id="nav">
-    <button data-view="leads" class="tab on">Leads</button>
+    <button data-view="today" class="tab on">Today</button>
+    <button data-view="leads" class="tab">Leads</button>
     <button data-view="find" class="tab">Find clients</button>
     <button data-view="settings" class="tab">Settings</button>
   </nav>
   <span class="grow"></span>
   <span id="upd-pill"></span>
   <button id="pill" class="pill" hidden></button>
+  <select id="lang" class="lang" aria-label="Language"></select>
+  <button id="mode" class="btn sm"></button>
+  <button id="quit" class="btn sm ghost" hidden></button>
 </header>
-<main id="view-leads" class="view"></main>
+<main id="view-today" class="view"></main>
+<main id="view-leads" class="view" hidden></main>
 <main id="view-find" class="view" hidden></main>
 <main id="view-settings" class="view" hidden></main>
 <div id="modal" class="modal" hidden></div>

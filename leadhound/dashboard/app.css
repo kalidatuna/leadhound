@@ -100,3 +100,21 @@ body.login{align-items:center;justify-content:center;padding:16px}body.login .di
   .back{display:inline-block;margin-bottom:10px}.detail{padding:16px}.two,.three{grid-template-columns:1fr}
   .top{gap:8px;padding:0 10px}.tab{padding:8px 9px}.help{display:none}
 }
+
+/* simple mode */
+body[data-mode=simple] .tab:not([data-view=today]){display:none}
+body[data-mode=simple] #nav{display:none}
+.lang{width:auto;padding:4px 8px;font-size:13px}
+.big-btn{font-size:16px;padding:12px 22px}
+.today{max-width:720px}
+.steps3{display:flex;gap:10px;list-style:none;padding:0;margin:0 0 4px;flex-wrap:wrap}
+.steps3 li{flex:1;min-width:150px;background:var(--panel);border:1px solid var(--bd);border-radius:10px;padding:8px 12px;font-weight:600}
+.steps3 b{display:inline-block;width:22px;height:22px;line-height:22px;text-align:center;border-radius:50%;background:var(--ac);color:var(--ac-fg);margin-inline-end:8px;font-size:13px}
+.findbar{display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin:8px 0}
+.hello{font-size:15px;margin:18px 0 8px;color:var(--mut)}
+.card.lead{display:flex;gap:14px;align-items:flex-start;margin-bottom:10px}
+.card.lead .sc{margin-top:2px}.card.lead .lt{min-width:0;flex:1}.card.lead .ti{font-weight:700;font-size:16px;overflow-wrap:anywhere}
+.why1{color:var(--hi);font-size:13px;margin-top:4px}
+.cityask{margin-top:16px}.cityask .row{margin-top:8px}
+.dialog textarea{width:100%}
+body[data-mode=simple] #pill{display:none}
