@@ -4,6 +4,12 @@ export const $ = (s, r = document) => r.querySelector(s);
 export const $$ = (s, r = document) => [...r.querySelectorAll(s)];
 export const state = { meta: null };
 
+// localStorage that never throws (private mode, blocked storage)
+export const store = {
+  get: k => { try { return localStorage.getItem(k) || ''; } catch { return ''; } },
+  set: (k, v) => { try { localStorage.setItem(k, v); } catch { /* ignore */ } },
+};
+
 const bus = new EventTarget();
 export const emit = (name, detail) => bus.dispatchEvent(new CustomEvent(name, { detail }));
 export const on = (name, fn) => bus.addEventListener(name, e => fn(e.detail));
@@ -16,6 +22,7 @@ export async function api(path, body) {
     opt.body = JSON.stringify(body);
   }
   const r = await fetch(path, opt);
+  if (r.status === 401 && path !== '/api/login') { location.reload(); throw new Error('signed out'); }
   const isJson = (r.headers.get('content-type') || '').includes('json');
   const data = isJson ? await r.json() : await r.blob();
   if (!r.ok) throw new Error((isJson && data.error) || `Request failed (${r.status})`);
@@ -62,17 +69,10 @@ export async function copyText(text) {
   }
 }
 
-export function ageText(ts) {
-  if (!ts) return '';
-  const h = (Date.now() / 1000 - ts) / 3600;
-  if (h < 1) return 'just now';
-  return h < 48 ? `${Math.round(h)}h ago` : `${Math.round(h / 24)}d ago`;
-}
 
 export const scoreClass = s => (s >= 60 ? 'hi' : s >= 35 ? 'mid' : 'lo');
 export const safeUrl = u => (/^https?:\/\//i.test(u || '') ? u : null);
-export const pretty = s => String(s).replace(/_/g, ' ');
-export const SOURCE_NAMES = { reddit: 'Reddit', hn: 'Hacker News', github: 'GitHub', rss: 'Job board', osm: 'Local business', manual: 'Website check' };
+export const BRANDS = { reddit: 'Reddit', hn: 'Hacker News', github: 'GitHub', freelancer: 'Freelancer.com', mastodon: 'Mastodon' };
 
 export function openModal(content) {
   const m = $('#modal');

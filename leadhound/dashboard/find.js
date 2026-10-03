@@ -1,50 +1,57 @@
 // Find view: start searches, watch live progress, see a plain-language summary.
-import { $, api, el, emit, on, toast, pretty, SOURCE_NAMES } from './util.js';
+import { $, api, el, emit, on, state, store, toast, BRANDS } from './util.js';
+import { t, catName } from './i18n.js';
 
 let job = null, timer = null, queue = [];
 const root = $('#view-find');
-const LS = { get: k => { try { return localStorage.getItem(k) || ''; } catch { return ''; } }, set: (k, v) => { try { localStorage.setItem(k, v); } catch { /* private mode */ } } };
-
-const SOURCE_INFO = [
-  ['reddit', 'Reddit', 'Hiring posts in r/forhire, r/jobbit and the subreddits from Settings'],
-  ['hn', 'Hacker News', '"Seeking freelancer" and contract posts from the monthly threads'],
-  ['github', 'GitHub', 'Open issues with bounty and help-wanted labels'],
-  ['rss', 'Job boards', 'RSS feeds you added in Settings'],
-];
-const QUICK_CATS = ['restaurant', 'cafe', 'dentist', 'hairdresser', 'beauty', 'plumber', 'lawyer', 'hotel', 'gym', 'car_repair'];
-const picked = new Set(['restaurant', 'dentist']);
+const SOURCES = ['freelancer', 'reddit', 'hn', 'github', 'mastodon', 'rss'];
+const QUICK = ['restaurant', 'cafe', 'dentist', 'hairdresser', 'beauty', 'gym', 'hotel', 'plumber', 'lawyer', 'car_repair'];
+const picked = new Set();
+const srcLabel = s => BRANDS[s] || t('src.' + s);
 
 export function initFind() {
-  const srcBoxes = SOURCE_INFO.map(([id, name, desc]) => el('label', { class: 'check' },
-    el('input', { type: 'checkbox', checked: true, 'data-src': id }), el('span', {}, name, el('small', {}, desc))));
+  (state.cfg.categories || ['restaurant', 'dentist']).forEach(c => picked.add(c));
+  const enabled = { freelancer: state.cfg.freelancer, github: state.cfg.github, hn: state.cfg.hn, mastodon: state.cfg.mastodon,
+    reddit: state.cfg.reddit_subreddits.length > 0, rss: state.cfg.rss_feeds.length > 0 };
+  const srcBoxes = SOURCES.map(id => el('label', { class: 'check' },
+    el('input', { type: 'checkbox', checked: !!enabled[id], 'data-src': id }), el('span', {}, srcLabel(id), el('small', {}, t('src_desc.' + id)))));
   const catChips = el('div', { class: 'chips', id: 'cats' });
-  const drawCats = () => catChips.replaceChildren(...[...new Set([...QUICK_CATS, ...picked])].map(c =>
-    el('button', { class: 'chip' + (picked.has(c) ? ' on' : ''), type: 'button', onclick: () => { picked.has(c) ? picked.delete(c) : picked.add(c); drawCats(); } }, pretty(c))));
+  const drawCats = () => catChips.replaceChildren(...[...new Set([...QUICK, ...picked])].map(c =>
+    el('button', { class: 'chip' + (picked.has(c) ? ' on' : ''), type: 'button', onclick: () => { picked.has(c) ? picked.delete(c) : picked.add(c); drawCats(); } }, catName(c))));
   drawCats();
+  on('profile-changed', () => {  // wizard or Settings picked a profession: follow its targets and sources
+    picked.clear();
+    (state.cfg.categories || []).forEach(c => picked.add(c));
+    drawCats();
+    const on_ = { freelancer: state.cfg.freelancer, github: state.cfg.github, hn: state.cfg.hn, mastodon: state.cfg.mastodon,
+      reddit: state.cfg.reddit_subreddits.length > 0, rss: state.cfg.rss_feeds.length > 0 };
+    document.querySelectorAll('[data-src]').forEach(cb => { cb.checked = !!on_[cb.dataset.src]; });
+  });
+  const more = el('select', { onchange: e => { if (e.target.value) { picked.add(e.target.value); e.target.value = ''; drawCats(); } } },
+    el('option', { value: '' }, t('find.more_kinds')),
+    state.meta.categories.filter(c => !QUICK.includes(c)).map(c => [c, catName(c)]).sort((a, b) => a[1].localeCompare(b[1])).map(([c, n]) => el('option', { value: c }, n)));
 
   root.append(el('div', { class: 'page' }, el('div', { class: 'wrap' },
     el('div', { class: 'card', id: 'progress', hidden: true }),
-    el('div', { class: 'card' }, el('h2', {}, 'People hiring right now'),
-      el('p', {}, 'Finds posts where someone asks for a freelancer, ranked by how well they match your skills.'),
-      srcBoxes, el('div', { class: 'row', style: 'margin-top:10px' }, el('button', { class: 'btn primary', id: 'run-scan', onclick: runScan }, 'Search now'),
-        el('span', { class: 'mut' }, 'Takes about a minute. Reddit is slow on purpose to stay polite.'))),
-    el('div', { class: 'card' }, el('h2', {}, 'Local businesses that need help'),
-      el('p', {}, 'Finds nearby businesses and checks their websites for problems you can fix.'),
-      el('label', { class: 'f' }, el('small', {}, 'City or address'), el('input', { id: 'place', placeholder: 'e.g. Tbilisi, Georgia', value: LS.get('lh-place') })),
-      el('label', { class: 'f' }, el('small', {}, 'What kind of business? (click to choose)')), catChips,
-      el('div', { class: 'row' }, el('input', { id: 'custom-cat', placeholder: 'Other: type a category, or an OpenStreetMap tag like shop=bicycle', style: 'flex:1;min-width:240px' }),
-        el('button', { class: 'btn sm', onclick: () => { const v = $('#custom-cat').value.trim(); if (v) { picked.add(v); $('#custom-cat').value = ''; drawCats(); } } }, 'Add')),
+    el('div', { class: 'card' }, el('h2', {}, t('find.hiring_title')), el('p', {}, t('find.hiring_desc')),
+      srcBoxes, el('div', { class: 'row', style: 'margin-top:10px' }, el('button', { class: 'btn primary', id: 'run-scan', onclick: runScan }, t('find.search_now')),
+        el('span', { class: 'mut' }, t('find.search_hint')))),
+    el('div', { class: 'card' }, el('h2', {}, t('find.local_title')), el('p', {}, t('find.local_desc')),
+      el('label', { class: 'f' }, el('small', {}, t('find.city')), el('input', { id: 'place', placeholder: t('find.city_ph'), value: store.get('lh-place') })),
+      el('label', { class: 'f' }, el('small', {}, t('find.kind_q'))), catChips,
+      el('div', { class: 'row' }, more,
+        el('input', { id: 'custom-cat', placeholder: t('find.other_ph'), style: 'flex:1;min-width:200px' }),
+        el('button', { class: 'btn sm', onclick: () => { const v = $('#custom-cat').value.trim(); if (v) { picked.add(v); $('#custom-cat').value = ''; drawCats(); } } }, t('find.add'))),
       el('div', { class: 'two' },
-        el('label', { class: 'f' }, el('small', {}, 'How far from the center'), sel('radius', [[1000, '1 km'], [3000, '3 km'], [5000, '5 km'], [10000, '10 km']], 3000)),
-        el('label', { class: 'f' }, el('small', {}, 'Show'), sel('website', [['any', 'All businesses'], ['no', 'Only without a website'], ['yes', 'Only with a website']], 'any'))),
-      el('label', { class: 'check' }, el('input', { type: 'checkbox', id: 'do-audit', checked: true }), el('span', {}, 'Check their websites for problems', el('small', {}, 'Slower, but this is what gives you something concrete to say.'))),
-      el('div', { class: 'row', style: 'margin-top:8px' }, el('button', { class: 'btn primary', id: 'run-local', onclick: runLocal }, 'Find businesses'),
-        el('span', { class: 'mut' }, 'Tip: "Only without a website" is the quickest way to find clients who need a site.'))),
-    el('div', { class: 'card' }, el('h2', {}, 'Check one website'),
-      el('p', {}, 'Paste any business website to see what is wrong with it and get a ready-made pitch.'),
-      el('div', { class: 'row' }, el('input', { id: 'site', placeholder: 'example.com', style: 'flex:1;min-width:240px', onkeydown: e => e.key === 'Enter' && runAudit() }),
-        el('button', { class: 'btn primary', id: 'run-audit', onclick: runAudit }, 'Check')),
-      el('label', { class: 'check' }, el('input', { type: 'checkbox', id: 'booking' }), el('span', {}, 'This business takes bookings (restaurant, clinic, salon…)'))))));
+        el('label', { class: 'f' }, el('small', {}, t('find.distance')), sel('radius', [[1000, '1 km'], [3000, '3 km'], [5000, '5 km'], [10000, '10 km'], [0, t('find.whole_city')]], 3000)),
+        el('label', { class: 'f' }, el('small', {}, t('find.show')), sel('website', [['any', t('find.show_all')], ['no', t('find.show_no')], ['yes', t('find.show_yes')]], 'any'))),
+      el('label', { class: 'check' }, el('input', { type: 'checkbox', id: 'do-audit', checked: true }), el('span', {}, t('find.check_sites'), el('small', {}, t('find.check_sites_hint')))),
+      el('div', { class: 'row', style: 'margin-top:8px' }, el('button', { class: 'btn primary', id: 'run-local', onclick: runLocal }, t('find.local_btn')),
+        el('span', { class: 'mut' }, t('find.local_tip')))),
+    el('div', { class: 'card' }, el('h2', {}, t('find.check_title')), el('p', {}, t('find.check_desc')),
+      el('div', { class: 'row' }, el('input', { id: 'site', placeholder: 'example.com', style: 'flex:1;min-width:220px', onkeydown: e => e.key === 'Enter' && runAudit() }),
+        el('button', { class: 'btn primary', id: 'run-audit', onclick: runAudit }, t('find.check_btn'))),
+      el('label', { class: 'check' }, el('input', { type: 'checkbox', id: 'booking' }), el('span', {}, t('find.booking')))))));
   on('job', renderProgress);
   resume();
 }
@@ -62,9 +69,10 @@ function setJob(j) { job = j; emit('job', j); }
 export async function startJob(kind, params) {
   try {
     setJob(await api('/api/jobs', { kind, params }));
-    emit('goto', 'find');
+    if (kind !== 'update') emit('goto', 'find');
     poll();
-  } catch (e) { toast(e.message, 'err'); queue = []; }
+    return true;
+  } catch (e) { toast(e.message, 'err'); queue = []; return false; }
 }
 
 export function runQueue(items) { queue = items.slice(1); startJob(items[0].kind, items[0].params); }
@@ -79,37 +87,34 @@ function poll() {
         clearInterval(timer);
         emit('job-done', j);
         const n = Object.values(j.result.new || {}).reduce((a, b) => a + b, 0);
-        toast(j.status === 'cancelled' ? 'Search stopped' : j.status === 'error' ? 'Search failed' : `Done: ${n} new lead${n === 1 ? '' : 's'}`, j.status === 'error' ? 'err' : '');
+        if (j.kind !== 'update') toast(j.status === 'cancelled' ? t('toast.stopped') : j.status === 'error' ? t('toast.failed') : t('toast.done', { n }), j.status === 'error' ? 'err' : '');
         if (queue.length && j.status !== 'cancelled') { const nx = queue.shift(); startJob(nx.kind, nx.params); } else queue = [];
       }
     } catch { clearInterval(timer); }
   }, 800);
 }
 
-const friendly = msg => /429/.test(msg) ? 'The site asked us to slow down. Try again in a few minutes.'
-  : /403/.test(msg) ? 'The site refused the request.' : /not found/.test(msg) ? 'That place was not found. Try a bigger city name.' : msg;
+const friendly = msg => /429/.test(msg) ? t('err.429') : /403/.test(msg) ? t('err.403') : /not found/.test(msg) ? t('err.notfound') : msg;
 
 function renderProgress(j) {
   const box = $('#progress');
-  if (!box) return;
+  if (!box || (j && j.kind === 'update')) return;
   const busy = j?.status === 'running';
   ['run-scan', 'run-local', 'run-audit'].forEach(id => { const b = $('#' + id); if (b) b.disabled = busy; });
   box.hidden = !j;
   if (!j) return;
-  const title = { scan: 'People hiring right now', local: 'Local businesses', audit: 'Website check' }[j.kind];
-  const parts = [el('h2', {}, busy ? el('span', {}, el('span', { class: 'spin' }), '  ', title, ' · working…') : `${title} · ${{ done: 'finished', error: 'failed', cancelled: 'stopped' }[j.status]}`)];
-  if (busy) parts.push(el('button', { class: 'btn sm', onclick: () => api(`/api/jobs/${j.id}/cancel`, {}) }, 'Stop'));
+  const title = t('prog.title.' + j.kind);
+  const parts = [el('h2', {}, busy ? el('span', {}, el('span', { class: 'spin' }), '  ', title, ' · ', t('prog.working')) : `${title} · ${t('prog.' + j.status)}`)];
+  if (busy) parts.push(el('button', { class: 'btn sm', onclick: () => api(`/api/jobs/${j.id}/cancel`, {}) }, t('stop')));
   else {
     const sum = el('div', { class: 'sum' });
-    for (const [src, n] of Object.entries(j.result.found || {})) sum.append(el('div', {}, `${SOURCE_NAMES[src] || src}: ${n} found, ${(j.result.new || {})[src] || 0} new`));
-    for (const [src, msg] of Object.entries(j.result.errors || {})) sum.append(el('div', { class: 'bad' }, `${SOURCE_NAMES[src] || src}: ${friendly(msg)}`));
-    parts.push(sum);
-    const acts = el('div', { class: 'row' });
-    if (j.result.lead_id) acts.append(el('button', { class: 'btn primary', onclick: () => { emit('goto', 'leads'); emit('lead-open', j.result.lead_id); } }, 'See the result'));
-    else acts.append(el('button', { class: 'btn primary', onclick: () => emit('goto', 'leads') }, 'See leads'));
-    parts.push(acts);
+    for (const [src, n] of Object.entries(j.result.found || {})) sum.append(el('div', {}, t('prog.found', { src: srcLabel(src), n, new: (j.result.new || {})[src] || 0 })));
+    for (const [src, msg] of Object.entries(j.result.errors || {})) sum.append(el('div', { class: 'bad' }, `${srcLabel(src)}: ${friendly(msg)}`));
+    parts.push(sum, el('div', { class: 'row' }, j.result.lead_id
+      ? el('button', { class: 'btn primary', onclick: () => { emit('goto', 'leads'); emit('lead-open', j.result.lead_id); } }, t('prog.see_result'))
+      : el('button', { class: 'btn primary', onclick: () => emit('goto', 'leads') }, t('prog.see_leads'))));
   }
-  const log = el('div', { class: 'log' }, j.log.join('\n') || 'starting…');
+  const log = el('div', { class: 'log', dir: 'ltr' }, j.log.join('\n') || t('prog.starting'));
   parts.push(log);
   box.replaceChildren(...parts);
   log.scrollTop = log.scrollHeight;
@@ -117,31 +122,23 @@ function renderProgress(j) {
   if (!busy) delete box.dataset.seen;
 }
 
-export const rememberPlace = p => LS.set('lh-place', p);
-
-const checked = id => $('#' + id).checked;
-
 function runScan() {
   const sources = [...document.querySelectorAll('[data-src]')].filter(c => c.checked).map(c => c.dataset.src);
-  if (!sources.length) return toast('Pick at least one source', 'err');
+  if (!sources.length) return toast(t('find.pick_source'), 'err');
   startJob('scan', { sources });
 }
 
-export function localParams() {
-  return { place: $('#place').value, categories: [...picked], radius: +$('#radius').value, website: $('#website').value, audit: checked('do-audit') };
-}
-
 function runLocal() {
-  if (!picked.size) return toast('Choose at least one kind of business', 'err');
-  LS.set('lh-place', $('#place').value);
-  startJob('local', localParams());
+  if (!picked.size) return toast(t('find.pick_kind'), 'err');
+  store.set('lh-place', $('#place').value);
+  startJob('local', { place: $('#place').value, categories: [...picked], radius: +$('#radius').value, website: $('#website').value, audit: $('#do-audit').checked });
 }
 
 function runAudit() {
   const url = $('#site').value.trim();
-  if (!url) return toast('Enter a website address', 'err');
-  startJob('audit', { url, booking: checked('booking') });
+  if (!url) return toast(t('find.enter_site'), 'err');
+  startJob('audit', { url, booking: $('#booking').checked });
 }
 
-export const pickedCategories = picked;
+export const rememberPlace = p => { store.set('lh-place', p); const i = $('#place'); if (i) i.value = p; };
 export const currentJob = () => job;
