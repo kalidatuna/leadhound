@@ -1,6 +1,6 @@
 # Contributing
 
-Thanks for helping. leadhound has one hard rule: **standard library only**. No runtime dependencies, so it installs anywhere Python 3.10+ runs.
+Thanks for helping. leadhound has one hard rule: **standard library only**. No runtime dependencies, so it installs anywhere Python 3.10+ runs and builds into small standalone apps.
 
 ## Run the tests
 
@@ -38,3 +38,16 @@ Only flag what you can verify from the page. A false finding in a cold message c
 ## Scoring
 
 `leadhound/score.py` must stay explainable: every point added or removed comes with a reason string shown to the user.
+
+## Improve a translation
+
+- App text: `leadhound/dashboard/locales/<lang>.json`
+- Messages, website findings and score reasons: `leadhound/i18n/<lang>.py`
+
+Keep every `{placeholder}` exactly as in English. The tests check that every language has every key and the same placeholders.
+
+To add a language, copy `en.json` and `en.py`, translate them, and add the code to `LANGUAGES` in `leadhound/langs.py`.
+
+## Add a profession
+
+Add a `Profession` to `leadhound/profiles.py`. Check that its Freelancer.com categories return projects: `https://www.freelancer.com/rss/job_<Category>.xml`. Then add `prof.<id>` to every locale file and `o.<id>` (the one-line offer) to every `i18n/<lang>.py`.

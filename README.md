@@ -1,161 +1,144 @@
 # leadhound
 
-**Find freelance clients by live intent, not stale contact lists.**
+**Find freelance clients anywhere in the world, by live intent, not stale contact lists.**
 
-Most lead tools sell you a database of names and emails, then you cold-email strangers who never asked for anything. leadhound does the opposite. It looks for people and businesses that show a need **right now**, tells you why each one is a fit, and drafts a first message based on that evidence. You review it and send it yourself.
+Most lead tools sell you a database of names, then you cold-email strangers who never asked for anything. leadhound does the opposite. It finds people and businesses that need your kind of work **right now**, shows why each one fits, and drafts a first message from that evidence, in the client's own language. You review it and send it yourself.
 
-It is for freelance developers, small agencies, and anyone who builds websites or software for clients.
+It works for **any freelancer**: developers, designers, writers, translators, marketers, video editors, photographers, virtual assistants, data and AI people, voice artists and bookkeepers.
 
-- **Live intent.** Hiring posts on Reddit and Hacker News, paid GitHub bounties, and job-board feeds.
-- **Local businesses.** Finds shops, clinics, cafes and trades near any city with OpenStreetMap, then audits their websites.
-- **Evidence-based pitch.** The audit finds concrete problems an owner understands, such as "Chrome marks your site Not secure" or "customers can't book online". The draft cites only those.
-- **Explainable scores.** Every lead gets a 0–100 score with a line-by-line breakdown (`+15 budget stated: $1,500`, `-30 contains 'equity only'`). No black box.
-- **Local-first and free.** Data stays in a SQLite file on your machine. No account, no tracking, no API key needed.
-- **Zero dependencies.** Python 3.10+ standard library only.
+- **Live intent.** New client projects on Freelancer.com, plus hiring posts on Reddit, Hacker News, Mastodon, job boards and paid GitHub issues.
+- **Local businesses in any country.** Finds shops, clinics, cafes and trades anywhere with OpenStreetMap. It checks their websites and writes the pitch in the business's language.
+- **Evidence-based pitch.** The website check finds problems an owner understands, such as "Chrome marks your site Not secure" or "customers can't book online". The message cites only those.
+- **Explainable scores.** Every lead gets a 0–100 score with a line-by-line reason list. No black box.
+- **11 languages.** English, Español, Português, Français, Deutsch, Русский, ქართული, Türkçe, العربية, हिन्दी and 中文, for both the app and the messages.
+- **Private and free.** Your data stays on your computer. No account, no tracking, no API key needed. Zero dependencies.
 
-## Install and open
+## Install
+
+| Your computer | Do this |
+|---|---|
+| **Windows** | Open PowerShell and paste: `irm https://raw.githubusercontent.com/kalidatuna/leadhound/main/install.ps1 \| iex` |
+| **macOS / Linux** | Open Terminal and paste: `curl -fsSL https://raw.githubusercontent.com/kalidatuna/leadhound/main/install.sh \| sh` |
+| **No Python, no terminal** | Download the app for your system from [Releases](https://github.com/kalidatuna/leadhound/releases/latest), unzip it and double-click `leadhound`. |
+
+The installer puts everything in your user folder (no admin rights), adds a desktop icon and opens the app. After that, double-click the icon or type `leadhound`.
+
+The downloaded app files are not code-signed yet. The first time you open one, Windows shows "Windows protected your PC": click **More info**, then **Run anyway**. On macOS, right-click the file and choose **Open**.
+
+<details><summary>Other ways to install</summary>
 
 ```bash
-pipx install git+https://github.com/kalidatuna/leadhound
-leadhound
+pipx install git+https://github.com/kalidatuna/leadhound   # then: leadhound
 ```
 
-That is all. `leadhound` opens the app in your browser. The first time, a short setup asks what you do and where you want clients, then starts your first search. Nothing else to configure.
+Or clone the repo and run `python -m leadhound`. Python 3.10 or newer is needed.
+</details>
 
-No pipx? `pip install git+https://github.com/kalidatuna/leadhound` works too, or clone the repo and run `python -m leadhound`.
+## First run
 
-**Want an icon to double-click?** Run `leadhound shortcut` once. It puts a launcher on your desktop (Linux, macOS and Windows).
-
-Your leads and settings live in `~/.leadhound/` (set `LEADHOUND_HOME` to move them). Nothing is sent anywhere.
+1. Pick your kind of work, such as *Translator*. This fills in skills, sources and the types of business that buy your work.
+2. Optionally enter your city. leadhound starts searching right away.
+3. Go through the **Leads** tab. For each lead, click **Write message**, edit it, then **Copy & mark contacted**.
 
 ## Using the app
 
-**Find clients** tab
-- **People hiring right now**: one click searches Reddit, Hacker News, GitHub and your job-board feeds.
-- **Local businesses**: type a city, click the kinds of business you want (dentists, cafes, plumbers...), choose "Only without a website" if you build sites, and go. Optionally checks each business's website for problems.
-- **Check one website**: paste any address and get the problems found, ready to use in a pitch, plus the contact details the site publishes.
-- A progress panel shows what is happening live. You can stop a search at any time.
+**Find clients**
+- **People hiring right now**: one click searches all your sources. Freelancer.com alone usually brings 50–150 fresh projects in your categories.
+- **Local businesses**: type any city in the world, pick business types (more than 70, such as dentists, cafes, plumbers or hotels), choose a distance or **Whole city**. Optionally only show places without a website, and check their sites.
+- **Check one website**: paste an address to get the problems found, a ready pitch and the contact details the site publishes.
+- A live progress panel shows what's happening, and you can stop a search at any time.
 
-**Leads** tab
-- Leads are ranked best first, with a pipeline: Inbox, Shortlist, Contacted, Replied, Won, Lost, Skipped.
-- Click a lead to see why it scored what it did, the original post or website problems, and contact details with Copy and Open buttons.
-- **Write message** drafts a first message from the lead's own details. **Write with AI** uses your LLM if you set one up. **Copy & mark contacted** copies it and moves the lead along. **Open in email** starts an email in your mail app. You always send it yourself.
-- Moved a lead by mistake? Every move has an **Undo**.
-- Keyboard: `j`/`k` move, `s` shortlist, `c` contacted, `x` skip, `g` write message, `o` open original, `/` search.
-- Too many weak leads? **Skip low scores...** clears them in one go. **Export CSV** gives you a spreadsheet.
+**Leads**
+- The list is ranked best first. A pipeline tracks each lead: Inbox, Shortlist, Contacted, Replied, Won, Lost, Skipped. **NEW** marks what appeared since your last visit.
+- Each lead shows why it scored what it did, the original post or website problems, and contact buttons (Copy, Open, Call).
+- **Write message** drafts from templates in 11 languages. **Write with AI** uses Claude, OpenAI or a local Ollama model if you set one up. **Open in email** starts an email in your mail app. You always send it yourself.
+- Every move has an **Undo**. Keyboard: `j`/`k` move, `s` shortlist, `c` contacted, `x` skip, `g` write, `o` open, `/` search.
+- **Skip low scores…** clears weak leads in one go. **Export CSV** gives you a spreadsheet.
 
-**Settings** tab: your skills, pitch, minimum budget, words to avoid, which communities to watch, and the optional AI provider. Changes apply to the next search.
-
-## Terminal commands (optional)
-
-Everything above also works from the terminal:
-
-```bash
-leadhound scan
-leadhound local "Tbilisi, Georgia" --category dentist,restaurant --website no
-leadhound list --min-score 50
-leadhound show 12
-leadhound draft 12
-leadhound status 12 contacted --note "DM sent"
-leadhound export --format csv --out leads.csv
-leadhound audit https://example.com --booking
-```
+**Settings**: app language, message language (automatic = the client's language), your work and skills, currency and minimum budget, sources, **automatic search** every 6/12/24 hours, and the optional AI provider. **Updates**: the app tells you when a new version exists and installs it with one click.
 
 ## Where leads come from
 
-| Source | What it finds | Notes |
-|---|---|---|
-| `reddit` | `[Hiring]` and "need a developer" posts in r/forhire, r/jobbit, and the other subreddits you list | Public Atom feed. `[For Hire]` posts (competitors) are dropped. Reddit rate-limits anonymous feeds, so leadhound waits 7 s between subreddits. |
-| `hn` | The monthly "Freelancer? Seeking freelancer?" thread (`SEEKING FREELANCER` posts only) plus contract/part-time posts from "Who is hiring?" | Algolia HN API. |
-| `github` | Open, unassigned issues labelled `bounty` / `help wanted`, optionally filtered by language | Only issues with a cash amount or an Algora 💎 label count as **paid bounty**. A bare "bounty" label is often points, not money. Max 3 issues per owner, so one org can't flood your list. Set `GITHUB_TOKEN` for higher limits. |
-| `rss` | Any RSS or Atom feed, such as job boards or saved searches | Add feeds in `rss_feeds`. |
-| `local` | Businesses near a place, by category (`dentist`, `cafe`, `plumber`, `shop=bicycle`, ...) | OpenStreetMap Nominatim + Overpass. Free, no key. |
+| Source | What it finds |
+|---|---|
+| **Freelancer.com** | New client projects in the categories for your work (`Translation`, `Logo-Design`, `WordPress`, ...), worldwide, with budgets in any currency. |
+| **Reddit** | `[Hiring]` and "need a ..." posts in r/forhire, r/jobbit, r/hiring and communities for your work (r/HireaWriter, r/DesignJobs, r/HireAnEditor, ...). Competitors' `[For Hire]` posts are dropped. |
+| **Hacker News** | `SEEKING FREELANCER` posts and contract roles from the monthly threads. |
+| **GitHub** | Open, unassigned issues with bounty labels. Only cash amounts count as **paid bounty**; points don't. Max 3 per owner. |
+| **Mastodon** *(off by default)* | Fediverse posts asking for help, in any language. Worldwide but low-volume. |
+| **Job boards** | Any RSS feed. Presets per profession: We Work Remotely, Dribbble, Jobspresso, Authentic Jobs. |
+| **Local** | OpenStreetMap businesses near any place, by type, with automatic fallback between map servers. |
 
-If one source fails (rate limit, outage), the others still run, and partial results are kept.
+Requests in English, Spanish, Portuguese, French, German, Russian, Georgian, Turkish, Italian, Arabic and Chinese are recognised. "I'm looking for work" posts are filtered out in the same languages.
 
-## Website audit
+## Website check
 
-`leadhound local` audits each business website. `leadhound audit <url>` audits any single site. The audit fetches the homepage and up to 8 internal links. It checks for:
+The check reads the homepage and up to 8 internal links:
 
 | Severity | Check |
 |---|---|
-| critical | Site down, HTTP errors, broken HTTPS certificate, no HTTPS, not mobile-friendly, WordPress < 6, Flash |
-| costs customers | Slow load (> 3 s), footer copyright 2+ years old, no contact path, no online booking (for booking businesses), broken links, mixed content, missing title |
-| minor | Missing meta description, no structured data (hurts maps ranking), old jQuery, images without alt text |
+| critical | Site down or erroring, broken HTTPS, no HTTPS, not mobile-friendly, WordPress < 6, Flash |
+| costs customers | Slow (> 3 s), copyright 2+ years old, no contact path, no online booking (booking businesses), broken links, mixed content, no title |
+| minor | No meta description, no structured data (hurts maps ranking), old jQuery, images without alt text |
 
-Some checks are built to avoid false claims, because a wrong claim in a cold email ruins your credibility:
-
-- If a site blocks automated checks (HTTP 401/403/429/503, usually bot protection), the audit is marked **inconclusive** and nothing is pitched.
-- Only 404/410/5xx responses count as broken links.
-- The copyright year is read from visible text only, so a library license in a script does not count.
+It never pitches what it can't verify. If a site blocks automated checks (bot protection), the result is marked **inconclusive**. Only 404/410/5xx count as broken links. The copyright year comes from visible text only. Contact and booking words are recognised in 10+ languages.
 
 ## Scoring
 
-Posts and issues (0–100):
-
 | Part | Points |
 |---|---|
-| Your skills mentioned (title counts more) | up to 35 |
-| Hiring intent: `[Hiring]`, "looking to hire", "paid", budget, contract, urgency | up to 25 |
-| Budget stated and above your minimum | +15, or −15 below your `min_budget` / `min_rate` |
+| Your skills in the title, text or the project's skill tags | up to 35 |
+| Hiring intent: client project, `[Hiring]`, "looking to hire", "paid", budget, urgency (any language) | up to 25 |
+| Budget, scaled by size in USD, or −15 if below your minimum (compared in your currency) | −15 to +15 |
 | Fresh: < 24 h / < 3 d / < 7 d | 15 / 10 / 5 |
 | Public email, or another contact path | 10 / 5 |
-| No replies yet / crowded (> 20 replies) | +5 / −5 |
-| Each phrase from your `avoid` list ("unpaid", "equity only", ...) | −30 |
+| No replies yet / crowded | +5 / −5 |
+| Each phrase from your "no thanks" list | −30 |
 
-Leads with no skill match are capped at 45, so relevant work always ranks first.
+Leads with no skill match are capped at 45. Local businesses score on website problems (or no website), plus public contact details.
 
-For local businesses, the score is based on: no website listed (+60), or audit severity (up to 60, plus 10 if any finding is critical), plus public contact info.
+## Run it online (your own private copy)
 
-## Message drafts
+To use leadhound from your phone or any computer, run your own copy on a server. It then asks for a password.
 
-`leadhound draft <id>` writes a first message from templates. No AI is needed. A post draft quotes the post, names your matching skills, and asks one scoping question. A business draft lists the top three audit findings in plain language and offers a free report.
+- **Render** (one click): [Deploy to Render](https://render.com/deploy?repo=https://github.com/kalidatuna/leadhound). It generates the password for you; find it under *Environment*. Keeping data between restarts needs Render's paid disk, about 7 USD/month.
+- **Any server with Docker**:
+  ```bash
+  docker run -d -p 8787:8787 -e LEADHOUND_PASSWORD='a-long-password' -v leadhound:/data ghcr.io/kalidatuna/leadhound
+  ```
+  Or use the included `docker-compose.yml`. Put it behind HTTPS (Caddy, Cloudflare Tunnel, ...) when it is on the internet.
+- **Railway / Fly.io**: deploy this repository's `Dockerfile`, set `LEADHOUND_PASSWORD`, and mount a volume at `/data`.
 
-To have an LLM write drafts, set this in `leadhound.ini`:
+Cloud mode is password-protected and rate-limits sign-in attempts. Sessions use an HttpOnly cookie, and it refuses to check private network addresses. Some sites, especially Reddit, block data-center IP addresses, so expect fewer Reddit results from a server than from your own computer.
 
-```ini
-[llm]
-provider = anthropic     # needs ANTHROPIC_API_KEY
-# or any OpenAI-compatible API, including local Ollama:
-# provider = openai
-# base_url = http://localhost:11434/v1
-# model = llama3.1
-```
+## Privacy and security
 
-Then run `leadhound draft 12 --llm`, or click **Draft with LLM** in the dashboard. The model is told to use only the lead's evidence and never invent results. If the LLM call fails, the template draft is used instead.
-
-leadhound **never sends anything**. You copy the draft, edit it, and send it yourself.
-
-## Privacy and safety of the app
-
-The app runs on `127.0.0.1` only, so nobody on your network can reach it. It also rejects foreign `Host` headers (blocks DNS rebinding), requires a per-run token on every API call, and sends a strict Content-Security-Policy with no inline scripts. Other websites open in your browser cannot read or change your leads. Text from posts and websites is never rendered as HTML.
-
-## Configuration
-
-Use the Settings tab, or edit `~/.leadhound/config.ini` directly (`leadhound init` writes an example). The settings that matter most:
-
-```ini
-[profile]
-pitch = I build fast, reliable websites and web apps for small businesses
-skills = Python, Django, React, WordPress, Shopify
-avoid = unpaid, equity only, rev share, for exposure
-min_budget = 300
-min_rate = 25
-```
-
-API keys (`GITHUB_TOKEN`, `ANTHROPIC_API_KEY`, `OPENAI_API_KEY`) are read from environment variables only. They are never stored in the config file.
+- Local mode listens on `127.0.0.1` only, blocks DNS rebinding, and requires a per-run token on every API call. It also sends a strict Content-Security-Policy with no inline scripts. Text from posts and websites is never rendered as HTML.
+- Keys (`GITHUB_TOKEN`, `ANTHROPIC_API_KEY`, `OPENAI_API_KEY`) are read from environment variables and never saved to disk.
+- Installs and updates come directly from this GitHub repository's release archives.
 
 ## Responsible use
 
-- **You send every message.** Personalize it, and never mass-send.
-- **Follow outreach law where you and the recipient are.** Examples: CAN-SPAM (US), GDPR and ePrivacy (EU/UK). Identify yourself, and stop when asked.
-- **Verify before pitching.** OpenStreetMap can be incomplete, so a business may have a website that isn't listed. Open the site yourself before you send audit findings.
-- **Be a polite client of public APIs.** leadhound identifies itself in its User-Agent, rate-limits per host, and only reads public posts and public business listings. Don't remove those limits.
-- **Reply in the channel the person chose.** Contact info is only what the lead published themselves (an email in their post, a phone number in OpenStreetMap).
+- **You send every message.** Personalise it, and never mass-send.
+- **Follow outreach law** where you and the recipient are, such as CAN-SPAM, GDPR or ePrivacy. Identify yourself and stop when asked.
+- **Check before pitching.** OpenStreetMap can miss websites, so open the site yourself before you send audit findings.
+- **Respect the sources.** leadhound identifies itself, rate-limits per site, and only reads public posts and public business listings.
+
+## Terminal commands (optional)
+
+```bash
+leadhound scan                                  # search all sources
+leadhound local "Lisbon, Portugal" --category cafe,dentist --radius 0 --website no
+leadhound list --min-score 60
+leadhound draft 12                              # message in the lead's language
+leadhound audit https://example.com --booking
+leadhound shortcut                              # desktop icon
+leadhound serve --cloud                         # server mode (needs LEADHOUND_PASSWORD)
+```
 
 ## Contributing
 
-New sources and audit checks are welcome. See [CONTRIBUTING.md](CONTRIBUTING.md). Run the tests with:
+Translations, sources, professions and website checks are all welcome. See [CONTRIBUTING.md](CONTRIBUTING.md). The translations were machine-assisted, so native speakers fixing wording would help a lot.
 
 ```bash
 python -m unittest discover -s tests -t tests
