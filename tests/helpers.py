@@ -47,5 +47,5 @@ class FakeFetcher:
         p = self._find(url)
         if isinstance(p, Response):
             return p
-        body = p.encode() if isinstance(p, str) else json.dumps(p).encode()
+        body = p.encode() if isinstance(p, str) else json.dumps(p).encode()  # dict/list payloads become JSON
         return Response(200, url, {"content-type": "application/json"}, body, 0.01)

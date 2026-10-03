@@ -99,8 +99,18 @@ class DraftTest(unittest.TestCase):
                       extra={"website": "", "category": "dentist", "city": "Tbilisi", "booking_relevant": True})
         t, _ = draft.make_draft(nosite, cfg())
         self.assertIn("Subject: A website for Smile Dental", t)
-        self.assertIn("dentist in Tbilisi", t)
+        self.assertIn("couldn't find a website", t)
         self.assertIn("online booking", t)
+        es = Lead(source="osm", external_id="9", kind="business", title="Café Sol", url="u",
+                  extra={"website": "http://cafesol.es", "country": "es", "audit": {"lang": "es-ES", "findings": [
+                      {"code": "slow", "severity": 2, "pitch": "x", "args": {"secs": "4.2"}}]}})
+        t_es, _ = draft.make_draft(es, cfg(profession="developer"))
+        self.assertIn("Asunto: Una nota rápida sobre cafesol.es", t_es)
+        self.assertIn("tardó 4.2 segundos", t_es)
+        self.assertIn("Creo sitios web", t_es)  # translated offer, never the English pitch
+        self.assertNotIn("I build", t_es)
+        en_forced, _ = draft.make_draft(es, cfg(profession="developer", draft_language="en"))
+        self.assertIn("Quick note about cafesol.es", en_forced)
         site = Lead(source="osm", external_id="2", kind="business", title="Cafe X", url="u",
                     extra={"website": "http://cafex.ge", "audit": {"findings": [
                         {"severity": 3, "title": "No HTTPS", "pitch": "Chrome marks your site 'Not secure'."}]}})
