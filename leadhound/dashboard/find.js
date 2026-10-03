@@ -1,6 +1,7 @@
 // Find view: start searches, watch live progress, see a plain-language summary.
 import { $, api, el, emit, on, state, store, toast, BRANDS } from './util.js';
 import { t, catName } from './i18n.js';
+import { proTag } from './plan.js';
 
 let job = null, timer = null, queue = [];
 const root = $('#view-find');
@@ -43,7 +44,7 @@ export function initFind() {
     el('div', { class: 'card' }, el('h2', {}, t('find.hiring_title')), el('p', {}, t('find.hiring_desc')),
       srcBoxes, el('div', { class: 'row', style: 'margin-top:10px' }, el('button', { class: 'btn primary', id: 'run-scan', onclick: runScan }, t('find.search_now')),
         el('span', { class: 'mut' }, t('find.search_hint')))),
-    el('div', { class: 'card' }, el('h2', {}, t('find.local_title')), el('p', {}, t('find.local_desc')),
+    el('div', { class: 'card' }, el('h2', {}, t('find.local_title'), ' ', proTag()), el('p', {}, t('find.local_desc')),
       el('label', { class: 'f' }, el('small', {}, t('find.city')), el('input', { id: 'place', placeholder: t('find.city_ph'), value: store.get('lh-place') })),
       el('label', { class: 'f' }, el('small', {}, t('find.kind_q'))), catChips,
       el('div', { class: 'row' }, more,
@@ -55,7 +56,7 @@ export function initFind() {
       el('label', { class: 'check' }, el('input', { type: 'checkbox', id: 'do-audit', checked: true }), el('span', {}, t('find.check_sites'), el('small', {}, t('find.check_sites_hint')))),
       el('div', { class: 'row', style: 'margin-top:8px' }, el('button', { class: 'btn primary', id: 'run-local', onclick: runLocal }, t('find.local_btn')),
         el('span', { class: 'mut' }, t('find.local_tip')))),
-    el('div', { class: 'card' }, el('h2', {}, t('find.check_title')), el('p', {}, t('find.check_desc')),
+    el('div', { class: 'card' }, el('h2', {}, t('find.check_title'), ' ', proTag()), el('p', {}, t('find.check_desc')),
       el('div', { class: 'row' }, el('input', { id: 'site', placeholder: 'example.com', style: 'flex:1;min-width:220px', onkeydown: e => e.key === 'Enter' && runAudit() }),
         el('button', { class: 'btn primary', id: 'run-audit', onclick: runAudit }, t('find.check_btn'))),
       el('label', { class: 'check' }, el('input', { type: 'checkbox', id: 'booking' }), el('span', {}, t('find.booking')))))));
@@ -73,16 +74,17 @@ async function resume() {
 
 function setJob(j) { job = j; emit('job', j); }
 
-export async function startJob(kind, params) {
+let queueStay = false;  // searches started from Today stay on Today instead of jumping to the Find screen
+export async function startJob(kind, params, stay = false) {
   try {
     setJob(await api('/api/jobs', { kind, params }));
-    if (kind !== 'update') emit('goto', 'find');
+    if (kind !== 'update' && !stay) emit('goto', 'find');
     poll();
     return true;
   } catch (e) { toast(e.message, 'err'); queue = []; return false; }
 }
 
-export function runQueue(items) { queue = items.slice(1); startJob(items[0].kind, items[0].params); }
+export function runQueue(items, stay = false) { queueStay = stay; queue = items.slice(1); startJob(items[0].kind, items[0].params, stay); }
 
 function poll() {
   clearInterval(timer);
@@ -95,7 +97,7 @@ function poll() {
         emit('job-done', j);
         const n = Object.values(j.result.new || {}).reduce((a, b) => a + b, 0);
         if (j.kind !== 'update') toast(j.status === 'cancelled' ? t('toast.stopped') : j.status === 'error' ? t('toast.failed') : t('toast.done', { n }), j.status === 'error' ? 'err' : '');
-        if (queue.length && j.status !== 'cancelled') { const nx = queue.shift(); startJob(nx.kind, nx.params); } else queue = [];
+        if (queue.length && j.status !== 'cancelled') { const nx = queue.shift(); startJob(nx.kind, nx.params, queueStay); } else queue = [];
       }
     } catch { clearInterval(timer); }
   }, 800);

@@ -1,6 +1,7 @@
 """Optional LLM backends for drafts. Keys come from environment variables only.
 
 provider = anthropic  ->  ANTHROPIC_API_KEY
+provider = leadhound  ->  the seller's server (Pro key or trial, no API key needed)
 provider = openai     ->  OPENAI_API_KEY (optional for local servers), base_url defaults to OpenAI.
                            Ollama: base_url = http://localhost:11434/v1, model = llama3.1
 """
@@ -18,9 +19,17 @@ class LLMError(Exception):
     pass
 
 
-def complete(cfg, system: str, prompt: str, fetcher: Fetcher | None = None, max_tokens: int = 500) -> str:
+def complete(cfg, system: str, prompt: str, fetcher: Fetcher | None = None, max_tokens: int = 500, hosted_token: str | None = None) -> str:
     fetcher = fetcher or Fetcher(min_interval=0, timeout=90, retries=1)
     provider = cfg.llm_provider
+    if provider == "leadhound":  # the seller's server writes it: needs a valid Pro key or trial
+        from . import licensing
+        if not hosted_token:
+            raise LLMError("leadhound AI needs Pro or a trial")
+        try:
+            return licensing.post_json("/v1/ai", {"token": hosted_token, "system": system, "prompt": prompt, "max_tokens": max_tokens}, 90)["text"].strip()
+        except (ValueError, KeyError) as e:
+            raise LLMError(str(e)) from e
     if provider == "anthropic":
         key = os.environ.get("ANTHROPIC_API_KEY")
         if not key:

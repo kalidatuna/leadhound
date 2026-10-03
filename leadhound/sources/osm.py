@@ -5,6 +5,7 @@ leadhound makes one geocode call and one Overpass call per run.
 """
 from __future__ import annotations
 
+import re
 from urllib.parse import quote, urlencode
 
 from ..models import Lead
@@ -112,6 +113,8 @@ def parse_elements(data: dict, categories: list) -> list[Lead]:
         # OSM separates several values with ";"
         phones = [x.strip() for x in (tags.get("phone") or tags.get("contact:phone") or "").split(";") if x.strip()]
         emails = [x.strip() for x in (tags.get("email") or tags.get("contact:email") or "").split(";") if x.strip()]
+        phones += [x.strip() for x in (tags.get("contact:whatsapp") or "").split(";") if x.strip() and x.strip() not in phones]
+        telegram = (tags.get("contact:telegram") or "").strip().lstrip("@").removeprefix("https://t.me/")
         phone, email = (phones[0] if phones else ""), (emails[0] if emails else "")
         addr = " ".join(x for x in (tags.get("addr:street", ""), tags.get("addr:housenumber", "")) if x)
         city = tags.get("addr:city", "")
@@ -120,7 +123,7 @@ def parse_elements(data: dict, categories: list) -> list[Lead]:
         cat = _category_of(tags, categories)
         leads.append(Lead(
             source="osm", external_id=osm_id, kind="business", title=name, url=website or osm_url,
-            location=location, contact=", ".join(emails + phones),
+            location=location, contact=", ".join(emails + phones + ([f"Telegram: @{telegram}"] if re.fullmatch(r"\w{4,32}", telegram) else [])),
             signals=[] if website else ["no website listed"],
             extra={"category": cat, "website": website, "osm_url": osm_url, "phone": phone, "email": email,
                    "lat": center.get("lat"), "lon": center.get("lon"), "city": city,

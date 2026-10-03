@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "leadhound"
-version = "0.3.1"
+version = "0.4.0"
 description = "Find freelance clients worldwide: live hiring posts, Freelancer.com projects, paid issues and local businesses with weak websites. 11 languages, local-first, zero dependencies."
 readme = "README.md"
 license = { text = "MIT" }
@@ -28,7 +28,7 @@ Issues = "https://github.com/kalidatuna/leadhound/issues"
 leadhound = "leadhound.cli:main"
 
 [tool.setuptools]
-packages = ["leadhound", "leadhound.sources", "leadhound.dashboard", "leadhound.i18n"]
+packages = ["leadhound", "leadhound.sources", "leadhound.dashboard", "leadhound.i18n", "leadhound.send"]
 
 [tool.setuptools.package-data]
-"leadhound.dashboard" = ["*.html", "*.css", "*.js", "locales/*.json"]
+"leadhound.dashboard" = ["*.html", "*.css", "*.js", "locales/*.json", "fonts/*.woff2", "fonts/OFL-*.txt"]

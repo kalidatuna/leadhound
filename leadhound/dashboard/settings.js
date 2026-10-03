@@ -30,6 +30,7 @@ function draw() {
         el('button', { class: 'btn', onclick: applyProfession }, t('set.apply_defaults'))),
       el('p', { class: 'mut sm' }, t('set.profession_hint')),
       el('div', { class: 'two' }, field(t('set.name'), '', i('name')), field(t('set.signature'), t('set.signature_hint'), i('signature'))),
+      field(t('set.daily_goal'), t('set.daily_goal_hint'), i('daily_goal', 'number', { min: 1, max: 50 })),
       field(t('set.pitch'), t('set.pitch_hint'), i('pitch')),
       field(t('set.skills'), t('set.skills_hint'), i('skills', 'text', { value: list(cfg.skills) })),
       field(t('set.avoid'), t('set.avoid_hint'), i('avoid', 'text', { value: list(cfg.avoid) })),
@@ -54,7 +55,8 @@ function draw() {
         field(t('set.auto'), t('set.auto_hint'), el('select', { id: 's-auto_scan_hours' }, options([[0, t('set.auto_off')], [6, t('set.auto_every', { n: 6 })], [12, t('set.auto_every', { n: 12 })], [24, t('set.auto_daily')]], cfg.auto_scan_hours)))),
       el('p', { class: 'mut' }, key('GitHub', cfg.keys.github), ' · ', t('set.gh_token_hint'))),
     el('div', { class: 'card' }, el('h2', {}, t('set.ai')), el('p', {}, t('set.ai_desc')),
-      field(t('set.provider'), '', el('select', { id: 's-llm_provider' }, options([['none', t('prov.none')], ['anthropic', t('prov.anthropic')], ['openai', t('prov.openai')]], cfg.llm_provider))),
+      field(t('set.provider'), '', el('select', { id: 's-llm_provider' }, options([['none', t('prov.none')], ...(state.meta.hosted_ai ? [['leadhound', t('prov.leadhound')]] : []), ['anthropic', t('prov.anthropic')], ['openai', t('prov.openai')]], cfg.llm_provider))),
+      state.meta.hosted_ai && el('p', { class: 'mut sm' }, t('set.hosted_note')),
       el('div', { class: 'two' }, field(t('set.model'), t('set.model_hint'), i('llm_model')), field(t('set.server'), t('set.server_hint'), i('llm_base_url'))),
       el('p', { class: 'mut' }, key('Anthropic', cfg.keys.anthropic), ' · ', key('OpenAI', cfg.keys.openai), ' · ', t('set.keys_hint'))),
     el('div', { class: 'card' }, el('h2', {}, t('set.local')),
@@ -74,7 +76,7 @@ function collect() {
     freelancer: c('freelancer'), freelancer_categories: v('freelancer_categories'), reddit_subreddits: v('reddit_subreddits'),
     hn: c('hn'), github: c('github'), github_labels: v('github_labels'), github_languages: v('github_languages'),
     mastodon: c('mastodon'), mastodon_instances: v('mastodon_instances'), mastodon_tags: v('mastodon_tags'), rss_feeds: v('rss_feeds'),
-    max_age_days: +v('max_age_days'), auto_scan_hours: +v('auto_scan_hours'), llm_provider: v('llm_provider'), llm_model: v('llm_model'),
+    daily_goal: +v('daily_goal') || 5, max_age_days: +v('max_age_days'), auto_scan_hours: +v('auto_scan_hours'), llm_provider: v('llm_provider'), llm_model: v('llm_model'),
     llm_base_url: v('llm_base_url'), max_businesses: +v('max_businesses'), radius_m: +v('radius_m'),
   };
 }

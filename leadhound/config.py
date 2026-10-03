@@ -13,7 +13,7 @@ from .langs import LANGUAGES
 from .money import CURRENCIES
 
 DEFAULT_PATH = "leadhound.ini"
-LLM_PROVIDERS = ("none", "anthropic", "openai")
+LLM_PROVIDERS = ("none", "anthropic", "openai", "leadhound")
 AUTO_SCAN_HOURS = (0, 6, 12, 24)
 
 # (section, key, kind). kind: str | list | lines | bool | float | int
@@ -21,7 +21,7 @@ SCHEMA = [
     ("profile", "name", "str"), ("profile", "profession", "str"), ("profile", "pitch", "str"),
     ("profile", "skills", "list"), ("profile", "avoid", "list"), ("profile", "portfolio", "str"),
     ("profile", "currency", "str"), ("profile", "min_budget", "float"), ("profile", "min_rate", "float"),
-    ("profile", "signature", "str"), ("profile", "draft_language", "str"),
+    ("profile", "signature", "str"), ("profile", "draft_language", "str"), ("profile", "daily_goal", "int"),
     ("sources", "freelancer", "bool"), ("sources", "freelancer_categories", "list"),
     ("sources", "reddit_subreddits", "list"), ("sources", "hn", "bool"), ("sources", "github", "bool"),
     ("sources", "github_labels", "list"), ("sources", "github_languages", "list"),
@@ -45,6 +45,7 @@ class Config:
     min_budget: float = 0
     min_rate: float = 0
     signature: str = ""
+    daily_goal: int = 5  # messages to send each day; drives the goal ring on the Today screen
     draft_language: str = "auto"  # auto = the lead's language (website, then country), else a language code
     freelancer: bool = True
     freelancer_categories: list = field(default_factory=lambda: ["Website-Design", "WordPress", "PHP", "Python"])
@@ -162,7 +163,7 @@ def to_dict(cfg: Config) -> dict:
 SLUG_RX = re.compile(r"^[A-Za-z0-9][A-Za-z0-9-]{0,60}$")
 HOST_RX = re.compile(r"^[a-z0-9]([a-z0-9-]*[a-z0-9])?(\.[a-z0-9]([a-z0-9-]*[a-z0-9])?)+$")
 TAG_RX = re.compile(r"^\w{1,60}$")
-RANGES = {"max_age_days": (1, 90), "radius_m": (100, 20000), "max_businesses": (1, 300), "auto_scan_hours": (0, 24)}
+RANGES = {"daily_goal": (1, 50), "max_age_days": (1, 90), "radius_m": (100, 20000), "max_businesses": (1, 300), "auto_scan_hours": (0, 24)}
 KINDS = {key: kind for _, key, kind in SCHEMA}
 
 

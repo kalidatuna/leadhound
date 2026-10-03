@@ -4,6 +4,7 @@ from __future__ import annotations
 import json
 import sqlite3
 import time
+from datetime import datetime, timedelta
 
 from .models import STATUSES, Lead
 
@@ -34,6 +35,14 @@ CREATE TABLE IF NOT EXISTS leads (
 );
 CREATE INDEX IF NOT EXISTS idx_leads_score ON leads(score DESC);
 CREATE INDEX IF NOT EXISTS idx_leads_status ON leads(status);
+CREATE TABLE IF NOT EXISTS activity (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    lead_id INTEGER NOT NULL,
+    kind TEXT NOT NULL,
+    via TEXT DEFAULT '',
+    at REAL NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_activity_at ON activity(at);
 """
 
 CONTENT_FIELDS = ("kind", "title", "url", "body", "author", "created_at", "contact",
@@ -111,7 +120,14 @@ class Store:
         sql = f"SELECT * FROM leads WHERE {' AND '.join(where)} ORDER BY {self.ORDERS.get(sort, self.ORDERS['score'])} LIMIT ?"
         return [self._row(r) for r in self.db.execute(sql, (*args, limit))]
 
+    def _log_contacted(self, lead_ids: list, via: str) -> None:
+        now = time.time()
+        self.db.executemany("INSERT INTO activity (lead_id, kind, via, at) VALUES (?, 'contacted', ?, ?)",
+                            [(i, via, now) for i in lead_ids])
+
     def update(self, lead_id: int, **fields) -> bool:
+        """Change status, notes or draft. `via` says how a lead was contacted (email, manual, ...)."""
+        via = str(fields.pop("via", "manual"))[:30]
         allowed = {"status", "notes", "draft"}
         bad = set(fields) - allowed
         if bad:
@@ -120,6 +136,10 @@ class Store:
             raise ValueError(f"status must be one of {', '.join(STATUSES)}")
         if not fields:
             return False
+        if fields.get("status") == "contacted":
+            row = self.db.execute("SELECT status FROM leads WHERE id=?", (lead_id,)).fetchone()
+            if row and row["status"] != "contacted":
+                self._log_contacted([lead_id], via)
         sets = ", ".join(f"{k}=?" for k in fields)
         cur = self.db.execute(f"UPDATE leads SET {sets}, updated_at=? WHERE id=?",
                               (*fields.values(), time.time(), lead_id))
@@ -133,6 +153,9 @@ class Store:
         if not ids:
             return 0
         marks = ",".join("?" * len(ids))
+        if status == "contacted":
+            fresh = [r["id"] for r in self.db.execute(f"SELECT id FROM leads WHERE status!='contacted' AND id IN ({marks})", ids)]
+            self._log_contacted(fresh, "manual")
         cur = self.db.execute(f"UPDATE leads SET status=?, updated_at=? WHERE id IN ({marks})",
                               (status, time.time(), *ids))
         self.db.commit()
@@ -145,4 +168,18 @@ class Store:
             out["total"] += r["c"]
         for r in self.db.execute("SELECT source, COUNT(*) c FROM leads GROUP BY source"):
             out["by_source"][r["source"]] = r["c"]
+        out["sent_week"] = self.sent_per_day(7)  # oldest first, last item is today
+        out["sent_today"] = out["sent_week"][-1]
         return out
+
+    def sent_per_day(self, days: int) -> list[int]:
+        """Messages marked as sent per local day, oldest first, ending with today."""
+        midnight = datetime.now().replace(hour=0, minute=0, second=0, microsecond=0)
+        counts = []
+        for i in range(days - 1, -1, -1):
+            start = midnight - timedelta(days=i)
+            end = start + timedelta(days=1)
+            row = self.db.execute("SELECT COUNT(*) c FROM activity WHERE kind='contacted' AND at >= ? AND at < ?",
+                                  (start.timestamp(), end.timestamp())).fetchone()
+            counts.append(row["c"])
+        return counts

@@ -153,6 +153,37 @@ def cmd_shortcut(a, cfg):
     return 0
 
 
+def cmd_license(a, cfg):
+    """Seller tools. The private key signs license keys; keep it off GitHub and out of this folder."""
+    import secrets
+    import time
+
+    from . import ed25519, licensing
+    if a.action == "keygen":
+        if os.path.exists(a.out):
+            raise ValueError(f"{a.out} already exists: refusing to overwrite a private key")
+        secret = secrets.token_bytes(32)
+        fd = os.open(a.out, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600)
+        with os.fdopen(fd, "w") as f:
+            f.write(secret.hex() + "\n")
+        print(f"private key saved to {a.out} (back it up; anyone with it can sell licenses, and losing it means no new keys)")
+        print(f"public key (paste into PUBLIC_KEY_HEX in leadhound/licensing.py): {ed25519.public_key(secret).hex()}")
+        print("license server: run it with LICENSE_PRIVATE_KEY set to the same 64 characters (see docs/LICENSE_SERVER.md)")
+    elif a.action == "issue":
+        secret = bytes.fromhex(open(a.key).read().strip())
+        token = licensing.make_key(secret, a.email, a.days)
+        print(token)
+        print(f"valid {a.days} days for {a.email}", file=sys.stderr)
+    else:  # check
+        data = licensing.read_key(a.token, a.public or None)
+        if not data:
+            print("NOT VALID")
+            return 1
+        left = (data["exp"] - time.time()) / 86400
+        print(f"valid signature for {data.get('email')}: plan {data.get('plan')}, {left:.1f} days left")
+    return 0
+
+
 def cmd_serve(a, cfg):
     from .dashboard.server import serve
     serve(a.db, a.config, a.port, open_browser=not a.no_browser, cloud=a.cloud)
@@ -222,6 +253,19 @@ def build_parser() -> argparse.ArgumentParser:
     p.set_defaults(fn=cmd_export)
 
     sub.add_parser("shortcut", help="create a double-click launcher on your desktop").set_defaults(fn=cmd_shortcut)
+
+    p = sub.add_parser("license", help="seller tools: make keys and sign license keys for Pro")
+    ls = p.add_subparsers(dest="action", required=True)
+    q = ls.add_parser("keygen", help="make your signing key pair (once)")
+    q.add_argument("--out", default="leadhound-private.key")
+    q = ls.add_parser("issue", help="sign a license key for a customer")
+    q.add_argument("--key", default="leadhound-private.key")
+    q.add_argument("--email", required=True)
+    q.add_argument("--days", type=int, default=31)
+    q = ls.add_parser("check", help="check that a license key is genuine")
+    q.add_argument("token")
+    q.add_argument("--public", default="")
+    p.set_defaults(fn=cmd_license)
 
     p = sub.add_parser("serve", help="open the local dashboard")
     p.add_argument("--port", type=int, default=8787)

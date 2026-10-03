@@ -1,0 +1,6 @@
+# The license server only (not the app). Deployed with fly.license.toml, see docs/LICENSE_SERVER.md
+FROM python:3.12-slim
+WORKDIR /app
+COPY leadhound/ leadhound/
+ENV PYTHONUNBUFFERED=1
+CMD ["python", "-m", "leadhound.licenseserver"]

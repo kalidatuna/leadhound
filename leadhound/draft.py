@@ -123,14 +123,14 @@ def llm_prompt(lead: Lead, cfg, lang: str) -> str:
             f"Write the first message in {LANGUAGES.get(lang, 'English')} ({lang}).")
 
 
-def make_draft(lead: Lead, cfg, use_llm: bool = False, fetcher=None) -> tuple[str, str]:
+def make_draft(lead: Lead, cfg, use_llm: bool = False, fetcher=None, ai_token: str | None = None) -> tuple[str, str]:
     """Return (draft, engine). Falls back to the template when the LLM fails."""
     lang = draft_language(lead, cfg)
     template = template_business(lead, cfg, lang) if lead.kind == "business" else template_post(lead, cfg, lang)
     if not use_llm or cfg.llm_provider == "none":
         return template, "template"
     try:
-        text = llm.complete(cfg, SYSTEM, llm_prompt(lead, cfg, lang), fetcher=fetcher)
+        text = llm.complete(cfg, SYSTEM, llm_prompt(lead, cfg, lang), fetcher=fetcher, hosted_token=ai_token)
         return (text or template), (cfg.llm_provider if text else "template")
     except (llm.LLMError, FetchError, KeyError, ValueError) as e:
         return template, f"template (LLM failed: {str(e)[:120]})"

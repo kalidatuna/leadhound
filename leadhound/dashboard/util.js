@@ -25,7 +25,8 @@ export async function api(path, body) {
   if (r.status === 401 && path !== '/api/login') { location.reload(); throw new Error('signed out'); }
   const isJson = (r.headers.get('content-type') || '').includes('json');
   const data = isJson ? await r.json() : await r.blob();
-  if (!r.ok) throw new Error((isJson && data.error) || `Request failed (${r.status})`);
+  if (r.status === 402) { emit('pro-required'); const e = new Error(''); e.status = 402; throw e; }  // the plan dialog explains it
+  if (!r.ok) { const e = new Error((isJson && data.error) || `Request failed (${r.status})`); e.status = r.status; throw e; }
   return data;
 }
 
@@ -49,6 +50,7 @@ export function el(tag, attrs, ...kids) {
 }
 
 export function toast(msg, kind = '', action = null) {
+  if (!msg) return;  // empty message: the error was already shown some other way
   const t = el('div', { class: 'toast ' + kind }, msg);
   if (action) t.append(el('button', { onclick: () => { action.fn(); t.remove(); } }, action.label));
   $('#toasts').append(t);

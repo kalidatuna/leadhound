@@ -20,22 +20,25 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from urllib.parse import parse_qs, urlparse
 
-from .. import __version__, config, i18n, paths, profiles, updates
+from .. import __version__, accounts as accts, config, i18n, licensing, paths, profiles, sending, updates
 from ..draft import make_draft
 from ..jobs import AutoScanner, JobBusy, JobManager
 from ..langs import LANGUAGES
 from ..models import KINDS, STATUSES
 from ..money import CURRENCIES
 from ..net import Fetcher
+from ..send import SendError
 from ..sources import SOURCES, osm
 from ..store import Store
 from .auth import Auth, TooManyAttempts, cookie_value
 
 STATIC = Path(__file__).parent
 STATIC_FILES = {name: ("text/css" if name.endswith(".css") else "text/javascript")
-                for name in ("app.css", "app.js", "util.js", "i18n.js", "today.js", "leads.js", "find.js", "settings.js", "login.js")}
+                for name in ("app.css", "app.js", "util.js", "i18n.js", "icons.js", "today.js", "compose.js", "accounts.js", "plan.js",
+                             "leads.js", "find.js", "settings.js", "login.js")}
+FONT_RX = re.compile(r"fonts/([a-z-]+)\.woff2")
 LOCALE_RX = re.compile(r"locales/([a-z]{2})\.json")
-CSP = ("default-src 'none'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; "
+CSP = ("default-src 'none'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; "
        "connect-src 'self'; base-uri 'none'; form-action 'none'; frame-ancestors 'none'")
 
 
@@ -52,6 +55,8 @@ class Ctx:
         self.store, self.config_path, self.token, self.port = store, config_path, token, port
         self.jobs, self.auth, self.fetcher_factory = jobs, auth, fetcher_factory
         self.lock = threading.Lock()
+        self.license = licensing.License(os.path.join(os.path.dirname(os.path.abspath(config_path)), "license.json"))
+        self.accounts = accts.Accounts(os.path.join(os.path.dirname(os.path.abspath(config_path)), "accounts.json"))
         self.stop = None  # set by make_server: stops the HTTP server (Quit button)
         self.update_cache = os.path.join(os.path.dirname(os.path.abspath(config_path)), "update.json")
 
@@ -68,13 +73,20 @@ def build_routes(c: Ctx) -> list:
                      "mode": updates.install_mode(), "categories": sorted(osm.CATEGORY_TAGS),
                      "sources": list(SOURCES), "statuses": list(STATUSES), "kinds": list(KINDS),
                      "languages": LANGUAGES, "currencies": sorted(CURRENCIES), "professions": profiles.summary(),
-                     "llm_ready": cfg.llm_provider != "none", "profession": cfg.profession,
+                     "llm_ready": cfg.llm_provider != "none", "hosted_ai": bool(licensing.SERVER), "profession": cfg.profession,
                      "config_path": c.config_path, "db_path": store_path(store)}
+
+    def pro(feature: str):
+        try:
+            c.license.require(feature)
+        except licensing.ProRequired:
+            raise HttpError(402, "This is a Pro feature. Start your free trial or upgrade.")
 
     def leads_list(m, q, b):
         leads = store.query(status=q.get("status") or None, kind=q.get("kind") or None,
                             source=q.get("source") or None, min_score=int(q.get("min", 0) or 0),
-                            search=q.get("q", ""), limit=min(int(q.get("limit", 300)), 1000), sort=q.get("sort", "score"))
+                            search=q.get("q", ""), limit=min(int(q.get("limit", 300)), 1000, c.license.max_leads()),
+                            sort=q.get("sort", "score"))
         return 200, [asdict(l) for l in leads]
 
     def lead_get(m, q, b):
@@ -88,10 +100,15 @@ def build_routes(c: Ctx) -> list:
         if not store.get(lid):
             raise HttpError(404, "lead not found")
         fields = {k: b[k] for k in ("status", "notes", "draft") if k in b}
+        if isinstance(b.get("via"), str):  # how it was contacted (email, whatsapp, manual...); only used with status=contacted
+            fields["via"] = b["via"]
         for k in ("notes", "draft"):
             if k in fields and (not isinstance(fields[k], str) or len(fields[k]) > 20000):
                 raise HttpError(400, f"{k} must be text under 20000 characters")
+        was = store.get(lid).status
         store.update(lid, **fields)
+        if fields.get("status") == "contacted" and was != "contacted":
+            c.license.count_use()
         return 200, asdict(store.get(lid))
 
     def lead_draft(m, q, b):  # runs unlocked: an LLM call can take a minute and must not freeze the app
@@ -99,7 +116,13 @@ def build_routes(c: Ctx) -> list:
             lead = store.get(int(m.group(1)))
         if not lead:
             raise HttpError(404, "lead not found")
-        text, engine = make_draft(lead, c.cfg(), use_llm=bool(b.get("llm")))
+        if b.get("llm"):
+            pro("ai")
+        cfg = c.cfg()
+        token = c.license.ai_token() if cfg.llm_provider == "leadhound" else None
+        text, engine = make_draft(lead, cfg, use_llm=bool(b.get("llm")), ai_token=token)
+        if b.get("llm"):
+            c.license.count_use()
         with c.lock:
             store.update(lead.id, draft=text)
         return 200, {"draft": text, "engine": engine}
@@ -132,16 +155,27 @@ def build_routes(c: Ctx) -> list:
             new = config.from_dict(base, b)
         except (ValueError, TypeError) as e:
             raise HttpError(400, str(e))
+        if new.auto_scan_hours and not base.auto_scan_hours:
+            pro("autosearch")
         config.save(new, c.config_path)
         return 200, config.to_dict(new)
 
     def job_start(m, q, b):
+        kind = str(b.get("kind", ""))
+        if kind in ("local", "audit"):
+            pro("business")
         try:
             job = c.jobs.start(str(b.get("kind", "")), b.get("params") or {})
         except JobBusy as e:
             raise HttpError(409, str(e))
         except (ValueError, TypeError) as e:
             raise HttpError(400, str(e))
+        if kind == "scan":
+            try:
+                c.license.use_search()
+            except licensing.ProRequired:
+                c.jobs.cancel(job.id)
+                raise HttpError(402, "You used today's free searches. Upgrade for unlimited searches.")
         return 200, job.to_dict()
 
     def job_get(m, q, b):
@@ -165,6 +199,67 @@ def build_routes(c: Ctx) -> list:
         threading.Timer(0.3, c.stop).start()
         return 200, {"stopping": True}
 
+    def need_lead(lid: int):
+        lead = store.get(lid)
+        if not lead:
+            raise HttpError(404, "lead not found")
+        return lead
+
+    def lead_channels(m, q, b):
+        return 200, sending.channels_for(need_lead(int(m.group(1))), c.accounts.public())
+
+    def lead_send(m, q, b):  # network call: unlocked, store access is locked by hand
+        pro("send")
+        with c.lock:
+            lead = need_lead(int(m.group(1)))
+        try:
+            res = sending.send_lead(c.accounts, lead, str(b.get("channel", "")), str(b.get("to", "")),
+                                    b.get("subject", ""), b.get("body", ""))
+        except SendError as e:
+            raise HttpError(e.code, str(e))
+        with c.lock:
+            store.update(lead.id, status="contacted", draft=b["body"], via=res["via"])
+            c.license.count_use()
+        return 200, res
+
+    def accounts_get(m, q, b):
+        return 200, c.accounts.public()
+
+    def account_post(m, q, b):  # a connect check talks to the service: unlocked
+        pid, action = m.group(1), b.get("action")
+        spec = accts.PLATFORMS.get(pid)
+        if not spec:
+            raise HttpError(404, "unknown platform")
+        if action == "connect":
+            pro("send")
+            try:
+                who = sending.connect(c.accounts, pid, b.get("fields") or {}, bool(c.auth))
+            except SendError as e:
+                raise HttpError(e.code, str(e))
+            return 200, {"as": who, **c.accounts.public()[pid]}
+        if action == "disconnect" and spec["mode"] == "send":
+            c.accounts.disconnect(pid)
+        elif action == "toggle" and spec["mode"] == "link":
+            c.accounts.set_link(pid, bool(b.get("on")))
+        else:
+            raise HttpError(400, "unknown action")
+        return 200, c.accounts.public()[pid]
+
+    def plan_get(m, q, b):
+        return 200, c.license.status()
+
+    def plan_post(m, q, b):
+        try:
+            if b.get("action") == "activate":
+                return 200, c.license.activate(str(b.get("key", "")))
+            if b.get("action") == "remove":
+                return 200, c.license.remove_key()
+            if b.get("action") == "signup":
+                return 200, c.license.signup(str(b.get("email", "")))
+        except ValueError as e:
+            raise HttpError(400, str(e))
+        raise HttpError(400, "unknown action")
+
     def i18n_catalog(m, q, b):
         lang = m.group(1)
         if lang not in LANGUAGES:
@@ -175,6 +270,9 @@ def build_routes(c: Ctx) -> list:
         ("GET", r"/api/meta", meta), ("GET", r"/api/stats", lambda m, q, b: (200, store.stats())),
         ("GET", r"/api/leads", leads_list), ("GET", r"/api/leads/(\d+)", lead_get),
         ("POST", r"/api/leads/(\d+)", lead_update), ("POST", r"/api/leads/(\d+)/draft", lead_draft, False),
+        ("GET", r"/api/leads/(\d+)/channels", lead_channels), ("POST", r"/api/leads/(\d+)/send", lead_send, False),
+        ("GET", r"/api/plan", plan_get), ("POST", r"/api/plan", plan_post, False),
+        ("GET", r"/api/accounts", accounts_get), ("POST", r"/api/accounts/([a-z]+)", account_post, False),
         ("POST", r"/api/leads/bulk", bulk), ("GET", r"/api/export", export),
         ("GET", r"/api/config", lambda m, q, b: (200, config.to_dict(c.cfg()))), ("POST", r"/api/config", config_set),
         ("POST", r"/api/jobs", job_start),
@@ -260,6 +358,10 @@ def make_handler(c: Ctx):
                 name = u.path[len("/static/"):]
                 if name in STATIC_FILES:
                     return self._send(200, (STATIC / name).read_bytes(), STATIC_FILES[name] + "; charset=utf-8")
+                f = FONT_RX.fullmatch(name)
+                if f and (STATIC / "fonts" / f"{f.group(1)}.woff2").is_file():
+                    return self._send(200, (STATIC / "fonts" / f"{f.group(1)}.woff2").read_bytes(), "font/woff2",
+                                      {"Cache-Control": "public, max-age=86400"})
                 m = LOCALE_RX.fullmatch(name)
                 if m and m.group(1) in LANGUAGES:
                     return self._send(200, (STATIC / "locales" / f"{m.group(1)}.json").read_bytes())
@@ -331,6 +433,7 @@ def make_server(db_path: str, config_path: str, port: int = 8787, fetcher_factor
     ctx.stop = httpd.shutdown
     httpd.RequestHandlerClass = make_handler(ctx)
     httpd.jobs = jm
+    httpd.ctx = ctx
     httpd.auto = AutoScanner(jm, os.path.join(os.path.dirname(os.path.abspath(config_path)), "state.json"))
     return httpd, token
 

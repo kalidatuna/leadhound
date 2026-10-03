@@ -1,11 +1,12 @@
 <!doctype html>
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="lh-token" content="__LEADHOUND_TOKEN__">
+<meta name="color-scheme" content="light">
 <title>leadhound</title>
 <link rel="stylesheet" href="/static/app.css">
 </head><body>
 <header class="top">
-  <div class="brand">leadhound</div>
+  <div class="brand"><span class="logo" aria-hidden="true">l</span><span class="wm">leadhound</span></div>
   <nav id="nav">
     <button data-view="today" class="tab on">Today</button>
     <button data-view="leads" class="tab">Leads</button>
@@ -15,15 +16,24 @@
   <span class="grow"></span>
   <span id="upd-pill"></span>
   <button id="pill" class="pill" hidden></button>
-  <select id="lang" class="lang" aria-label="Language"></select>
-  <button id="mode" class="btn sm"></button>
-  <button id="quit" class="btn sm ghost" hidden></button>
+  <button id="plan-btn" class="pill plan-pill" hidden></button>
+  <button id="acct-btn" class="pill"><span></span><span class="cnt" hidden></span></button>
+  <span class="menuwrap">
+    <button id="lang-btn" class="pill" aria-haspopup="menu" aria-expanded="false"><span></span></button>
+    <div id="lang-menu" class="menu" role="menu" hidden></div>
+  </span>
+  <button id="mode" class="pill"></button>
+  <button id="quit" class="pill" hidden></button>
 </header>
 <main id="view-today" class="view"></main>
+<main id="view-accounts" class="view" hidden></main>
 <main id="view-leads" class="view" hidden></main>
 <main id="view-find" class="view" hidden></main>
 <main id="view-settings" class="view" hidden></main>
 <div id="modal" class="modal" hidden></div>
+<dialog id="sheet"></dialog>
+<dialog id="quit-dialog"></dialog>
+<dialog id="plan-dialog" aria-label="leadhound Pro"></dialog>
 <div id="toasts" class="toasts" aria-live="polite"></div>
 <noscript>leadhound needs JavaScript.</noscript>
 <script type="module" src="/static/app.js"></script>

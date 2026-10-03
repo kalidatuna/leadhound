@@ -17,7 +17,11 @@ export function ageText(ts) {
   if (h < 1) return t('age.now');
   return h < 48 ? t('age.h', { n: Math.round(h) }) : t('age.d', { n: Math.round(h / 24) });
 }
-const isNew = l => lastVisit && l.first_seen > lastVisit && l.status === 'new';
+export function reasonLine(l) {  // the two strongest reasons this lead matches, in plain words
+  const good = (l.extra.why || []).filter(w => w[0] > 0 && w[1] !== 'age_unknown').sort((a, b) => b[0] - a[0]).slice(0, 2);
+  return good.length ? good.map(w => whyText([null, w[1], w[2]])).join(' · ') : t('today.reason_none');
+}
+export const isNew = l => !!lastVisit && l.first_seen > lastVisit && l.status === 'new';
 const debounce = (fn, ms) => { let tm; return (...a) => { clearTimeout(tm); tm = setTimeout(() => fn(...a), ms); }; };
 const select = (id, opts, onchange) => el('select', { id, onchange: e => onchange(e.target.value) }, opts.map(([v, l]) => el('option', { value: v }, l)));
 

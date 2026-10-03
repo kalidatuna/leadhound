@@ -37,12 +37,32 @@ Or clone the repo and run `python -m leadhound`. Python 3.10 or newer is needed.
 ## How to use it (3 steps)
 
 1. **Open leadhound** (desktop icon, or type `leadhound`). The first time, pick your kind of work, such as *Translator*, and click **Save and start searching**.
-2. **Click Write message** on a match. A message is ready in the client's language. Read it, change anything, click **Copy message**.
-3. **Send it** yourself (email, the original page, or Freelancer.com), then click **I sent it**. The next match moves up.
+2. **Click Write message** on a match. A message is ready in the client's language. Read it and change anything you like.
+3. **Send it.** Pick **Send via** (email, WhatsApp, Reddit, the project page...) and click the gold button. Connected accounts send for you; the others open with your message ready. The next match moves up.
 
 That is the whole simple view. **Find new clients** searches again whenever you like. **Not for me** hides a match. **Quit** closes leadhound. Double-clicking the icon twice just reopens the same window.
 
 Everything else lives behind the **Advanced** button: the full list with filters and stages, detailed searches, settings, export and updates.
+
+## Send from your own accounts
+
+Most platforms work right away with no setup: leadhound opens them with your message filled in. Click **Accounts** only if you want leadhound to send for you through your own account. Either way you still press the button on every message: leadhound never sends on its own, and the address always comes from the lead itself, never from the page.
+
+| Platform | How it works |
+|---|---|
+| **Gmail, Outlook** | Nothing to connect. Opens a new message with the address, subject and text filled in, in the account you are already signed in to. You press Send there. |
+| **Email** | Gmail, Outlook or any mail server, with an *app password* (not your normal password). Connecting sends a test email to yourself. |
+| **Mastodon** | Direct message, with an access token you create on your server (Preferences, Development, `write:statuses`). |
+| **GitHub** | Comment on a paid issue, with a personal access token that can write issues. |
+| **Reddit** | Private message, through a *script* app you create at reddit.com/prefs/apps. Reddit limits cold messages, so the cap is 5 a day. |
+| **WhatsApp** | Opens a chat with the lead's phone number and your message filled in. Nothing to connect. |
+| **Telegram, Freelancer.com** | Copies your message, then opens the chat or the project page so you paste and send. |
+
+Each account has a daily cap (10 for email and Mastodon, 5 for GitHub and Reddit), a pause between sends, and a block on sending to the same lead twice in a row. Logins are saved in `accounts.json` next to your config, readable only by your user. **The file is not encrypted**, so anyone who can read your user folder can read it. Use an app password or a limited token, never your main password, and disconnect to delete a login. Sending to Reddit, Mastodon and GitHub has been tested against local stand-ins, not the live services.
+
+## Free and Pro
+
+Everything works for free: searching, matches, drafts, and opening Gmail, Outlook, WhatsApp and more with your message ready (3 searches a day, your top 10 matches). Every install gets a **free taste** (7 uses), then a **7-day Pro trial** after a quick email sign-up (one trial per person). **Pro** unlocks sending from your connected accounts, unlimited searches and matches, AI-written messages, the local business finder with website checks, and automatic search. Pro is a license key checked offline. The sign-up and the optional hosted AI talk to the seller's license server and send only your email, a device code, and (for AI) the text of the lead. Sellers: see [docs/SELLING.md](docs/SELLING.md).
 
 ## Advanced
 
@@ -116,11 +136,12 @@ Cloud mode is password-protected and rate-limits sign-in attempts. Sessions use 
 
 - Local mode listens on `127.0.0.1` only, blocks DNS rebinding, and requires a per-run token on every API call. It also sends a strict Content-Security-Policy with no inline scripts. Text from posts and websites is never rendered as HTML.
 - Keys (`GITHUB_TOKEN`, `ANTHROPIC_API_KEY`, `OPENAI_API_KEY`) are read from environment variables and never saved to disk.
+- Account logins for sending are saved in `accounts.json` (owner-only permissions, not encrypted) and are never sent to the browser. See *Send from your own accounts*.
 - Installs and updates come directly from this GitHub repository's release archives.
 
 ## Responsible use
 
-- **You send every message.** Personalise it, and never mass-send.
+- **You send every message.** Personalise it, and never mass-send. Daily caps exist to protect your accounts, not to set a target.
 - **Follow outreach law** where you and the recipient are, such as CAN-SPAM, GDPR or ePrivacy. Identify yourself and stop when asked.
 - **Check before pitching.** OpenStreetMap can miss websites, so open the site yourself before you send audit findings.
 - **Respect the sources.** leadhound identifies itself, rate-limits per site, and only reads public posts and public business listings.
@@ -147,4 +168,4 @@ python -m unittest discover -s tests -t tests
 
 ## License
 
-MIT
+MIT. Fonts (Fraunces, Instrument Sans) are under the SIL Open Font License, see `leadhound/dashboard/fonts/`. Platform logos come from [Simple Icons](https://simpleicons.org) (CC0) and belong to their owners; they only say which platform a button is for.
