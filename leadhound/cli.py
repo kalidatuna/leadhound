@@ -4,6 +4,7 @@ from __future__ import annotations
 import argparse
 import csv
 import json
+import os
 import sys
 import time
 from dataclasses import asdict
@@ -154,7 +155,7 @@ def cmd_shortcut(a, cfg):
 
 def cmd_serve(a, cfg):
     from .dashboard.server import serve
-    serve(a.db, a.config, a.port, open_browser=not a.no_browser)
+    serve(a.db, a.config, a.port, open_browser=not a.no_browser, cloud=a.cloud)
     return 0
 
 
@@ -175,7 +176,7 @@ def build_parser() -> argparse.ArgumentParser:
     p = sub.add_parser("local", help="find local businesses (OpenStreetMap) and audit their websites")
     p.add_argument("place", help='city or address, e.g. "Tbilisi, Georgia"')
     p.add_argument("--category", help="comma list, e.g. dentist,restaurant or shop=bicycle")
-    p.add_argument("--radius", type=int, help="meters (default from config)")
+    p.add_argument("--radius", type=int, help="meters (default from config); 0 = whole city")
     p.add_argument("--limit", type=int, help="max businesses (default from config)")
     p.add_argument("--website", choices=["any", "yes", "no"], default="any",
                    help="only businesses with (yes) or without (no) a website listed")
@@ -225,6 +226,8 @@ def build_parser() -> argparse.ArgumentParser:
     p = sub.add_parser("serve", help="open the local dashboard")
     p.add_argument("--port", type=int, default=8787)
     p.add_argument("--no-browser", action="store_true")
+    p.add_argument("--cloud", action="store_true",
+                   help="run on a server: listen on all interfaces, require LEADHOUND_PASSWORD, use $PORT")
     p.set_defaults(fn=cmd_serve)
     return ap
 
@@ -233,7 +236,7 @@ def main(argv=None) -> int:
     a = build_parser().parse_args(argv)
     a.config, a.db = paths.resolve(a.config, a.db)
     if a.cmd is None:  # double-click / bare `leadhound`: open the app
-        a.fn, a.port, a.no_browser = cmd_serve, 8787, False
+        a.fn, a.port, a.no_browser, a.cloud = cmd_serve, 8787, False, bool(os.environ.get("LEADHOUND_CLOUD"))
     cfg = config.load(a.config)
     try:
         return a.fn(a, cfg)
