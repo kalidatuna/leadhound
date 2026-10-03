@@ -6,34 +6,59 @@ from __future__ import annotations
 
 import configparser
 import os
+import re
 from dataclasses import dataclass, field, fields
+
+from .langs import LANGUAGES
+from .money import CURRENCIES
 
 DEFAULT_PATH = "leadhound.ini"
 LLM_PROVIDERS = ("none", "anthropic", "openai")
+AUTO_SCAN_HOURS = (0, 6, 12, 24)
 
-PROFILE_STR = ("name", "pitch", "portfolio", "signature")
-LIST_FIELDS = ("skills", "avoid", "reddit_subreddits", "github_labels", "github_languages", "rss_feeds",
-               "categories")
-BOOL_FIELDS = ("hn", "github")
+# (section, key, kind). kind: str | list | lines | bool | float | int
+SCHEMA = [
+    ("profile", "name", "str"), ("profile", "profession", "str"), ("profile", "pitch", "str"),
+    ("profile", "skills", "list"), ("profile", "avoid", "list"), ("profile", "portfolio", "str"),
+    ("profile", "currency", "str"), ("profile", "min_budget", "float"), ("profile", "min_rate", "float"),
+    ("profile", "signature", "str"), ("profile", "draft_language", "str"),
+    ("sources", "freelancer", "bool"), ("sources", "freelancer_categories", "list"),
+    ("sources", "reddit_subreddits", "list"), ("sources", "hn", "bool"), ("sources", "github", "bool"),
+    ("sources", "github_labels", "list"), ("sources", "github_languages", "list"),
+    ("sources", "mastodon", "bool"), ("sources", "mastodon_instances", "list"), ("sources", "mastodon_tags", "list"),
+    ("sources", "rss_feeds", "lines"), ("sources", "max_age_days", "int"), ("sources", "auto_scan_hours", "int"),
+    ("local", "categories", "list"), ("local", "radius_m", "int"), ("local", "max_businesses", "int"),
+    ("llm", "llm_provider", "str"), ("llm", "llm_model", "str"), ("llm", "llm_base_url", "str"),
+]
+INI_KEY = {"llm_provider": "provider", "llm_model": "model", "llm_base_url": "base_url"}
 
 
 @dataclass
 class Config:
     name: str = ""
+    profession: str = ""
     pitch: str = "I build fast, reliable websites and web apps for small businesses"
     skills: list = field(default_factory=lambda: ["python", "javascript", "wordpress"])
     avoid: list = field(default_factory=lambda: ["unpaid", "equity only", "rev share", "for exposure"])
     portfolio: str = ""
+    currency: str = "USD"
     min_budget: float = 0
     min_rate: float = 0
     signature: str = ""
+    draft_language: str = "auto"  # auto = the lead's language (website, then country), else a language code
+    freelancer: bool = True
+    freelancer_categories: list = field(default_factory=lambda: ["Website-Design", "WordPress", "PHP", "Python"])
     reddit_subreddits: list = field(default_factory=lambda: ["forhire", "jobbit", "hiring"])
     hn: bool = True
     github: bool = True
     github_labels: list = field(default_factory=lambda: ["bounty", "help wanted"])
     github_languages: list = field(default_factory=list)
+    mastodon: bool = False  # opt-in: worldwide but low volume and noisy
+    mastodon_instances: list = field(default_factory=lambda: ["mastodon.social"])
+    mastodon_tags: list = field(default_factory=lambda: ["FediHire", "hiring", "freelance"])
     rss_feeds: list = field(default_factory=list)
     max_age_days: int = 21
+    auto_scan_hours: int = 0
     categories: list = field(default_factory=lambda: ["restaurant", "dentist"])
     radius_m: int = 3000
     max_businesses: int = 60
@@ -61,72 +86,53 @@ def load(path: str = DEFAULT_PATH) -> Config:
         return cfg
     cp = configparser.ConfigParser(interpolation=None, inline_comment_prefixes=None)
     cp.read(path, encoding="utf-8")
-    sec = {s: cp[s] for s in ("profile", "sources", "local", "llm") if cp.has_section(s)}
-
-    def get(section, key, default):
-        return sec[section].get(key, default) if section in sec else default
-
-    cfg.name = get("profile", "name", cfg.name)
-    cfg.pitch = get("profile", "pitch", cfg.pitch)
-    cfg.skills = _split(get("profile", "skills", ",".join(cfg.skills)))
-    cfg.avoid = _split(get("profile", "avoid", ",".join(cfg.avoid)))
-    cfg.portfolio = get("profile", "portfolio", "")
-    cfg.min_budget = float(get("profile", "min_budget", 0) or 0)
-    cfg.min_rate = float(get("profile", "min_rate", 0) or 0)
-    cfg.signature = get("profile", "signature", "") or cfg.name
-    cfg.reddit_subreddits = _split(get("sources", "reddit_subreddits", ",".join(cfg.reddit_subreddits)))
-    cfg.hn = str(get("sources", "hn", "true")).lower() in ("1", "true", "yes", "on")
-    cfg.github = str(get("sources", "github", "true")).lower() in ("1", "true", "yes", "on")
-    cfg.github_labels = _split(get("sources", "github_labels", ",".join(cfg.github_labels)))
-    cfg.github_languages = _split(get("sources", "github_languages", ""))
-    cfg.rss_feeds = _split(get("sources", "rss_feeds", ""), newline_only=True)
-    cfg.max_age_days = int(get("sources", "max_age_days", cfg.max_age_days))
-    cfg.categories = _split(get("local", "categories", ",".join(cfg.categories)))
-    cfg.radius_m = int(get("local", "radius_m", cfg.radius_m))
-    cfg.max_businesses = int(get("local", "max_businesses", cfg.max_businesses))
-    cfg.llm_provider = (get("llm", "provider", "none") or "none").strip().lower()
-    cfg.llm_model = get("llm", "model", "").strip()
-    cfg.llm_base_url = get("llm", "base_url", "").strip()
+    for section, key, kind in SCHEMA:
+        ini_key = INI_KEY.get(key, key)
+        if not cp.has_section(section) or ini_key not in cp[section]:
+            continue
+        raw = cp[section][ini_key]
+        try:
+            if kind == "list":
+                val = _split(raw)
+            elif kind == "lines":
+                val = _split(raw, newline_only=True)
+            elif kind == "bool":
+                val = raw.strip().lower() in ("1", "true", "yes", "on")
+            elif kind == "float":
+                val = float(raw or 0)
+            elif kind == "int":
+                val = int(raw or 0)
+            else:
+                val = raw.strip()
+        except ValueError:
+            continue  # keep the default for a hand-edited bad value
+        setattr(cfg, key, val)
+    cfg.llm_provider = (cfg.llm_provider or "none").lower()
+    cfg.signature = cfg.signature or cfg.name
     return cfg
 
 
 def render(cfg: Config) -> str:
-    j = lambda xs: ", ".join(_oneline(x) for x in xs)  # noqa: E731
-    feeds = "".join(f"\n    {_oneline(u)}" for u in cfg.rss_feeds)
-    return f"""\
-# leadhound config. Edit here or in the Settings tab of the app.
-# API keys are NOT stored here: set GITHUB_TOKEN, ANTHROPIC_API_KEY or OPENAI_API_KEY in your environment.
-
-[profile]
-name = {_oneline(cfg.name)}
-pitch = {_oneline(cfg.pitch)}
-skills = {j(cfg.skills)}
-avoid = {j(cfg.avoid)}
-portfolio = {_oneline(cfg.portfolio)}
-min_budget = {cfg.min_budget:g}
-min_rate = {cfg.min_rate:g}
-signature = {_oneline(cfg.signature)}
-
-[sources]
-reddit_subreddits = {j(cfg.reddit_subreddits)}
-hn = {str(cfg.hn).lower()}
-github = {str(cfg.github).lower()}
-github_labels = {j(cfg.github_labels)}
-github_languages = {j(cfg.github_languages)}
-rss_feeds ={feeds}
-max_age_days = {cfg.max_age_days}
-
-[local]
-categories = {j(cfg.categories)}
-radius_m = {cfg.radius_m}
-max_businesses = {cfg.max_businesses}
-
-[llm]
-# none | anthropic | openai  (openai = any OpenAI-compatible API, e.g. Ollama)
-provider = {cfg.llm_provider}
-model = {_oneline(cfg.llm_model)}
-base_url = {_oneline(cfg.llm_base_url)}
-"""
+    out = ["# leadhound config. Edit here or in the Settings tab of the app.",
+           "# API keys are NOT stored here: set GITHUB_TOKEN, ANTHROPIC_API_KEY or OPENAI_API_KEY in your environment."]
+    section = None
+    for sec, key, kind in SCHEMA:
+        if sec != section:
+            out += ["", f"[{sec}]"]
+            section = sec
+        v = getattr(cfg, key)
+        if kind == "list":
+            text = ", ".join(_oneline(x) for x in v)
+        elif kind == "lines":
+            text = "".join(f"\n    {_oneline(u)}" for u in v)
+        elif kind == "bool":
+            text = str(v).lower()
+        elif kind == "float":
+            text = f"{v:g}"
+        else:
+            text = _oneline(v)
+        out.append(f"{INI_KEY.get(key, key)} = {text}".rstrip() if kind != "lines" else f"{key} ={text}")
+    return "\n".join(out) + "\n"
 
 
 def save(cfg: Config, path: str) -> None:
@@ -153,36 +159,70 @@ def to_dict(cfg: Config) -> dict:
     return d
 
 
+SLUG_RX = re.compile(r"^[A-Za-z0-9][A-Za-z0-9-]{0,60}$")
+HOST_RX = re.compile(r"^[a-z0-9]([a-z0-9-]*[a-z0-9])?(\.[a-z0-9]([a-z0-9-]*[a-z0-9])?)+$")
+TAG_RX = re.compile(r"^\w{1,60}$")
+RANGES = {"max_age_days": (1, 90), "radius_m": (100, 20000), "max_businesses": (1, 300), "auto_scan_hours": (0, 24)}
+KINDS = {key: kind for _, key, kind in SCHEMA}
+
+
 def from_dict(base: Config, d: dict) -> Config:
     """Apply user input over `base`. Unknown keys are ignored. Raises ValueError on bad values."""
     new = Config(**{f.name: getattr(base, f.name) for f in fields(base)})
     for key, val in d.items():
-        if key in PROFILE_STR or key in ("llm_model", "llm_base_url"):
+        kind = KINDS.get(key)
+        if kind is None:
+            continue
+        if kind == "str":
             setattr(new, key, _oneline(val)[:500])
-        elif key in LIST_FIELDS:
-            items = _split(val, key == "rss_feeds") if isinstance(val, str) else [_oneline(x) for x in val]
+        elif kind in ("list", "lines"):
+            items = _split(val, kind == "lines") if isinstance(val, str) else [_oneline(x) for x in val]
             setattr(new, key, [x for x in items if x][:100])
-        elif key in BOOL_FIELDS:
+        elif kind == "bool":
             setattr(new, key, bool(val))
-        elif key in ("min_budget", "min_rate"):
+        elif kind == "float":
             n = float(val or 0)
             if n < 0:
                 raise ValueError(f"{key} cannot be negative")
             setattr(new, key, n)
-        elif key in ("max_age_days", "radius_m", "max_businesses"):
+        elif kind == "int":
             n = int(val)
-            lo, hi = {"max_age_days": (1, 90), "radius_m": (100, 20000), "max_businesses": (1, 200)}[key]
+            lo, hi = RANGES[key]
             if not lo <= n <= hi:
                 raise ValueError(f"{key} must be between {lo} and {hi}")
             setattr(new, key, n)
-        elif key == "llm_provider":
-            if val not in LLM_PROVIDERS:
-                raise ValueError(f"llm_provider must be one of {', '.join(LLM_PROVIDERS)}")
-            new.llm_provider = val
-    bad = [u for u in new.rss_feeds if not u.startswith(("http://", "https://"))]
-    if bad:
-        raise ValueError(f"RSS feed must start with http:// or https://: {bad[0][:60]}")
-    if new.llm_base_url and not new.llm_base_url.startswith(("http://", "https://")):
-        raise ValueError("LLM base URL must start with http:// or https://")
+    _validate(new)
     new.signature = new.signature or new.name
     return new
+
+
+def _validate(c: Config) -> None:
+    from .profiles import BY_ID  # local import: profiles is optional data, avoid a cycle
+
+    if c.llm_provider not in LLM_PROVIDERS:
+        raise ValueError(f"llm_provider must be one of {', '.join(LLM_PROVIDERS)}")
+    if c.currency.upper() not in CURRENCIES:
+        raise ValueError(f"unknown currency {c.currency!r}")
+    c.currency = c.currency.upper()
+    if c.draft_language not in ("auto", *LANGUAGES):
+        raise ValueError("unknown draft language")
+    if c.profession and c.profession not in BY_ID:
+        raise ValueError("unknown profession")
+    if c.auto_scan_hours not in AUTO_SCAN_HOURS:
+        raise ValueError("auto search must be off, 6, 12 or 24 hours")
+    bad = [u for u in c.rss_feeds if not u.startswith(("http://", "https://"))]
+    if bad:
+        raise ValueError(f"RSS feed must start with http:// or https://: {bad[0][:60]}")
+    if c.llm_base_url and not c.llm_base_url.startswith(("http://", "https://")):
+        raise ValueError("LLM base URL must start with http:// or https://")
+    for slug in c.freelancer_categories:
+        if not SLUG_RX.match(slug):
+            raise ValueError(f"bad Freelancer.com category: {slug[:40]}")
+    c.mastodon_instances = [h.lower().removeprefix("https://").strip("/") for h in c.mastodon_instances]
+    for h in c.mastodon_instances:
+        if not HOST_RX.match(h):
+            raise ValueError(f"bad Mastodon server: {h[:60]}")
+    c.mastodon_tags = [t.lstrip("#") for t in c.mastodon_tags]
+    for t in c.mastodon_tags:
+        if not TAG_RX.match(t):
+            raise ValueError(f"bad hashtag: {t[:40]}")
