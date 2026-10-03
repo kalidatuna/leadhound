@@ -57,7 +57,7 @@ class Store:
         d = dict(r)
         for f in JSON_FIELDS:
             d[f] = json.loads(d[f] or ("{}" if f == "extra" else "[]"))
-        d.pop("first_seen", None)
+        d["first_seen"] = d.get("first_seen") or 0.0
         d.pop("updated_at", None)
         return Lead(**d)
 

@@ -27,6 +27,7 @@ class Lead:
     draft: str = ""
     notes: str = ""
     extra: dict = field(default_factory=dict)
+    first_seen: float = 0.0  # when leadhound first found it
     id: int | None = None
 
     @property
