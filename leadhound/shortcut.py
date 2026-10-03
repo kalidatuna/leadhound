@@ -17,13 +17,14 @@ def build(platform: str, python: str, frozen: bool = False) -> tuple[str, str, b
     frozen=True means `python` is the downloaded leadhound app itself, so no "-m leadhound".
     """
     cmd = f'"{python}"' if frozen else f'"{python}" -m leadhound'
-    if platform.startswith("win"):
-        return "leadhound.bat", f'@echo off\r\ntitle leadhound\r\n{cmd}\r\npause\r\n', False
+    if platform.startswith("win"):  # .vbs runs it hidden: no black window; the Quit button in the app stops it
+        run = cmd.replace('"', '""')
+        return "leadhound.vbs", f'CreateObject("WScript.Shell").Run "{run}", 0, False\r\n', False
     if platform == "darwin":
         return "leadhound.command", f'#!/bin/bash\nexec {cmd}\n', True
     return ("leadhound.desktop",
             "[Desktop Entry]\nType=Application\nName=leadhound\nComment=Find freelance clients\n"
-            f'Exec={cmd}\nTerminal=true\nCategories=Office;Network;\n', True)
+            f'Exec={cmd}\nTerminal=false\nCategories=Office;Network;\n', True)
 
 
 def create(platform: str | None = None, python: str | None = None, folder: str | None = None) -> str:

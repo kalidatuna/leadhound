@@ -33,7 +33,7 @@ from .auth import Auth, TooManyAttempts, cookie_value
 
 STATIC = Path(__file__).parent
 STATIC_FILES = {name: ("text/css" if name.endswith(".css") else "text/javascript")
-                for name in ("app.css", "app.js", "util.js", "i18n.js", "leads.js", "find.js", "settings.js", "login.js")}
+                for name in ("app.css", "app.js", "util.js", "i18n.js", "today.js", "leads.js", "find.js", "settings.js", "login.js")}
 LOCALE_RX = re.compile(r"locales/([a-z]{2})\.json")
 CSP = ("default-src 'none'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; "
        "connect-src 'self'; base-uri 'none'; form-action 'none'; frame-ancestors 'none'")
@@ -52,6 +52,7 @@ class Ctx:
         self.store, self.config_path, self.token, self.port = store, config_path, token, port
         self.jobs, self.auth, self.fetcher_factory = jobs, auth, fetcher_factory
         self.lock = threading.Lock()
+        self.stop = None  # set by make_server: stops the HTTP server (Quit button)
         self.update_cache = os.path.join(os.path.dirname(os.path.abspath(config_path)), "update.json")
 
     def cfg(self):
@@ -158,6 +159,12 @@ def build_routes(c: Ctx) -> list:
         threading.Timer(0.5, updates.restart, args=(c.port,)).start()
         return 200, {"restarting": True}
 
+    def quit_app(m, q, b):
+        if c.auth or not c.stop:
+            raise HttpError(400, "quit is only available for local installs")
+        threading.Timer(0.3, c.stop).start()
+        return 200, {"stopping": True}
+
     def i18n_catalog(m, q, b):
         lang = m.group(1)
         if lang not in LANGUAGES:
@@ -175,7 +182,7 @@ def build_routes(c: Ctx) -> list:
         ("GET", r"/api/jobs/([0-9a-f]{10})", job_get),
         ("POST", r"/api/jobs/([0-9a-f]{10})/cancel", lambda m, q, b: (200, {"cancelled": c.jobs.cancel(m.group(1))})),
         ("GET", r"/api/update", update_info, False), ("POST", r"/api/restart", restart),
-        ("GET", r"/api/i18n/([a-z]{2})", i18n_catalog),
+        ("GET", r"/api/i18n/([a-z]{2})", i18n_catalog), ("POST", r"/api/quit", quit_app),
     ]
 
 
@@ -264,6 +271,8 @@ def make_handler(c: Ctx):
             if c.auth and method == "POST" and u.path == "/api/logout":
                 c.auth.logout(self._session())
                 return self._send(200, {"ok": True}, headers={"Set-Cookie": "lh_session=; Path=/; Max-Age=0"})
+            if method == "GET" and u.path == "/api/ping":  # lets a second launch find this one; reveals only the version
+                return self._send(200, {"leadhound": __version__, "cloud": bool(c.auth)})
             if not self._authed():
                 return self._send(401, {"error": "please sign in"})
             if not secrets.compare_digest(self.headers.get("X-Leadhound-Token", ""), c.token):
@@ -319,10 +328,25 @@ def make_server(db_path: str, config_path: str, port: int = 8787, fetcher_factor
     httpd = ThreadingHTTPServer((host, port), BaseHTTPRequestHandler)
     # build the handler after binding so the Host allow-list uses the real port (port 0 = any free port)
     ctx = Ctx(store, config_path, token, httpd.server_address[1], jm, auth, factory)
+    ctx.stop = httpd.shutdown
     httpd.RequestHandlerClass = make_handler(ctx)
     httpd.jobs = jm
     httpd.auto = AutoScanner(jm, os.path.join(os.path.dirname(os.path.abspath(config_path)), "state.json"))
     return httpd, token
+
+
+def find_running(port: int = 8787, tries: int = 20) -> int | None:
+    """Port of a leadhound already running on this computer, if any."""
+    import urllib.request
+    for p in range(port, port + tries):
+        try:
+            with urllib.request.urlopen(f"http://127.0.0.1:{p}/api/ping", timeout=0.4) as r:
+                info = json.loads(r.read(500))
+            if info.get("leadhound") and not info.get("cloud"):
+                return p
+        except Exception:
+            continue
+    return None
 
 
 def bind(db_path: str, config_path: str, port: int, tries: int = 20, **kw):
@@ -344,6 +368,11 @@ def serve(db_path: str, config_path: str, port: int = 8787, open_browser: bool =
         print(f"leadhound (cloud mode) listening on port {httpd.server_address[1]}", flush=True)
         open_browser = False
     else:
+        running = find_running(port) if open_browser else None
+        if running:  # double-clicked twice: just show the window that is already there
+            print(f"leadhound is already running at http://127.0.0.1:{running}/, opening it.", flush=True)
+            webbrowser.open(f"http://127.0.0.1:{running}/")
+            return
         httpd, _ = bind(db_path, config_path, port)
         url = f"http://127.0.0.1:{httpd.server_address[1]}/"
         print(f"leadhound is running at {url}  (close this window or press Ctrl+C to stop)", flush=True)
@@ -358,3 +387,4 @@ def serve(db_path: str, config_path: str, port: int = 8787, open_browser: bool =
     finally:
         httpd.auto.stop()
         httpd.server_close()
+        print("leadhound stopped.", flush=True)

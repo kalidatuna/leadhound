@@ -131,6 +131,49 @@ class LocalServerExtrasTest(unittest.TestCase):
         self.assertEqual(status, 400)  # running from a git checkout: updates come from git, not pip
 
 
+class SimpleModeServerTest(unittest.TestCase):
+    def test_ping_single_instance_and_quit(self):
+        from leadhound.dashboard.server import find_running
+        with tempfile.TemporaryDirectory() as d:
+            httpd, token = make_server(os.path.join(d, "d.db"), os.path.join(d, "c.ini"), 0)
+            port = httpd.server_address[1]
+            t = threading.Thread(target=httpd.serve_forever, daemon=True)
+            t.start()
+            c = http.client.HTTPConnection("127.0.0.1", port, timeout=5)
+            c.request("GET", "/api/ping", headers={"Host": f"127.0.0.1:{port}"})  # no token needed, reveals only the version
+            r = c.getresponse()
+            self.assertEqual((r.status, "leadhound" in json.loads(r.read())), (200, True))
+            self.assertEqual(find_running(port, tries=1), port)  # a second launch finds the first
+            c = http.client.HTTPConnection("127.0.0.1", port, timeout=5)
+            c.request("GET", "/api/ping", headers={"Host": "evil.example"})
+            self.assertEqual(c.getresponse().status, 403)
+            c = http.client.HTTPConnection("127.0.0.1", port, timeout=5)  # quit needs the token
+            c.request("POST", "/api/quit", body="{}", headers={"Host": f"127.0.0.1:{port}"})
+            self.assertEqual(c.getresponse().status, 403)
+            c = http.client.HTTPConnection("127.0.0.1", port, timeout=5)
+            c.request("POST", "/api/quit", body="{}", headers={"Host": f"127.0.0.1:{port}", "X-Leadhound-Token": token})
+            self.assertEqual(c.getresponse().status, 200)
+            t.join(5)
+            self.assertFalse(t.is_alive())  # the server really stopped
+            self.assertIsNone(find_running(port, tries=1))
+            httpd.server_close()
+
+    def test_cloud_cannot_quit(self):
+        with tempfile.TemporaryDirectory() as d:
+            httpd, token = make_server(os.path.join(d, "d.db"), os.path.join(d, "c.ini"), 0, password=PASSWORD)
+            port = httpd.server_address[1]
+            threading.Thread(target=httpd.serve_forever, daemon=True).start()
+            sess = httpd.RequestHandlerClass  # exercise through HTTP with a real login
+            c = http.client.HTTPConnection("127.0.0.1", port, timeout=5)
+            c.request("POST", "/api/login", body=json.dumps({"password": PASSWORD}), headers={"Host": "x.example"})
+            cookie = c.getresponse().getheader("Set-Cookie").split(";")[0]
+            c = http.client.HTTPConnection("127.0.0.1", port, timeout=5)
+            c.request("POST", "/api/quit", body="{}", headers={"Host": "x.example", "Cookie": cookie, "X-Leadhound-Token": token})
+            self.assertEqual(c.getresponse().status, 400)
+            httpd.shutdown()
+            del sess
+
+
 class SchedulerTest(unittest.TestCase):
     def test_tick(self):
         with tempfile.TemporaryDirectory() as d:

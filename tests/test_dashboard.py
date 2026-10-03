@@ -200,9 +200,10 @@ class ShortcutTest(unittest.TestCase):
         name, text, ex = shortcut.build("linux", "/usr/bin/python3")
         self.assertEqual((name, ex), ("leadhound.desktop", True))
         self.assertIn('Exec="/usr/bin/python3" -m leadhound', text)
-        self.assertIn("Terminal=true", text)
-        self.assertEqual(shortcut.build("win32", r"C:\Python\python.exe")[0], "leadhound.bat")
-        self.assertIn("\r\n", shortcut.build("win32", "p")[1])
+        self.assertIn("Terminal=false", text)
+        self.assertEqual(shortcut.build("win32", r"C:\Python\python.exe")[0], "leadhound.vbs")
+        vbs = shortcut.build("win32", r"C:\Py thon\python.exe")[1]
+        self.assertIn('Run """C:\\Py thon\\python.exe"" -m leadhound", 0, False', vbs)
         self.assertEqual(shortcut.build("darwin", "p")[0], "leadhound.command")
         with tempfile.TemporaryDirectory() as d:
             path = shortcut.create("linux", "/usr/bin/python3", d)
