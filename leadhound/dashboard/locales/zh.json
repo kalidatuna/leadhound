@@ -498,7 +498,7 @@
  "plan.price": "每月 {month} 或每年 {year}",
  "plan.get": "获取 Pro",
  "plan.not_for_sale": "Pro 尚未开售。",
- "plan.after": "付款后，密钥会通过邮件发给你。",
+ "plan.after": "付款后，许可密钥会立刻通过邮件发给你。粘贴到下方。",
  "plan.key_label": "已有密钥？",
  "plan.key_ph": "粘贴你的许可密钥",
  "plan.activate": "激活",

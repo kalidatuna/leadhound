@@ -498,7 +498,7 @@
  "plan.price": "{month} al mes o {year} al año",
  "plan.get": "Obtener Pro",
  "plan.not_for_sale": "Pro aún no está a la venta.",
- "plan.after": "Después de pagar, tu clave llega por correo.",
+ "plan.after": "Después de pagar, tu clave de licencia llega por correo al instante. Pégala abajo.",
  "plan.key_label": "¿Ya tienes una clave?",
  "plan.key_ph": "Pega tu clave de licencia",
  "plan.activate": "Activar",

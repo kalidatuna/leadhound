@@ -246,6 +246,7 @@ def build_routes(c: Ctx) -> list:
         return 200, c.accounts.public()[pid]
 
     def plan_get(m, q, b):
+        c.license.renew()
         return 200, c.license.status()
 
     def plan_post(m, q, b):
@@ -271,7 +272,7 @@ def build_routes(c: Ctx) -> list:
         ("GET", r"/api/leads", leads_list), ("GET", r"/api/leads/(\d+)", lead_get),
         ("POST", r"/api/leads/(\d+)", lead_update), ("POST", r"/api/leads/(\d+)/draft", lead_draft, False),
         ("GET", r"/api/leads/(\d+)/channels", lead_channels), ("POST", r"/api/leads/(\d+)/send", lead_send, False),
-        ("GET", r"/api/plan", plan_get), ("POST", r"/api/plan", plan_post, False),
+        ("GET", r"/api/plan", plan_get, False), ("POST", r"/api/plan", plan_post, False),
         ("GET", r"/api/accounts", accounts_get), ("POST", r"/api/accounts/([a-z]+)", account_post, False),
         ("POST", r"/api/leads/bulk", bulk), ("GET", r"/api/export", export),
         ("GET", r"/api/config", lambda m, q, b: (200, config.to_dict(c.cfg()))), ("POST", r"/api/config", config_set),

@@ -5,6 +5,7 @@ You host this one small program. Users never run it. It makes the free trial fai
 | Job | What it does |
 |---|---|
 | `POST /v1/trial` | Gives a signed 7-day trial. **One per email and per device**, 3 new trials per network per day. Asking again returns the same trial, so deleting files or reinstalling never starts a new one. Gmail dots and `+tags` count as one inbox. |
+| `POST /v1/redeem` | Turns a Gumroad license key into a signed 35-day Pro token (needs `GUMROAD_PRODUCT_ID`). The app renews it monthly; refunds and ended subscriptions stop the renewal. |
 | `POST /v1/ai` | Writes a message with **your** Anthropic key for anyone holding a valid Pro key or trial (40 a day each by default). This is the one paid feature that cannot be patched out of the app, because the app does not contain it. |
 
 The app checks trial tokens and license keys by itself, offline. The server is only needed for sign-up and for AI.

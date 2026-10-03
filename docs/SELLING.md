@@ -1,38 +1,40 @@
-# Selling leadhound Pro
+# Selling leadhound Pro (Gumroad)
 
-leadhound is free to use and MIT licensed. Pro is a paid license key that unlocks sending from connected accounts,
-unlimited searches and matches, AI-written messages, the local business finder with website checks, and automatic search.
-Everyone gets a free taste (7 uses), then a 7-day trial after an email sign-up. Keys and trials are checked offline; you host one small [license server](LICENSE_SERVER.md) for sign-ups and the paid AI.
+leadhound is free to use and MIT licensed. Pro unlocks sending from connected accounts, unlimited searches and matches,
+hosted AI messages, the local business finder with website checks, and automatic search. Everyone gets a free taste
+(7 uses), then a 7-day trial after an email sign-up. You host one small [license server](LICENSE_SERVER.md).
 
-**Honest limit:** the code is open, so a developer can remove the local checks. The license server stops the ordinary routes (resetting the trial, reinstalling, sharing) and holds the AI behind payment, which cannot be patched out. Do not promise more than that.
+**Honest limit:** the code is open, so a developer can remove the local checks. The server stops the ordinary routes
+(resetting the trial, reinstalling, sharing) and holds the AI behind payment. Do not promise more than that.
 
 ## One-time setup
 
-1. Make your signing key (keep the file private and back it up; never commit it, `*.key` is git-ignored):
+1. **Gumroad product.** Create a *Membership* product with two tiers: Monthly $12.99 and Yearly $89.99.
+   In the product's settings turn on **Generate a unique license key per sale**. Gumroad then emails every buyer a license key.
+   Note the product's **ID** (Product page, Settings, or the API docs show it).
+   Gumroad account owners must meet Gumroad's age rule; use a parent or guardian's account if you are under it.
+2. **Give the server the product ID** and redeploy:
    ```bash
-   leadhound license keygen --out ~/leadhound-private.key
+   fly secrets set GUMROAD_PRODUCT_ID=<your product id> -a leadhound-license-nino
+   fly deploy -c fly.license.toml -a leadhound-license-nino
    ```
-2. Deploy the license server ([LICENSE_SERVER.md](LICENSE_SERVER.md)), then paste the printed public key into `PUBLIC_KEY_HEX` in `leadhound/licensing.py` (or set `LEADHOUND_PUBLIC_KEY`), commit, release.
-   Until you do, licensing is off and everything stays unlocked.
-3. Create a PayPal payment link for your price (PayPal.me or a PayPal button) and set it as `LEADHOUND_BUY_URL`
-   (or edit `BUY_URL` in `licensing.py`). Prices shown in the app come from `LEADHOUND_PRICE_MONTH` / `LEADHOUND_PRICE_YEAR`.
-   The app only opens `https://` links.
+3. **Point the app at the product page**: set `BUY_URL` in `leadhound/licensing.py` (or `LEADHOUND_BUY_URL`) to the Gumroad link.
+   Put the same link on the landing page (`site/index.html`).
 
-## Each sale (manual, takes a minute)
+## Each sale: nothing to do
 
-1. PayPal emails you the payment and the buyer's email address.
-2. Make their key (31 days for a monthly plan, 366 for a yearly one):
-   ```bash
-   leadhound license issue --key ~/leadhound-private.key --email buyer@example.com --days 31
-   ```
-3. Email them the key. They paste it in **Pro** (the pill in the header) and click Activate.
-4. Renewals: send a new key before the old one ends. An expired key falls back to Free; nothing is lost.
+The buyer pays on Gumroad and gets a license key by email. They paste it into the **Pro** dialog. leadhound asks your server,
+which asks Gumroad, and returns a signed Pro token valid for 35 days. The app renews it quietly each month while the
+subscription is active. A refund, chargeback, failed payment or ended subscription stops the renewal, and Pro ends within 35 days.
 
-Check a key: `leadhound license check LH1... --public <public key>`.
+## Manual keys (for testers and gifts)
+
+```bash
+leadhound license issue --key ~/leadhound-private.key --email tester@example.com --days 31
+```
 
 ## Before you sell
 
-- Check PayPal's rules for your age and country, and whether a parent or guardian needs to be on the account.
-  Selling can also have tax and consumer-law duties where you and your buyers live. This file is not legal advice.
-- Say clearly on the sales page that keys are sent by email by hand, and what the refund policy is.
-- Pro never touches customer data: licensing sends nothing over the network.
+- Check the age and tax rules for you, your country and your buyers. This file is not legal advice.
+- Write your refund policy on the sales page. Gumroad handles refunds; the key stops renewing after one.
+- Pro never sends customer data anywhere except the license server (see LICENSE_SERVER.md).

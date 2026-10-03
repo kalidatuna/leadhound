@@ -36,7 +36,7 @@ from . import ed25519
 
 PUBLIC_KEY_HEX = os.environ.get("LEADHOUND_PUBLIC_KEY", "b87d8ad3a99c643ab15c3cd13978df8c5c609e5c01f12ce2a9a50e144b7c72d3")  # set by the seller: `leadhound license keygen`, then paste the public key here
 SERVER = os.environ.get("LEADHOUND_LICENSE_SERVER", "https://leadhound-license-nino.fly.dev").rstrip("/")  # the seller's license server (https://...)
-BUY_URL = os.environ.get("LEADHOUND_BUY_URL", "https://paypal.me/SupplierIndexUK")  # where "Get Pro" goes (PayPal link, shop page...)
+BUY_URL = os.environ.get("LEADHOUND_BUY_URL", "")  # where "Get Pro" goes (PayPal link, shop page...)
 PRICE_MONTH = os.environ.get("LEADHOUND_PRICE_MONTH", "$12.99")
 PRICE_YEAR = os.environ.get("LEADHOUND_PRICE_YEAR", "$89.99")
 TRIAL_DAYS = 7
@@ -89,6 +89,14 @@ def device_id() -> str:
     return hashlib.sha256(f"leadhound|{uuid.getnode()}|{platform.node()}".encode()).hexdigest()
 
 
+class ServerError(ValueError):
+    """The license server answered. `code` is its HTTP status (0 = could not reach it)."""
+
+    def __init__(self, msg: str, code: int = 0):
+        super().__init__(msg)
+        self.code = code
+
+
 def post_json(path: str, body: dict, timeout: float = 20) -> dict:
     """Call the license server. Raises ValueError with a message fit to show."""
     if not SERVER.startswith(("https://", "http://127.0.0.1", "http://localhost")):
@@ -103,9 +111,9 @@ def post_json(path: str, body: dict, timeout: float = 20) -> dict:
             msg = json.loads(e.read(5000)).get("error", "")
         except (ValueError, OSError):
             msg = ""
-        raise ValueError(msg or f"The server said no ({e.code}).")
+        raise ServerError(msg or f"The server said no ({e.code}).", e.code)
     except (urllib.error.URLError, TimeoutError, OSError, ValueError):
-        raise ValueError("Could not reach the sign-up server. Check your internet and try again.")
+        raise ServerError("Could not reach the sign-up server. Check your internet and try again.", 0)
 
 
 class License:
@@ -139,6 +147,9 @@ class License:
                 "uses_left": None, "key_state": "none", "searches_left": None, "need_signup": False, "trial_used": False}
         if not self.configured:  # fresh checkout or fork: nothing is locked
             return {**base, "plan": "pro"}
+        if "first_use" not in d:  # the clock starts at the first look, even for someone who buys straight away
+            d["first_use"] = now
+            self._write(d)
         key = read_key(d["key"]) if d.get("key") else None
         if d.get("key") and (not key or key.get("plan") != "pro"):
             base["key_state"] = "invalid"
@@ -152,9 +163,6 @@ class License:
                 return {**base, "plan": "trial", "email": trial.get("email", ""), "expires": trial["exp"],
                         "trial_left": max(1, math.ceil((trial["exp"] - now) / DAY))}
             base["trial_used"] = True
-        if "first_use" not in d:
-            d["first_use"] = now
-            self._write(d)
         if not base["trial_used"]:
             if not SERVER:  # no sign-up server: a plain clock on this computer
                 left = d["first_use"] + TRIAL_DAYS * DAY - now
@@ -228,7 +236,37 @@ class License:
                 return d[name]
         return None
 
+    def redeem(self, license_key: str) -> dict:
+        """Turn a Gumroad license key into a signed Pro token and remember the key so the token can be renewed."""
+        resp = post_json("/v1/redeem", {"license_key": license_key.strip()})
+        token = str(resp.get("token", ""))
+        key = read_key(token)
+        if not key or key.get("plan") != "pro" or key["exp"] <= self.clock():
+            raise ValueError("The server sent something leadhound could not verify.")
+        d = self._read()
+        d["key"], d["gumroad_key"] = token, license_key.strip()
+        self._write(d)
+        return self.status()
+
+    def renew(self) -> None:
+        """Quietly renew a Gumroad-backed Pro token that is close to its end. A refund or ended subscription stops it."""
+        d = self._read()
+        key = read_key(d["key"]) if d.get("key") else None
+        if not d.get("gumroad_key") or not SERVER or (key and key["exp"] - self.clock() > 5 * DAY):
+            return
+        try:
+            self.redeem(d["gumroad_key"])
+        except ServerError as e:
+            if e.code in (403, 404):  # refunded, ended or unknown: stop renewing
+                d = self._read()
+                d.pop("gumroad_key", None)
+                self._write(d)
+        except ValueError:
+            pass  # offline: try again next time
+
     def activate(self, token: str) -> dict:
+        if not token.strip().startswith("LH1."):  # not one of our own keys: treat it as a Gumroad license key
+            return self.redeem(token)
         key = read_key(token)
         if not key or key.get("plan") != "pro":
             raise ValueError("That key is not valid. Check that you copied all of it.")

@@ -498,7 +498,7 @@
  "plan.price": "{month} a month or {year} a year",
  "plan.get": "Get Pro",
  "plan.not_for_sale": "Pro is not on sale yet.",
- "plan.after": "After you pay, your key arrives by email.",
+ "plan.after": "After you pay, your license key arrives by email right away. Paste it below.",
  "plan.key_label": "Already have a key?",
  "plan.key_ph": "Paste your license key",
  "plan.activate": "Activate",

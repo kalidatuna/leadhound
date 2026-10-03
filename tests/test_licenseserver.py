@@ -30,7 +30,11 @@ class Base(unittest.TestCase):
         self.tmp = tempfile.TemporaryDirectory()
         self.clock = Clock()
         self.ai_calls = []
-        self.service = licenseserver.Service(":memory:", SECRET, clock=self.clock, anthropic=self.fake_ai)
+        self.gumroad = {"GOOD-KEY-1234": {"success": True, "purchase": {"email": "buyer@example.com", "recurrence": "monthly"}},
+                        "REFUNDED-1234": {"success": True, "purchase": {"email": "r@example.com", "refunded": True}},
+                        "ENDED-KEY-1234": {"success": True, "purchase": {"email": "e@example.com", "subscription_ended_at": "2026-01-01"}}}
+        self.service = licenseserver.Service(":memory:", SECRET, clock=self.clock, anthropic=self.fake_ai,
+                                             gumroad=lambda k: self.gumroad.get(k, {"success": False}))
         self.httpd = licenseserver.make_server(self.service, 0, "127.0.0.1")
         threading.Thread(target=self.httpd.serve_forever, daemon=True).start()
         self.old = (licensing.PUBLIC_KEY_HEX, licensing.SERVER)
@@ -131,6 +135,45 @@ class TasteAndSignupTests(Base):
         self.assertEqual((st["plan"], st["trial_left"]), ("trial", 7))
         self.clock.now = T0 + 8 * DAY
         self.assertEqual(self.lic.status()["plan"], "free")
+
+
+class GumroadTests(Base):
+    def test_a_good_license_key_becomes_a_pro_token_the_app_accepts(self):
+        for _ in range(7):
+            self.lic.count_use()
+        st = self.lic.activate("GOOD-KEY-1234")  # not an LH1 key, so it is redeemed with the server
+        self.assertEqual((st["plan"], st["email"], st["key_state"]), ("pro", "buyer@example.com", "ok"))
+        self.lic.require("send")
+        self.assertIn("gumroad_key", json.load(open(self.lic.path)))
+
+    def test_refunded_ended_unknown_and_junk_keys_are_refused(self):
+        for key, code in (("REFUNDED-1234", 403), ("ENDED-KEY-1234", 403), ("NO-SUCH-KEY-99", 404), ("x", 400)):
+            with self.assertRaises(licenseserver.ServiceError) as cm:
+                self.service.redeem("1.1.1.1", key)
+            self.assertEqual(cm.exception.code, code, key)
+        with self.assertRaises(ValueError):
+            self.lic.activate("REFUNDED-1234")
+        self.assertNotEqual(self.lic.status()["plan"], "pro")
+
+    def test_the_app_renews_quietly_and_stops_after_a_refund(self):
+        self.lic.activate("GOOD-KEY-1234")
+        self.clock.now = T0 + 31 * DAY  # close to the end of the 35-day token
+        self.lic.renew()
+        self.assertGreater(self.lic.status()["expires"], T0 + 60 * DAY)
+        self.gumroad["GOOD-KEY-1234"] = {"success": True, "purchase": {"email": "buyer@example.com", "refunded": True}}
+        self.clock.now = T0 + 63 * DAY
+        self.lic.renew()
+        self.assertNotIn("gumroad_key", json.load(open(self.lic.path)))
+        self.clock.now = T0 + 100 * DAY
+        self.assertEqual(self.lic.status()["plan"], "free")
+
+    def test_redeem_is_rate_limited(self):
+        for _ in range(20):
+            with self.assertRaises(licenseserver.ServiceError):
+                self.service.redeem("5.5.5.5", "NO-SUCH-KEY-99")
+        with self.assertRaises(licenseserver.ServiceError) as cm:
+            self.service.redeem("5.5.5.5", "GOOD-KEY-1234")
+        self.assertEqual(cm.exception.code, 429)
 
 
 class HostedAiTests(Base):

@@ -7,6 +7,8 @@ You (the seller) host this, not users. It needs only the standard library:
 It does two jobs:
   POST /v1/trial {email, device}   gives a signed 7-day trial. One per email and per device, a few per IP a day.
                                    Asking again returns the same trial, so reinstalling never restarts the clock.
+  POST /v1/redeem {license_key}   turns a Gumroad license key into a signed Pro token (35 days, renewed by the app
+                                   while the purchase is still good: refunds and cancelled payments stop renewing).
   POST /v1/ai {token, system, prompt}   writes a draft with YOUR Anthropic key, for holders of a valid Pro key or
                                    trial. This is the one paid feature that cannot be patched out of the app.
 The app checks trial tokens and license keys offline; this server only issues trials and relays AI.
@@ -21,6 +23,7 @@ import sqlite3
 import threading
 import time
 import urllib.error
+import urllib.parse
 import urllib.request
 from datetime import date
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
@@ -29,6 +32,8 @@ from . import licensing
 
 TRIAL_DAYS = licensing.TRIAL_DAYS
 TRIALS_PER_IP_PER_DAY = 3
+PRO_TOKEN_DAYS = 35
+GUMROAD_PRODUCT_ID = os.environ.get("GUMROAD_PRODUCT_ID", "")
 AI_PER_DAY = int(os.environ.get("AI_DAILY_CAP", "40"))
 AI_MODEL = os.environ.get("AI_MODEL", "claude-haiku-4-5-20251001")
 MAX_BODY = 20_000
@@ -54,11 +59,12 @@ def canonical_email(email: str) -> str:
 
 
 class Service:
-    def __init__(self, db_path: str, secret: bytes, clock=time.time, anthropic=None):
+    def __init__(self, db_path: str, secret: bytes, clock=time.time, anthropic=None, gumroad=None):
         self.db = sqlite3.connect(db_path, check_same_thread=False)
         self.db.executescript(SCHEMA)
         self.secret, self.clock, self.lock = secret, clock, threading.Lock()
         self.anthropic = anthropic or call_anthropic
+        self.gumroad = gumroad or call_gumroad
 
     # ---- rate limits ----
     def _hits(self, ip: str, kind: str, window: float) -> int:
@@ -90,6 +96,31 @@ class Service:
             self.db.commit()
             return {"token": token, "exp": exp, "new": True}
 
+    # ---- paid keys (Gumroad) ----
+    def redeem(self, ip: str, license_key: str) -> dict:
+        key = (license_key or "").strip() if isinstance(license_key, str) else ""
+        if not 8 <= len(key) <= 100:
+            raise ServiceError(400, "That does not look like a license key.")
+        with self.lock:
+            if self._hits(ip, "redeem", 3600) >= 20:
+                raise ServiceError(429, "Too many tries. Wait a little and try again.")
+            self._hit(ip, "redeem")
+            self.db.commit()
+        try:
+            info = self.gumroad(key)
+        except Exception:
+            raise ServiceError(502, "Could not check your purchase right now. Try again in a minute.")
+        buy = (info or {}).get("purchase") or {}
+        if not (info or {}).get("success"):
+            raise ServiceError(404, "That license key was not found. Copy it from your Gumroad receipt.")
+        if buy.get("refunded") or buy.get("chargebacked") or buy.get("disputed"):
+            raise ServiceError(403, "That purchase was refunded.")
+        if buy.get("subscription_ended_at") or buy.get("subscription_failed_at"):
+            raise ServiceError(403, "That subscription has ended. Renew it on Gumroad to keep Pro.")
+        email = str(buy.get("email", ""))[:120] or "customer"
+        token = licensing.make_key(self.secret, email, PRO_TOKEN_DAYS, plan="pro", now=self.clock())
+        return {"token": token, "exp": int(self.clock() + PRO_TOKEN_DAYS * licensing.DAY), "email": email}
+
     # ---- paid AI ----
     def ai(self, ip: str, token: str, system: str, prompt: str, max_tokens: int) -> dict:
         key = licensing.read_key(token or "", licensing.public_hex(self.secret))
@@ -118,6 +149,21 @@ class ServiceError(Exception):
     def __init__(self, code: int, msg: str):
         super().__init__(msg)
         self.code, self.msg = code, msg
+
+
+def call_gumroad(license_key: str) -> dict:
+    """Ask Gumroad about a license key. Does not use up one of the key's activations."""
+    if not GUMROAD_PRODUCT_ID:
+        raise RuntimeError("server has no GUMROAD_PRODUCT_ID")
+    data = urllib.parse.urlencode({"product_id": GUMROAD_PRODUCT_ID, "license_key": license_key, "increment_uses_count": "false"}).encode()
+    req = urllib.request.Request("https://api.gumroad.com/v2/licenses/verify", data=data, method="POST")
+    try:
+        with urllib.request.urlopen(req, timeout=20) as r:
+            return json.loads(r.read(100_000))
+    except urllib.error.HTTPError as e:
+        if e.code == 404:  # Gumroad answers 404 for an unknown key
+            return {"success": False}
+        raise
 
 
 def call_anthropic(system: str, prompt: str, max_tokens: int) -> str:
@@ -171,6 +217,8 @@ def make_server(service: Service, port: int = 8080, host: str = "0.0.0.0", trust
             try:
                 if self.path == "/v1/trial":
                     return self._send(200, service.trial(self._ip(), b.get("email", ""), b.get("device", "")))
+                if self.path == "/v1/redeem":
+                    return self._send(200, service.redeem(self._ip(), b.get("license_key", "")))
                 if self.path == "/v1/ai":
                     return self._send(200, service.ai(self._ip(), b.get("token", ""), b.get("system", ""), b.get("prompt", ""), b.get("max_tokens", 400)))
             except ServiceError as e:

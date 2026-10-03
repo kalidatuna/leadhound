@@ -498,7 +498,7 @@
  "plan.price": "Ayda {month} veya yılda {year}",
  "plan.get": "Pro'yu al",
  "plan.not_for_sale": "Pro henüz satışta değil.",
- "plan.after": "Ödemeden sonra anahtarınız e-postayla gelir.",
+ "plan.after": "Ödemeden sonra lisans anahtarınız hemen e-postayla gelir. Aşağıya yapıştırın.",
  "plan.key_label": "Zaten anahtarınız var mı?",
  "plan.key_ph": "Lisans anahtarınızı yapıştırın",
  "plan.activate": "Etkinleştir",

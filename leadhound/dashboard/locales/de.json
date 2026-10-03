@@ -498,7 +498,7 @@
  "plan.price": "{month} im Monat oder {year} im Jahr",
  "plan.get": "Pro holen",
  "plan.not_for_sale": "Pro ist noch nicht im Verkauf.",
- "plan.after": "Nach der Zahlung kommt Ihr Schlüssel per E-Mail.",
+ "plan.after": "Nach der Zahlung kommt Ihr Lizenzschlüssel sofort per E-Mail. Fügen Sie ihn unten ein.",
  "plan.key_label": "Schon einen Schlüssel?",
  "plan.key_ph": "Lizenzschlüssel einfügen",
  "plan.activate": "Aktivieren",
