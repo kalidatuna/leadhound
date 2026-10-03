@@ -55,7 +55,8 @@ def local(store, cfg, fetcher, place: str, categories: list | None = None, radiu
     cats = categories or cfg.categories
     log(f"  osm: searching {', '.join(cats)} near '{place}'...")
     try:
-        leads, display = osm.find_businesses(fetcher, place, cats, radius or cfg.radius_m)
+        # radius None = your default; 0 = the whole city/area
+        leads, display = osm.find_businesses(fetcher, place, cats, cfg.radius_m if radius is None else radius)
     except Exception as e:
         rep.errors["osm"] = str(e)[:300]
         log(f"  osm: FAILED {rep.errors['osm']}")
