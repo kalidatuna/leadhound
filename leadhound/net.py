@@ -12,6 +12,23 @@ from urllib.parse import urlparse
 
 from . import __version__
 
+class _SafeRedirects(urllib.request.HTTPRedirectHandler):
+    """Follow redirects, but never carry a login (token, API key, cookie) over to a different host."""
+    SECRET_HEADERS = {"authorization", "x-api-key", "cookie"}
+
+    def redirect_request(self, req, fp, code, msg, headers, newurl):
+        if urlparse(newurl).scheme.lower() not in ("http", "https"):  # never follow a page on to ftp:, file: and the like
+            return None
+        new = super().redirect_request(req, fp, code, msg, headers, newurl)
+        if new is not None and urlparse(newurl).netloc.lower() != urlparse(req.full_url).netloc.lower():
+            for store in (new.headers, new.unredirected_hdrs):
+                for name in [h for h in store if h.lower() in self.SECRET_HEADERS]:
+                    del store[name]
+        return new
+
+
+urllib.request.install_opener(urllib.request.build_opener(_SafeRedirects()))  # urlopen() everywhere in leadhound now uses it
+
 USER_AGENT = f"leadhound/{__version__} (+https://github.com/kalidatuna/leadhound)"
 MAX_BYTES = 3_000_000
 # Hosts with strict anonymous limits get extra spacing between requests (seconds)
@@ -73,6 +90,8 @@ class Fetcher:
 
     def request(self, url: str, method: str = "GET", data: bytes | None = None,
                 headers: dict | None = None, timeout: float | None = None) -> Response:
+        if urlparse(url).scheme.lower() not in ("http", "https"):
+            raise FetchError(f"{url[:80]}: only http and https addresses can be fetched")
         h = {"User-Agent": USER_AGENT, "Accept-Encoding": "identity"}
         h.update(headers or {})
         host = urlparse(url).netloc

@@ -34,7 +34,8 @@ TRIAL_DAYS = licensing.TRIAL_DAYS
 TRIALS_PER_IP_PER_DAY = 3
 PRO_TOKEN_DAYS = 35
 GUMROAD_PRODUCT_ID = os.environ.get("GUMROAD_PRODUCT_ID", "")
-AI_PER_DAY = int(os.environ.get("AI_DAILY_CAP", "40"))
+AI_PER_DAY = int(os.environ.get("AI_DAILY_CAP", "40"))              # per customer
+AI_ALL_PER_DAY = int(os.environ.get("AI_GLOBAL_DAILY_CAP", "3000"))  # everyone together: a hard ceiling on what a bad day can cost
 AI_MODEL = os.environ.get("AI_MODEL", "claude-haiku-4-5-20251001")
 MAX_BODY = 20_000
 EMAIL_RX = re.compile(r"^[^\s@<>\",;]{1,64}@[a-z0-9-]+(\.[a-z0-9-]+)+$")
@@ -123,20 +124,28 @@ class Service:
 
     # ---- paid AI ----
     def ai(self, ip: str, token: str, system: str, prompt: str, max_tokens: int) -> dict:
-        key = licensing.read_key(token or "", licensing.public_hex(self.secret))
+        key = licensing.read_key(token if isinstance(token, str) else "", licensing.public_hex(self.secret))
         if not key or key["exp"] <= self.clock() or key.get("plan") not in ("pro", "trial"):
             raise ServiceError(402, "Your Pro key or trial is not valid. Open the Pro dialog in leadhound.")
         if not (isinstance(system, str) and isinstance(prompt, str)) or len(system) > 4000 or len(prompt) > 8000 or not prompt.strip():
             raise ServiceError(400, "That request is too large.")
-        max_tokens = max(50, min(int(max_tokens or 400), 600))
-        who, day = canonical_email(key.get("email", "")) or key.get("id", ""), date.fromtimestamp(self.clock()).isoformat()
+        try:
+            max_tokens = int(max_tokens or 400)
+        except (TypeError, ValueError):
+            max_tokens = 400
+        max_tokens = max(50, min(max_tokens, 600))
+        who, day = canonical_email(str(key.get("email", ""))) or str(key.get("id", "")), date.fromtimestamp(self.clock()).isoformat()
         with self.lock:
             if self._hits(ip, "ai", 3600) >= 120:
                 raise ServiceError(429, "Slow down.")
             used = (self.db.execute("SELECT n FROM ai_usage WHERE who=? AND day=?", (who, day)).fetchone() or [0])[0]
             if used >= AI_PER_DAY:
                 raise ServiceError(429, f"Daily AI limit reached ({AI_PER_DAY}). It resets tomorrow.")
-            self.db.execute("INSERT INTO ai_usage VALUES (?,?,1) ON CONFLICT(who, day) DO UPDATE SET n = n + 1", (who, day))
+            everyone = (self.db.execute("SELECT n FROM ai_usage WHERE who='*' AND day=?", (day,)).fetchone() or [0])[0]
+            if everyone >= AI_ALL_PER_DAY:
+                raise ServiceError(503, "The AI is very busy today. Try again tomorrow, or write the message yourself for now.")
+            for who_row in (who, "*"):
+                self.db.execute("INSERT INTO ai_usage VALUES (?,?,1) ON CONFLICT(who, day) DO UPDATE SET n = n + 1", (who_row, day))
             self._hit(ip, "ai")
             self.db.commit()
         try:
@@ -181,7 +190,7 @@ def call_anthropic(system: str, prompt: str, max_tokens: int) -> str:
     return "".join(p.get("text", "") for p in parts if p.get("type") == "text").strip()
 
 
-def make_server(service: Service, port: int = 8080, host: str = "0.0.0.0", trust_proxy: bool = False):
+def make_server(service: Service, port: int = 8080, host: str = "0.0.0.0", trust_proxy: bool = False, timeout: float = 15):
     class Handler(BaseHTTPRequestHandler):
         server_version = "leadhound-license"
 
@@ -190,12 +199,15 @@ def make_server(service: Service, port: int = 8080, host: str = "0.0.0.0", trust
 
         def _send(self, code, body):
             data = json.dumps(body).encode()
-            self.send_response(code)
-            for k, v in {"Content-Type": "application/json", "Content-Length": str(len(data)), "Cache-Control": "no-store",
-                         "X-Content-Type-Options": "nosniff"}.items():
-                self.send_header(k, v)
-            self.end_headers()
-            self.wfile.write(data)
+            try:
+                self.send_response(code)
+                for k, v in {"Content-Type": "application/json", "Content-Length": str(len(data)), "Cache-Control": "no-store",
+                             "X-Content-Type-Options": "nosniff"}.items():
+                    self.send_header(k, v)
+                self.end_headers()
+                self.wfile.write(data)
+            except OSError:  # the client went away: nothing to answer
+                self.close_connection = True
 
         def _ip(self):
             fwd = self.headers.get("X-Forwarded-For", "")
@@ -207,6 +219,8 @@ def make_server(service: Service, port: int = 8080, host: str = "0.0.0.0", trust
         def do_POST(self):
             try:
                 n = int(self.headers.get("Content-Length", 0) or 0)
+                if n < 0:
+                    raise ValueError
                 if n > MAX_BODY:
                     return self._send(413, {"error": "too large"})
                 b = json.loads(self.rfile.read(n) or b"{}")
@@ -214,6 +228,9 @@ def make_server(service: Service, port: int = 8080, host: str = "0.0.0.0", trust
                     raise ValueError
             except (ValueError, json.JSONDecodeError):
                 return self._send(400, {"error": "bad json"})
+            except OSError:  # timed out waiting for the body, or the client left
+                self.close_connection = True
+                return
             try:
                 if self.path == "/v1/trial":
                     return self._send(200, service.trial(self._ip(), b.get("email", ""), b.get("device", "")))
@@ -223,8 +240,11 @@ def make_server(service: Service, port: int = 8080, host: str = "0.0.0.0", trust
                     return self._send(200, service.ai(self._ip(), b.get("token", ""), b.get("system", ""), b.get("prompt", ""), b.get("max_tokens", 400)))
             except ServiceError as e:
                 return self._send(e.code, {"error": e.msg})
+            except Exception:  # a bug must never leave the app waiting on a dropped connection
+                return self._send(500, {"error": "Something went wrong on the server. Try again in a minute."})
             self._send(404, {"error": "not found"})
 
+    Handler.timeout = timeout  # honoured by the socket server: a client that stalls mid-request is dropped, not kept forever
     return ThreadingHTTPServer((host, port), Handler)
 
 

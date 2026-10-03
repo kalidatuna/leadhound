@@ -16,6 +16,7 @@ from .models import KINDS, STATUSES
 from .net import Fetcher
 from .sources import SOURCES
 from .store import Store
+from .textutil import csv_cell
 
 
 def _age(ts: float) -> str:
@@ -140,7 +141,7 @@ def cmd_export(a, cfg):
         w = csv.writer(out)
         w.writerow(cols)
         for l in leads:
-            w.writerow([getattr(l, c) for c in cols])
+            w.writerow([csv_cell(getattr(l, c)) for c in cols])
     if a.out:
         out.close()
         print(f"exported {len(leads)} leads to {a.out}")

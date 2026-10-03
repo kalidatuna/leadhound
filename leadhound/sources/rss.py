@@ -47,7 +47,7 @@ def parse_feed(xml_text: str, feed_url: str, min_created: float) -> list[Lead]:
         if created and created < min_created:
             continue
         body = strip_html(desc)
-        ext = hashlib.sha1((guid or link or title).encode()).hexdigest()[:16]
+        ext = hashlib.sha1((guid or link or title).encode(), usedforsecurity=False).hexdigest()[:16]  # an id, not a secret
         leads.append(Lead(
             source="rss", external_id=ext, kind="post", title=strip_html(title)[:200],
             url=link.strip(), body=body[:6000], created_at=created,

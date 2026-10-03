@@ -51,6 +51,7 @@ CATEGORY_TAGS = {
     "language_school": ("amenity", "language_school"), "music_school": ("amenity", "music_school"),
     "driving_school": ("amenity", "driving_school"), "dancing_school": ("leisure", "dance"),
 }
+TAG_PART_RX = re.compile(r"^[a-z0-9_:.-]{1,60}$")
 BOOKING_CATEGORIES = {"restaurant", "dentist", "doctors", "clinic", "veterinary", "hairdresser", "beauty", "massage",
                       "tattoo", "physiotherapist", "psychotherapist", "hotel", "guest_house", "hostel", "apartment", "gym",
                       "yoga", "driving_school", "language_school", "music_school", "dancing_school", "car_repair", "car_wash"}
@@ -59,8 +60,10 @@ BOOKING_CATEGORIES = {"restaurant", "dentist", "doctors", "clinic", "veterinary"
 def category_tag(cat: str) -> tuple[str, str]:
     cat = cat.strip().lower()
     if "=" in cat:  # raw OSM tag, e.g. "shop=bicycle"
-        k, v = cat.split("=", 1)
-        return k.strip(), v.strip()
+        k, v = (x.strip() for x in cat.split("=", 1))
+        if not (TAG_PART_RX.match(k) and TAG_PART_RX.match(v)):  # these go into the map query: letters, digits and _ : . - only
+            raise ValueError(f"bad map tag '{cat[:40]}'. Use key=value, for example shop=bicycle")
+        return k, v
     if cat not in CATEGORY_TAGS:
         raise ValueError(f"unknown category '{cat}'. Use one of: {', '.join(sorted(CATEGORY_TAGS))} or key=value")
     return CATEGORY_TAGS[cat]

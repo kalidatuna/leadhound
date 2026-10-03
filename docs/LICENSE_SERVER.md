@@ -29,13 +29,15 @@ python -m leadhound.licenseserver
 Put it behind HTTPS (Render, Fly.io, Railway or any small server with Caddy). Behind a proxy set `TRUST_PROXY=1` so the
 rate limit sees the real address. Keep `licenses.db` on a persistent disk and back it up: it is what stops repeat trials.
 
-Optional: `AI_DAILY_CAP` (default 40), `AI_MODEL` (default `claude-haiku-4-5-20251001`, the cheapest).
+Optional: `AI_DAILY_CAP` (default 40 per customer), `AI_GLOBAL_DAILY_CAP` (default 3000 for everyone together, a hard ceiling on a bad day), `AI_MODEL` (default `claude-haiku-4-5-20251001`, the cheapest).
+
+Before you set `ANTHROPIC_API_KEY`, open the Anthropic console and set a monthly spend limit on that key. The caps above are the first guard, the spend limit is the last.
 
 Then build the app with your settings (environment variables, or edit the constants in `leadhound/licensing.py`):
 
 | Setting | Meaning |
 |---|---|
-| `PUBLIC_KEY_HEX` / `LEADHOUND_PUBLIC_KEY` | public key from `keygen` |
+| `PUBLIC_KEY_HEX` / `LEADHOUND_PUBLIC_KEY` | public key from `keygen`. The downloadable app ignores these environment overrides (so they cannot be used to switch licensing off); they work for a pip install and for forks. |
 | `LEADHOUND_LICENSE_SERVER` | `https://your-server` (without it there is no sign-up step and the trial is a local 7-day clock) |
 | `LEADHOUND_BUY_URL` | your PayPal link |
 | `LEADHOUND_PRICE_MONTH`, `LEADHOUND_PRICE_YEAR` | shown prices (default $12.99 and $89.99) |

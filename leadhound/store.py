@@ -93,6 +93,8 @@ class Store:
         return cur.lastrowid, True
 
     def get(self, lead_id: int) -> Lead | None:
+        if not -2**63 <= lead_id < 2**63:  # beyond SQLite's integer range: no such lead
+            return None
         r = self.db.execute("SELECT * FROM leads WHERE id=?", (lead_id,)).fetchone()
         return self._row(r) if r else None
 

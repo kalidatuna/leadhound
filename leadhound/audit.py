@@ -118,6 +118,7 @@ COPYRIGHT_RX = re.compile(r"(?:©|&copy;|copyright)\s*(?:\d{4}\s*[-–]\s*)?((?:
 JQUERY_RX = re.compile(r"jquery[.-]?(\d+)\.(\d+)(?:\.\d+)?(?:\.min)?\.js|jquery(?:\.min)?\.js\?ver=(\d+)\.(\d+)", re.I)
 BOOKING_RX = re.compile(BOOKING_WORDS, re.I)
 CONTACT_RX = re.compile(CONTACT_WORDS, re.I)
+MAX_HTML = 1_000_000  # characters given to the HTML parser; a huge or hostile page cannot stall a search
 BLOCKED_STATUSES = (401, 403, 406, 429, 503)
 BROKEN_STATUSES = (404, 410)
 BUILDERS = {"wix.com": "Wix", "squarespace": "Squarespace", "wp-content": "WordPress",
@@ -132,7 +133,7 @@ def analyze_html(res: AuditResult, html: str, booking_relevant: bool = False, no
     now_year = now_year or time.gmtime().tm_year
     p = PageParser()
     try:
-        p.feed(html)
+        p.feed(html[:MAX_HTML])
     except Exception:  # malformed HTML: keep what was parsed
         pass
     low = html.lower()

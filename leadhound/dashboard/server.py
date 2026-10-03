@@ -14,6 +14,7 @@ import re
 import secrets
 import threading
 import time
+import traceback
 import webbrowser
 from dataclasses import asdict
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
@@ -30,6 +31,7 @@ from ..net import Fetcher
 from ..send import SendError
 from ..sources import SOURCES, osm
 from ..store import Store
+from ..textutil import csv_cell
 from .auth import Auth, TooManyAttempts, cookie_value
 
 STATIC = Path(__file__).parent
@@ -85,7 +87,7 @@ def build_routes(c: Ctx) -> list:
     def leads_list(m, q, b):
         leads = store.query(status=q.get("status") or None, kind=q.get("kind") or None,
                             source=q.get("source") or None, min_score=int(q.get("min", 0) or 0),
-                            search=q.get("q", ""), limit=min(int(q.get("limit", 300)), 1000, c.license.max_leads()),
+                            search=q.get("q", ""), limit=max(1, min(int(q.get("limit", 300)), 1000, c.license.max_leads())),
                             sort=q.get("sort", "score"))
         return 200, [asdict(l) for l in leads]
 
@@ -141,7 +143,7 @@ def build_routes(c: Ctx) -> list:
         cols = ["id", "score", "status", "source", "kind", "title", "url", "contact", "location", "budget", "notes"]
         w.writerow(cols)
         for l in leads:  # prefix formula characters so Excel/Sheets never run a lead's text as a formula
-            w.writerow([("'" + str(v)) if str(v)[:1] in "=+-@" and str(v) else v for v in (getattr(l, k) for k in cols)])
+            w.writerow([csv_cell(getattr(l, k)) for k in cols])
         return 200, ("text/csv; charset=utf-8", out.getvalue().encode())
 
     def config_set(m, q, b):
@@ -289,9 +291,14 @@ def make_handler(c: Ctx):
     routes = build_routes(c)
     allowed_hosts = {f"127.0.0.1:{c.port}", f"localhost:{c.port}"}
     extra_hosts = {h.strip() for h in os.environ.get("LEADHOUND_ALLOWED_HOSTS", "").split(",") if h.strip()}
+    try:  # how many proxies sit in front in cloud mode (0 = none): only then is X-Forwarded-For believed
+        proxy_hops = max(0, int(os.environ.get("LEADHOUND_TRUST_PROXY", "0") or 0))
+    except ValueError:
+        proxy_hops = 0
 
     class Handler(BaseHTTPRequestHandler):
         server_version = "leadhound"
+        timeout = 30  # seconds: a client that stalls mid-request is dropped instead of holding a thread
 
         def log_message(self, *args):
             pass
@@ -319,12 +326,20 @@ def make_handler(c: Ctx):
             return not c.auth or c.auth.valid(self._session())
 
         def _client(self) -> str:
-            fwd = self.headers.get("X-Forwarded-For", "")
-            return fwd.split(",")[0].strip() if (c.auth and fwd) else self.client_address[0]
+            """Who is asking, for the sign-in lockout. X-Forwarded-For is written by whoever sends the request, so it is only
+            believed when LEADHOUND_TRUST_PROXY says how many proxies of yours add to it; then the entry your outermost proxy
+            added (counting from the right) is used, never the one the client supplied."""
+            if c.auth and proxy_hops:
+                parts = [p.strip() for p in self.headers.get("X-Forwarded-For", "").split(",") if p.strip()]
+                if len(parts) >= proxy_hops:
+                    return parts[-proxy_hops]
+            return self.client_address[0]
 
         def _body(self) -> dict:
             n = int(self.headers.get("Content-Length", 0) or 0)
-            body = json.loads(self.rfile.read(min(n, 200_000)) or b"{}")
+            if not 0 <= n <= 200_000:
+                raise ValueError("bad length")
+            body = json.loads(self.rfile.read(n) or b"{}")
             if not isinstance(body, dict):
                 raise ValueError
             return body
@@ -400,8 +415,11 @@ def make_handler(c: Ctx):
                             code, payload = fn(m, q, body)
                 except HttpError as e:
                     return self._send(e.code, {"error": e.msg})
-                except (ValueError, TypeError) as e:
+                except (ValueError, TypeError, OverflowError) as e:
                     return self._send(400, {"error": str(e)})
+                except Exception:  # a bug must not drop the connection; the page shows a clear message instead
+                    traceback.print_exc()
+                    return self._send(500, {"error": "Something went wrong. Try again, and tell us if it keeps happening."})
                 if isinstance(payload, tuple):  # (content type, bytes) for downloads
                     return self._send(code, payload[1], payload[0])
                 return self._send(code, payload)

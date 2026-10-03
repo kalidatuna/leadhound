@@ -9,17 +9,19 @@ from .rss import parse_feed
 
 FEED = "https://www.freelancer.com/rss/job_{}.xml"
 TAIL_RX = re.compile(r"\(Budget:\s*(?P<budget>[^,]+?)\s*,\s*Jobs:\s*(?P<jobs>.*)\)\s*$", re.S)
+TAIL_MAX = 1500
 
 
 def parse(xml_text: str, category: str, min_created: float) -> list[Lead]:
     leads = []
     for lead in parse_feed(xml_text, FEED.format(category), min_created):
-        m = TAIL_RX.search(lead.body)
+        tail = lead.body[-TAIL_MAX:]  # the "(Budget: ..., Jobs: ...)" note is always at the very end; a short window keeps the match fast
+        m = TAIL_RX.search(tail)
         jobs = []
         if m:
             lead.budget = m.group("budget").strip()
             jobs = [j.strip() for j in m.group("jobs").split(",") if j.strip()]
-            lead.body = lead.body[:m.start()].rstrip(" .") + "…"
+            lead.body = lead.body[:len(lead.body) - len(tail) + m.start()].rstrip(" .") + "…"
         # stable id from the project URL so the same project in two categories is one lead
         lead.external_id = lead.url.rstrip("/").rsplit("/", 1)[-1].removesuffix(".html")[:120] or lead.external_id
         lead.source = "freelancer"

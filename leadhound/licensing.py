@@ -26,6 +26,7 @@ import os
 import platform
 import re
 import secrets
+import sys
 import time
 import urllib.error
 import urllib.request
@@ -34,11 +35,18 @@ from datetime import date
 
 from . import ed25519
 
-PUBLIC_KEY_HEX = os.environ.get("LEADHOUND_PUBLIC_KEY", "b87d8ad3a99c643ab15c3cd13978df8c5c609e5c01f12ce2a9a50e144b7c72d3")  # set by the seller: `leadhound license keygen`, then paste the public key here
-SERVER = os.environ.get("LEADHOUND_LICENSE_SERVER", "https://leadhound-license-nino.fly.dev").rstrip("/")  # the seller's license server (https://...)
-BUY_URL = os.environ.get("LEADHOUND_BUY_URL", "https://leadhound.gumroad.com/l/tfoewu")  # where "Get Pro" goes (PayPal link, shop page...)
-PRICE_MONTH = os.environ.get("LEADHOUND_PRICE_MONTH", "$12.99")
-PRICE_YEAR = os.environ.get("LEADHOUND_PRICE_YEAR", "$89.99")
+
+def _setting(name: str, default: str) -> str:
+    """An environment override for forks and tests. The downloadable app ignores it, so that setting
+    LEADHOUND_PUBLIC_KEY= (empty) cannot switch the license checks off."""
+    return default if getattr(sys, "frozen", False) else os.environ.get(name, default)
+
+
+PUBLIC_KEY_HEX = _setting("LEADHOUND_PUBLIC_KEY", "b87d8ad3a99c643ab15c3cd13978df8c5c609e5c01f12ce2a9a50e144b7c72d3")  # set by the seller: `leadhound license keygen`, then paste the public key here
+SERVER = _setting("LEADHOUND_LICENSE_SERVER", "https://leadhound-license-nino.fly.dev").rstrip("/")  # the seller's license server (https://...)
+BUY_URL = _setting("LEADHOUND_BUY_URL", "https://leadhound.gumroad.com/l/tfoewu")  # where "Get Pro" goes (PayPal link, shop page...)
+PRICE_MONTH = _setting("LEADHOUND_PRICE_MONTH", "$12.99")
+PRICE_YEAR = _setting("LEADHOUND_PRICE_YEAR", "$89.99")
 TRIAL_DAYS = 7
 TASTE_USES = 7         # uses before the email sign-up (needs SERVER)
 FREE_SEARCHES = 3      # "find new clients" runs per day on Free
@@ -80,7 +88,7 @@ def read_key(token: str, public: str | None = None) -> dict | None:
             return None
         data = json.loads(payload)
         return data if isinstance(data, dict) and isinstance(data.get("exp"), int) else None
-    except (ValueError, TypeError):
+    except (ValueError, TypeError, AttributeError):  # not a string, wrong shape, bad base64
         return None
 
 

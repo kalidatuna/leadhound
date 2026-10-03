@@ -130,7 +130,7 @@ To use leadhound from your phone or any computer, run your own copy on a server.
   Or use the included `docker-compose.yml`. Put it behind HTTPS (Caddy, Cloudflare Tunnel, ...) when it is on the internet.
 - **Railway / Fly.io**: deploy this repository's `Dockerfile`, set `LEADHOUND_PASSWORD`, and mount a volume at `/data`.
 
-Cloud mode is password-protected and rate-limits sign-in attempts. Sessions use an HttpOnly cookie, and it refuses to check private network addresses. Some sites, especially Reddit, block data-center IP addresses, so expect fewer Reddit results from a server than from your own computer.
+Cloud mode is password-protected and rate-limits sign-in attempts (5 wrong passwords, then a 10-minute pause). Sessions use an HttpOnly cookie, and it refuses to check private network addresses. If a proxy sits in front of it (Render, Caddy, Cloudflare), set `LEADHOUND_TRUST_PROXY=1` (the number of proxies you run) so the pause applies to each visitor instead of to the proxy. Some sites, especially Reddit, block data-center IP addresses, so expect fewer Reddit results from a server than from your own computer.
 
 ## Privacy and security
 
