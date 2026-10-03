@@ -1,0 +1,10 @@
+.git
+.github
+tests
+packaging
+build
+dist
+*.egg-info
+__pycache__
+*.db
+*.ini

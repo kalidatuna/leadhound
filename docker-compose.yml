@@ -1,0 +1,18 @@
+# Run leadhound on your own server or home computer:
+#   LEADHOUND_PASSWORD='choose-a-long-password' docker compose up -d
+# Then open http://<server>:8787 and sign in. Put it behind HTTPS (Caddy, Cloudflare Tunnel, ...) if it is on the internet.
+services:
+  leadhound:
+    image: ghcr.io/kalidatuna/leadhound:latest
+    build: .
+    ports:
+      - "8787:8787"
+    environment:
+      LEADHOUND_PASSWORD: ${LEADHOUND_PASSWORD:?set LEADHOUND_PASSWORD (8+ characters)}
+      # Optional: GITHUB_TOKEN, ANTHROPIC_API_KEY, OPENAI_API_KEY
+    volumes:
+      - leadhound-data:/data
+    restart: unless-stopped
+
+volumes:
+  leadhound-data:

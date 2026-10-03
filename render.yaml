@@ -1,0 +1,16 @@
+# One-click deploy: https://render.com/deploy?repo=https://github.com/kalidatuna/leadhound
+# Render generates LEADHOUND_PASSWORD for you: find it under Environment after the deploy.
+# The disk keeps your leads between restarts (disks need a paid plan; ~7 USD/month for "starter").
+services:
+  - type: web
+    name: leadhound
+    runtime: docker
+    plan: starter
+    healthCheckPath: /
+    envVars:
+      - key: LEADHOUND_PASSWORD
+        generateValue: true
+    disk:
+      name: leadhound-data
+      mountPath: /data
+      sizeGB: 1
