@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "leadhound"
-version = "0.4.0"
+version = "0.4.1"
 description = "Find freelance clients worldwide: live hiring posts, Freelancer.com projects, paid issues and local businesses with weak websites. 11 languages, local-first, zero dependencies."
 readme = "README.md"
 license = { text = "MIT" }
