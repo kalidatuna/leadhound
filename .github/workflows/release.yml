@@ -26,7 +26,7 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - { os: ubuntu-latest, name: linux-x86_64, ext: "" }
+          - { os: ubuntu-22.04, name: linux-x86_64, ext: "" }  # older Linux build so it also runs on Ubuntu 22.04 and similar
           - { os: windows-latest, name: windows-x86_64, ext: ".exe" }
           - { os: macos-latest, name: macos-arm64, ext: "" }
     steps:
