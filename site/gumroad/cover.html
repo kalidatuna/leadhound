@@ -1,0 +1,14 @@
+<!doctype html><meta charset="utf-8"><style>
+@font-face{font-family:F;src:url(../fonts/fraunces.woff2);font-weight:300 700}
+@font-face{font-family:F;src:url(../fonts/fraunces-italic.woff2);font-weight:300 700;font-style:italic}
+@font-face{font-family:S;src:url(../fonts/instrument-sans.woff2);font-weight:400 700}
+*{box-sizing:border-box;margin:0}body{width:1280px;height:720px;background:oklch(.962 .012 95);font-family:S;color:oklch(.22 .035 165);position:relative;overflow:hidden}
+.glow{position:absolute;inset:0;background:radial-gradient(700px 380px at 50% -10%,oklch(.76 .115 82/.22),transparent 70%)}
+.card{position:absolute;left:80px;top:80px;right:80px;bottom:80px;border-radius:36px;background:radial-gradient(520px 340px at 100% 0,oklch(.97 .012 95/.12),transparent 70%),oklch(.28 .062 164);box-shadow:0 40px 80px -40px oklch(.28 .062 164/.7);color:oklch(.97 .012 95);padding:64px 72px}
+.card::before{content:"";position:absolute;inset:14px;border-radius:26px;box-shadow:inset 0 0 0 1.5px oklch(.97 .012 95/.16)}
+.brand{display:flex;align-items:center;gap:18px;font:500 40px F}
+.logo{width:60px;height:60px;border-radius:50%;box-shadow:inset 0 0 0 2px oklch(.76 .115 82);color:oklch(.76 .115 82);display:grid;place-items:center;font:italic 400 40px F;padding-bottom:6px}
+h1{font:400 92px/1.02 F;letter-spacing:-.025em;margin-top:70px;max-width:900px}h1 em{color:oklch(.76 .115 82)}
+.pill{position:absolute;left:72px;bottom:58px;background:oklch(.76 .115 82);color:oklch(.22 .035 90);border-radius:99px;padding:20px 38px;font:500 32px F}
+.sub{position:absolute;right:72px;bottom:70px;font-size:26px;color:oklch(.97 .012 95/.75)}
+</style><div class="glow"></div><div class="card"><div class="brand"><span class="logo">l</span>leadhound</div><h1>Find clients who need you <em>right now</em></h1><div class="pill">Pro</div><div class="sub">11 languages · Your data stays on your computer</div></div>
