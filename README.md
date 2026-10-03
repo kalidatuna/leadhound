@@ -21,7 +21,7 @@ It works for **any freelancer**: developers, designers, writers, translators, ma
 | **macOS / Linux** | Open Terminal and paste: `curl -fsSL https://raw.githubusercontent.com/kalidatuna/leadhound/main/install.sh \| sh` |
 | **No Python, no terminal** | Download the app for your system from [Releases](https://github.com/kalidatuna/leadhound/releases/latest), unzip it and double-click `leadhound`. |
 
-The installer puts everything in your user folder (no admin rights), adds a desktop icon and opens the app. After that, double-click the icon or type `leadhound`.
+The installer puts everything in your user folder (no admin rights), adds a desktop icon and opens the app. After that, double-click the icon (no terminal window opens) or type `leadhound`.
 
 The downloaded app files are not code-signed yet. The first time you open one, Windows shows "Windows protected your PC": click **More info**, then **Run anyway**. On macOS, right-click the file and choose **Open**.
 
@@ -34,26 +34,27 @@ pipx install git+https://github.com/kalidatuna/leadhound   # then: leadhound
 Or clone the repo and run `python -m leadhound`. Python 3.10 or newer is needed.
 </details>
 
-## First run
+## How to use it (3 steps)
 
-1. Pick your kind of work, such as *Translator*. This fills in skills, sources and the types of business that buy your work.
-2. Optionally enter your city. leadhound starts searching right away.
-3. Go through the **Leads** tab. For each lead, click **Write message**, edit it, then **Copy & mark contacted**.
+1. **Open leadhound** (desktop icon, or type `leadhound`). The first time, pick your kind of work, such as *Translator*, and click **Save and start searching**.
+2. **Click Write message** on a match. A message is ready in the client's language. Read it, change anything, click **Copy message**.
+3. **Send it** yourself (email, the original page, or Freelancer.com), then click **I sent it**. The next match moves up.
 
-## Using the app
+That is the whole simple view. **Find new clients** searches again whenever you like. **Not for me** hides a match. **Quit** closes leadhound. Double-clicking the icon twice just reopens the same window.
+
+Everything else lives behind the **Advanced** button: the full list with filters and stages, detailed searches, settings, export and updates.
+
+## Advanced
 
 **Find clients**
 - **People hiring right now**: one click searches all your sources. Freelancer.com alone usually brings 50–150 fresh projects in your categories.
 - **Local businesses**: type any city in the world, pick business types (more than 70, such as dentists, cafes, plumbers or hotels), choose a distance or **Whole city**. Optionally only show places without a website, and check their sites.
 - **Check one website**: paste an address to get the problems found, a ready pitch and the contact details the site publishes.
-- A live progress panel shows what's happening, and you can stop a search at any time.
 
 **Leads**
 - The list is ranked best first. A pipeline tracks each lead: Inbox, Shortlist, Contacted, Replied, Won, Lost, Skipped. **NEW** marks what appeared since your last visit.
-- Each lead shows why it scored what it did, the original post or website problems, and contact buttons (Copy, Open, Call).
-- **Write message** drafts from templates in 11 languages. **Write with AI** uses Claude, OpenAI or a local Ollama model if you set one up. **Open in email** starts an email in your mail app. You always send it yourself.
-- Every move has an **Undo**. Keyboard: `j`/`k` move, `s` shortlist, `c` contacted, `x` skip, `g` write, `o` open, `/` search.
-- **Skip low scores…** clears weak leads in one go. **Export CSV** gives you a spreadsheet.
+- Each lead shows why it scored what it did, the original post or website problems, and contact buttons (Copy, Open, Call). **Write with AI** uses Claude, OpenAI or a local Ollama model if you set one up.
+- Every move has an **Undo**. Keyboard: `j`/`k` move, `s` shortlist, `c` contacted, `x` skip, `g` write, `o` open, `/` search. **Skip low scores…** clears weak leads; **Export CSV** gives you a spreadsheet.
 
 **Settings**: app language, message language (automatic = the client's language), your work and skills, currency and minimum budget, sources, **automatic search** every 6/12/24 hours, and the optional AI provider. **Updates**: the app tells you when a new version exists and installs it with one click.
 
