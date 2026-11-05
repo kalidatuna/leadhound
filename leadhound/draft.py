@@ -80,7 +80,7 @@ def template_post(lead: Lead, cfg, lang: str = "en") -> str:
     if lead.source == "github":
         lines.append(f"{msg(lang, 'p.github', title=title)} {skill_line}")
     else:
-        where = SOURCE_LABEL.get(lead.source, lead.source)
+        where = SOURCE_LABEL.get(lead.source) or urlparse(lead.url).netloc.removeprefix("www.") or lead.source
         lines.append(f"{msg(lang, 'p.saw', where=where, title=title)} {skill_line} {_offer(cfg, lang)}")
     proof = pick_proof(lead, cfg) if lang == "en" else ""  # your own words: only in English drafts, like your pitch
     if proof:

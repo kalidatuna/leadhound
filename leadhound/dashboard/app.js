@@ -3,7 +3,7 @@ import { $, $$, api, el, on, emit, state, store } from './util.js';
 import { initI18n, t, LANG, setLang } from './i18n.js';
 import { icon } from './icons.js';
 import { initToday } from './today.js';
-import { initLeads } from './leads.js';
+import { initLeads, addLead } from './leads.js';
 import { initFind } from './find.js';
 import { initSettings, showWizard, checkUpdate } from './settings.js';
 import { initAccounts, loadAccounts } from './accounts.js';
@@ -94,6 +94,18 @@ function confirmQuit() {
   d.showModal();
 }
 
+// #add?url=…&title=…&text=… and #check?url=… come from the browser extension. They only fill in a form: you confirm.
+function fromExtension() {
+  const [route, query] = location.hash.slice(1).split('?');
+  const p = new URLSearchParams(query || '');
+  if (!['add', 'check'].includes(route) || !/^https?:\/\//.test(p.get('url') || '')) return false;
+  setMode('advanced');
+  show(route === 'add' ? 'leads' : 'find');
+  if (route === 'add') addLead({ url: p.get('url'), title: (p.get('title') || '').slice(0, 200), text: (p.get('text') || '').slice(0, 6000) });
+  else { const site = $('#site'); site.value = p.get('url'); site.focus(); site.scrollIntoView({ block: 'center' }); }
+  return true;
+}
+
 async function boot() {
   try {
     state.meta = await api('/api/meta');
@@ -121,8 +133,9 @@ async function boot() {
   initLeads();
   initToday();
   const first = state.meta.first_run;
-  show(first ? 'today' : location.hash.slice(1) || (mode === 'simple' ? 'today' : 'leads'));
-  if (first) showWizard();
+  if (first) { show('today'); showWizard(); }
+  else if (!fromExtension()) show(location.hash.slice(1) || (mode === 'simple' ? 'today' : 'leads'));
+  window.addEventListener('hashchange', fromExtension);
   // quiet update notice in the header (checked at most twice a day by the server)
   checkUpdate(null, false).then(u => {
     if (u && u.newer) $('#upd-pill').replaceChildren(el('button', { class: 'pill', onclick: () => { setMode('advanced'); show('settings'); $('#upd')?.scrollIntoView(); } }, t('banner.update', { v: u.latest })));

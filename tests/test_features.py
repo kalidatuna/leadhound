@@ -341,6 +341,19 @@ class FollowupApiTest(Api):
         self.assertEqual(self.req("POST", "/api/config", {"follow_up_days": 0})[0], 400)
         self.assertEqual(self.req("POST", "/api/config", {"follow_up_days": 5, "follow_up_max": 0})[1]["follow_up_max"], 0)
 
+    def test_add_a_lead_by_hand(self):
+        code, r = self.req("POST", "/api/leads", {"url": "https://www.reddit.com/r/forhire/comments/zz/x/",
+                                                  "title": "[Hiring] Python script", "body": "Paid. Email bob@shop.example"})
+        self.assertEqual((code, r["new"]), (200, True))
+        got = self.req("GET", f"/api/leads/{r['id']}")[1]
+        self.assertEqual((got["source"], got["contact"], got["status"]), ("added", "bob@shop.example", "new"))
+        self.assertGreater(got["score"], 0)
+        self.assertIn('on reddit.com: "Python script"', self.req("POST", f"/api/leads/{r['id']}/draft", {})[1]["draft"])
+        again = self.req("POST", "/api/leads", {"url": "https://www.reddit.com/r/forhire/comments/zz/x/"})[1]
+        self.assertEqual((again["id"], again["new"]), (r["id"], False))  # same link: same lead
+        for bad in ("javascript:alert(1)", "notalink", "https://" + "a" * 600 + ".com"):
+            self.assertEqual(self.req("POST", "/api/leads", {"url": bad})[0], 400, bad)
+
     def test_reply_check_needs_an_email_account(self):
         code, body = self.req("POST", "/api/replies", {})
         self.assertEqual(code, 400)  # licensing is off in tests: allowed, but nothing connected

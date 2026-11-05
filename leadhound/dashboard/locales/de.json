@@ -562,5 +562,15 @@
  "set.notify_blocked": "Benachrichtigungen sind in den Browser-Einstellungen blockiert.",
  "al.notify": "{n} neue Treffer",
  "src_desc.himalayas": "Remote-Aufträge für Selbstständige (keine Festanstellung), nach deinen Top-Fähigkeiten gesucht",
- "set.himalayas_hint": "Remote-Aufträge von himalayas.app, für deine ersten 3 Fähigkeiten"
+ "set.himalayas_hint": "Remote-Aufträge von himalayas.app, für deine ersten 3 Fähigkeiten",
+ "add.btn": "Kontakt hinzufügen",
+ "add.title": "Kontakt selbst hinzufügen",
+ "add.text": "Ein Beitrag oder eine Seite, die du selbst gefunden hast. leadhound bewertet sie und schreibt eine erste Nachricht wie bei jedem anderen Kontakt.",
+ "add.url": "Link",
+ "add.name": "Titel",
+ "add.body": "Der Text des Beitrags (optional, verbessert die Bewertung)",
+ "add.contact": "Kontakt (optional)",
+ "add.save": "Speichern",
+ "add.saved": "Kontakt gespeichert",
+ "src.added": "Von dir hinzugefügt"
 }

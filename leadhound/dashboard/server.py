@@ -7,6 +7,7 @@ login with an HttpOnly session cookie. Both send a strict Content-Security-Polic
 from __future__ import annotations
 
 import csv
+import hashlib
 import io
 import json
 import os
@@ -25,13 +26,14 @@ from .. import __version__, accounts as accts, alerts, config, i18n, licensing, 
 from ..draft import make_draft, make_followup
 from ..jobs import AutoScanner, JobBusy, JobManager
 from ..langs import LANGUAGES
-from ..models import KINDS, STATUSES
+from ..models import KINDS, STATUSES, Lead
+from ..score import score
 from ..money import CURRENCIES
 from ..net import Fetcher
 from ..send import SendError
 from ..sources import SOURCES, osm
 from ..store import Store
-from ..textutil import csv_cell
+from ..textutil import csv_cell, find_emails
 from .auth import Auth, TooManyAttempts, cookie_value
 
 STATIC = Path(__file__).parent
@@ -145,6 +147,21 @@ def build_routes(c: Ctx) -> list:
         with c.lock:
             store.update(lead.id, draft=text)
         return 200, {"draft": text, "engine": engine}
+
+    def lead_add(m, q, b):
+        """A post or page you found yourself (or sent from the browser extension). Scored like any other lead."""
+        url = str(b.get("url", "")).strip()
+        if not re.match(r"^https?://[^\s/]+\.[^\s]+$", url) or len(url) > 500:
+            raise HttpError(400, "Enter the full link, starting with https://")
+        host = urlparse(url).netloc.removeprefix("www.")
+        title = " ".join(str(b.get("title") or host).split())[:200]
+        body, contact = str(b.get("body") or "")[:6000], " ".join(str(b.get("contact") or "").split())[:300]
+        contact = contact or ", ".join(find_emails(body)[:2])  # an address in the pasted post
+        lead = Lead(source="added", external_id=hashlib.sha1(url.encode(), usedforsecurity=False).hexdigest()[:16],
+                    kind="post", title=title, url=url, body=body, contact=contact, created_at=time.time(),
+                    signals=[f"added by you from {host}"])
+        lead_id, is_new = store.upsert(score(lead, c.cfg(), time.time()))
+        return 200, {"id": lead_id, "new": is_new}
 
     def bulk(m, q, b):
         ids = b.get("ids")
@@ -295,7 +312,7 @@ def build_routes(c: Ctx) -> list:
         ("GET", r"/api/leads/(\d+)/channels", lead_channels), ("POST", r"/api/leads/(\d+)/send", lead_send, False),
         ("GET", r"/api/plan", plan_get, False), ("POST", r"/api/plan", plan_post, False),
         ("GET", r"/api/accounts", accounts_get), ("POST", r"/api/accounts/([a-z]+)", account_post, False),
-        ("POST", r"/api/leads/bulk", bulk), ("GET", r"/api/export", export),
+        ("POST", r"/api/leads/bulk", bulk), ("POST", r"/api/leads", lead_add), ("GET", r"/api/export", export),
         ("GET", r"/api/config", lambda m, q, b: (200, config.to_dict(c.cfg()))), ("POST", r"/api/config", config_set),
         ("POST", r"/api/jobs", job_start),
         ("GET", r"/api/jobs/current", lambda m, q, b: (200, c.jobs.current.to_dict() if c.jobs.current else None)),

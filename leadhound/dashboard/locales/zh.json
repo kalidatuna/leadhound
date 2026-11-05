@@ -562,5 +562,15 @@
  "set.notify_blocked": "通知已在浏览器设置中被阻止。",
  "al.notify": "找到 {n} 个新匹配",
  "src_desc.himalayas": "远程合同岗位（非全职），按你的主要技能搜索",
- "set.himalayas_hint": "来自 himalayas.app 的远程合同岗位，按你的前 3 项技能"
+ "set.himalayas_hint": "来自 himalayas.app 的远程合同岗位，按你的前 3 项技能",
+ "add.btn": "添加线索",
+ "add.title": "手动添加线索",
+ "add.text": "你自己找到的帖子或页面。leadhound 会像其他线索一样为它打分并写好第一条消息。",
+ "add.url": "链接",
+ "add.name": "标题",
+ "add.body": "帖子或页面文字（可选，有助于评分）",
+ "add.contact": "联系方式（可选）",
+ "add.save": "保存线索",
+ "add.saved": "线索已保存",
+ "src.added": "你添加的"
 }

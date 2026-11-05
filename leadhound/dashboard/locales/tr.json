@@ -562,5 +562,15 @@
  "set.notify_blocked": "Bildirimler tarayıcı ayarlarında engellenmiş.",
  "al.notify": "{n} yeni eşleşme",
  "src_desc.himalayas": "Uzaktan sözleşmeli işler (tam zamanlı değil), en önemli becerilerinize göre",
- "set.himalayas_hint": "himalayas.app'ten uzaktan sözleşmeli işler, ilk 3 beceriniz için"
+ "set.himalayas_hint": "himalayas.app'ten uzaktan sözleşmeli işler, ilk 3 beceriniz için",
+ "add.btn": "Kişi ekle",
+ "add.title": "Kendiniz kişi ekleyin",
+ "add.text": "Kendi bulduğunuz bir gönderi ya da sayfa. leadhound onu puanlar ve diğerleri gibi ilk mesajı yazar.",
+ "add.url": "Bağlantı",
+ "add.name": "Başlık",
+ "add.body": "Gönderi metni (isteğe bağlı, puanı iyileştirir)",
+ "add.contact": "İletişim (isteğe bağlı)",
+ "add.save": "Kaydet",
+ "add.saved": "Kişi kaydedildi",
+ "src.added": "Sizin eklediğiniz"
 }

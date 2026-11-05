@@ -562,5 +562,15 @@
  "set.notify_blocked": "Les notifications sont bloquées dans les réglages du navigateur.",
  "al.notify": "{n} nouvelles pistes",
  "src_desc.himalayas": "Missions à distance en freelance (pas de CDI), cherchées selon vos compétences clés",
- "set.himalayas_hint": "Missions à distance de himalayas.app, pour vos 3 premières compétences"
+ "set.himalayas_hint": "Missions à distance de himalayas.app, pour vos 3 premières compétences",
+ "add.btn": "Ajouter un prospect",
+ "add.title": "Ajouter un prospect vous-même",
+ "add.text": "Une annonce ou une page trouvée par vous. leadhound la note et rédige un premier message comme pour les autres.",
+ "add.url": "Lien",
+ "add.name": "Titre",
+ "add.body": "Le texte de l'annonce (facultatif, améliore la note)",
+ "add.contact": "Contact (facultatif)",
+ "add.save": "Enregistrer",
+ "add.saved": "Prospect enregistré",
+ "src.added": "Ajouté par vous"
 }

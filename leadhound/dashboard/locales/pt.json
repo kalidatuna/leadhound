@@ -562,5 +562,15 @@
  "set.notify_blocked": "As notificações estão bloqueadas nas configurações do navegador.",
  "al.notify": "{n} novas oportunidades",
  "src_desc.himalayas": "Vagas remotas por contrato (não CLT), buscadas pelas suas principais habilidades",
- "set.himalayas_hint": "Vagas remotas por contrato do himalayas.app, para suas 3 primeiras habilidades"
+ "set.himalayas_hint": "Vagas remotas por contrato do himalayas.app, para suas 3 primeiras habilidades",
+ "add.btn": "Adicionar contato",
+ "add.title": "Adicione um contato você mesmo",
+ "add.text": "Uma publicação ou página que você mesmo encontrou. O leadhound dá a nota e escreve a primeira mensagem como para qualquer contato.",
+ "add.url": "Link",
+ "add.name": "Título",
+ "add.body": "O texto da publicação (opcional, melhora a nota)",
+ "add.contact": "Contato (opcional)",
+ "add.save": "Salvar contato",
+ "add.saved": "Contato salvo",
+ "src.added": "Adicionado por você"
 }

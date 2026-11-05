@@ -562,5 +562,15 @@
  "set.notify_blocked": "Notifications are blocked in this browser's settings.",
  "al.notify": "{n} new matches found",
  "src_desc.himalayas": "Remote contract roles (not full-time jobs), searched by your top skills",
- "set.himalayas_hint": "Remote contract roles from himalayas.app, for your first 3 skills"
+ "set.himalayas_hint": "Remote contract roles from himalayas.app, for your first 3 skills",
+ "add.btn": "Add lead",
+ "add.title": "Add a lead yourself",
+ "add.text": "A post or page you found yourself. leadhound scores it and writes a first message like any other lead.",
+ "add.url": "Link",
+ "add.name": "Title",
+ "add.body": "The post or page text (optional, helps the score)",
+ "add.contact": "Contact (optional)",
+ "add.save": "Save lead",
+ "add.saved": "Lead saved",
+ "src.added": "Added by you"
 }

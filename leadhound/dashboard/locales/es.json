@@ -562,5 +562,15 @@
  "set.notify_blocked": "Las notificaciones están bloqueadas en la configuración del navegador.",
  "al.notify": "{n} coincidencias nuevas",
  "src_desc.himalayas": "Trabajos remotos por contrato (no a tiempo completo), buscados por tus habilidades principales",
- "set.himalayas_hint": "Trabajos remotos por contrato de himalayas.app, para tus 3 primeras habilidades"
+ "set.himalayas_hint": "Trabajos remotos por contrato de himalayas.app, para tus 3 primeras habilidades",
+ "add.btn": "Añadir cliente",
+ "add.title": "Añade un cliente tú mismo",
+ "add.text": "Una publicación o página que encontraste tú. leadhound la puntúa y escribe un primer mensaje como con cualquier otro cliente.",
+ "add.url": "Enlace",
+ "add.name": "Título",
+ "add.body": "El texto de la publicación (opcional, mejora la puntuación)",
+ "add.contact": "Contacto (opcional)",
+ "add.save": "Guardar cliente",
+ "add.saved": "Cliente guardado",
+ "src.added": "Añadido por ti"
 }

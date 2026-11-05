@@ -1,5 +1,5 @@
 // Leads view: pipeline stages, ranked list, lead detail with one-click actions, keyboard shortcuts.
-import { $, api, el, emit, on, state, store, toast, copyText, scoreClass, safeUrl, BRANDS, modalOpen } from './util.js';
+import { $, api, el, emit, on, state, store, toast, copyText, scoreClass, safeUrl, BRANDS, modalOpen, openModal, closeModal } from './util.js';
 import { t, whyText, findingText, catName } from './i18n.js';
 
 const STAGES = ['new', 'shortlisted', 'contacted', 'replied', 'won', 'lost', 'ignored'];
@@ -49,6 +49,7 @@ export function initLeads() {
           el('button', { class: 'btn sm', onclick: exportCsv }, t('leads.export')),
           el('button', { class: 'btn sm', onclick: skipLow }, t('leads.skip_low')),
           el('button', { class: 'btn sm', onclick: e => checkReplies(e.currentTarget) }, t('rep.check')),
+          el('button', { class: 'btn sm', onclick: () => addLead() }, t('add.btn')),
           el('span', { class: 'mut sm', id: 'newcount' }))),
       el('div', { class: 'list', id: 'list' })),
     el('section', { class: 'detail', id: 'detail' })));
@@ -150,6 +151,29 @@ async function skipLow() {
   if (!ids.length) return toast(t('leads.skip_none', { n }));
   if (!confirm(t('leads.skip_confirm', { count: ids.length, n }))) return;
   try { await api('/api/leads/bulk', { ids, status: 'ignored' }); toast(t('leads.skipped', { n: ids.length })); refresh(); } catch (e) { toast(e.message, 'err'); }
+}
+
+/** Add a lead you found yourself. `pre` fills the form (from the browser extension: url, title, text). */
+export function addLead(pre = {}) {
+  const f = (id, label, input) => el('label', { class: 'f' }, label, input);
+  const url = el('input', { id: 'add-url', type: 'url', placeholder: 'https://', value: pre.url || '' });
+  const title = el('input', { id: 'add-title', value: pre.title || '' });
+  const body = el('textarea', { id: 'add-body', rows: 5, value: pre.text || '' });
+  const contact = el('input', { id: 'add-contact', placeholder: 'name@example.com', value: pre.contact || '' });
+  const save = async () => {
+    try {
+      const r = await api('/api/leads', { url: url.value, title: title.value, body: body.value, contact: contact.value });
+      closeModal();
+      toast(t('add.saved'));
+      emit('goto', 'leads');
+      emit('lead-open', r.id);
+    } catch (e) { toast(e.message, 'err'); }
+  };
+  openModal([el('h2', {}, t('add.title')), el('p', { class: 'mut' }, t('add.text')),
+    f('add-url', t('add.url'), url), f('add-title', t('add.name'), title), f('add-body', t('add.body'), body), f('add-contact', t('add.contact'), contact),
+    el('div', { class: 'row', style: 'margin-top:16px' }, el('button', { class: 'btn primary', onclick: save }, t('add.save')),
+      el('button', { class: 'btn ghost', onclick: closeModal }, t('sheet.close')))]);
+  (pre.url ? title : url).focus();
 }
 
 // ---- detail ----
