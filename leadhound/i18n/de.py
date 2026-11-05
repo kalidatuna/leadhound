@@ -30,6 +30,7 @@ M = {
     "o.data": "Ich automatisiere wiederkehrende Aufgaben und baue Tools, die jede Woche Stunden sparen.",
     "o.audio": "Ich nehme Sprachaufnahmen auf und produziere professionellen Ton.",
     "o.accounting": "Ich halte die Buchhaltung kleiner Unternehmen korrekt, aktuell und steuerfertig.",
+    "o.tutor": "Ich biete geduldige Einzel-Nachhilfe, abgestimmt auf die Ziele jedes Lernenden.",
     "o.generic": "Ich unterstütze kleine Unternehmen wie Ihres.",
     "t.no_mobile": "Nicht für Smartphones optimiert", "f.no_mobile": "Ihre Website ist nicht für Smartphones optimiert, dabei finden die meisten lokalen Suchen am Handy statt.",
     "t.no_title": "Seitentitel fehlt", "f.no_title": "Ihre Startseite hat keinen Titel, daher zeigt Google ein schwaches Ergebnis für Ihr Unternehmen.",

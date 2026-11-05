@@ -20,7 +20,7 @@ FOR_HIRE_RX = re.compile(r"[\[(]\s*for\s*hire\s*[\])]|\bfor hire\b", re.I)
 # Plain-language intent when the post has no tag
 ASK_RX = re.compile(
     r"\b(looking for|need|seeking|hire|hiring)\b.{0,40}\b(developer|dev|programmer|freelancer|designer|"
-    r"someone|expert|engineer|agency|help)\b", re.I)
+    r"someone|expert|engineer|agency|help|tutors?|teachers?|instructors?|educators?)\b", re.I)
 
 
 def is_client_post(title: str) -> bool:

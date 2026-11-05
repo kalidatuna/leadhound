@@ -33,6 +33,7 @@ M = {
     "o.data": "I automate repetitive work and build tools that save hours every week.",
     "o.audio": "I record voice-overs and produce audio that sounds professional.",
     "o.accounting": "I keep small businesses' books accurate, on time and ready for tax season.",
+    "o.tutor": "I provide patient, one-to-one tutoring tailored to each student's goals.",
     "o.generic": "I help small businesses like yours.",
     # website findings: title + pitch
     "t.no_mobile": "Not mobile-friendly", "f.no_mobile": "Your site isn't set up for phones, and most local searches happen on a phone.",

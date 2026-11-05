@@ -30,6 +30,7 @@ M = {
     "o.data": "Tekrarlayan işleri otomatikleştiriyor, her hafta saatler kazandıran araçlar geliştiriyorum.",
     "o.audio": "Seslendirme kaydı yapıyor, profesyonel kalitede ses hazırlıyorum.",
     "o.accounting": "Küçük işletmelerin muhasebesini doğru, zamanında ve vergiye hazır tutuyorum.",
+    "o.tutor": "Her öğrencinin hedeflerine uygun, sabırlı ve bire bir özel ders veriyorum.",
     "o.generic": "Sizin gibi küçük işletmelere yardım ediyorum.",
     "t.no_mobile": "Mobil uyumlu değil", "f.no_mobile": "Siteniz telefona uygun değil, oysa yerel aramaların çoğu telefondan yapılıyor.",
     "t.no_title": "Sayfa başlığı yok", "f.no_title": "Ana sayfanızın başlığı yok, bu yüzden Google işletmeniz için zayıf bir sonuç gösteriyor.",
