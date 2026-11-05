@@ -75,4 +75,8 @@ M = {
     "fu.line": "\"{title}\" hakkındaki mesajımı hatırlatmak istedim. Hâlâ müsaitim ve yardımcı olmaktan memnuniyet duyarım.",
     "fu.ask": "Mesajla birkaç kısa soru ya da kısa bir görüşme daha kolay olur mu?",
     "fu.last": "Zamanlama uygun değilse sorun değil. Haber verin, bir daha yazmam.",
+    # the email you get after an automatic search (Pro)
+    "al.subject": "leadhound: sizin için {n} yeni eşleşme",
+    "al.intro": "leadhound, {min} ve üzeri puanlı {n} yeni eşleşme buldu:",
+    "al.footer": "Onlara yazmak için leadhound'u açın. Bu e-postayı Ayarlar'da uyarılar açık olduğu için alıyorsunuz.",
 }

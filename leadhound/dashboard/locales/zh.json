@@ -551,5 +551,14 @@
  "ins.won": "赢得 {n} 个",
  "ins.best": "{src} 带来的回复最多：{n} 条消息中 {rate}% 得到回复。",
  "ins.weak": "在 {src} 发了 {n} 条消息仍无回复。让消息更个性化，或在设置中关闭这个来源。",
- "ins.score": "60 分及以上的线索回复率为 {hi}%，其他为 {lo}%。把消息花在高分线索上。"
+ "ins.score": "60 分及以上的线索回复率为 {hi}%，其他为 {lo}%。把消息花在高分线索上。",
+ "set.alerts": "提醒",
+ "set.alerts_desc": "无需打开 leadhound 就能知道优质新匹配。",
+ "set.alert_email": "每次自动搜索后把最好的新匹配发到我的邮箱",
+ "set.alert_email_hint": "从你已连接的邮箱发给你自己，同时检查回复。",
+ "set.alert_min": "仅限得分不低于",
+ "set.notify_btn": "开启桌面通知",
+ "set.notify_on": "此浏览器已开启通知：当此标签页在后台而搜索找到新匹配时，你会收到通知。",
+ "set.notify_blocked": "通知已在浏览器设置中被阻止。",
+ "al.notify": "找到 {n} 个新匹配"
 }

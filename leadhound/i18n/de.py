@@ -75,4 +75,8 @@ M = {
     "fu.line": "Ich melde mich noch einmal wegen meiner Nachricht zu „{title}“. Ich bin weiterhin verfügbar und helfe gern.",
     "fu.ask": "Wären ein paar kurze Fragen per Nachricht oder ein kurzer Anruf einfacher?",
     "fu.last": "Wenn es gerade nicht passt, kein Problem. Sag einfach Bescheid, dann schreibe ich nicht mehr.",
+    # the email you get after an automatic search (Pro)
+    "al.subject": "leadhound: {n} neue Treffer für dich",
+    "al.intro": "leadhound hat {n} neue Treffer mit {min} Punkten oder mehr gefunden:",
+    "al.footer": "Öffne leadhound, um ihnen zu schreiben. Du bekommst diese E-Mail, weil Benachrichtigungen in den Einstellungen an sind.",
 }

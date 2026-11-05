@@ -72,6 +72,18 @@ async function resume() {
   try { const j = await api('/api/jobs/current'); if (j) { setJob(j); if (j.status === 'running') poll(); } else renderProgress(null); } catch { renderProgress(null); }
 }
 
+// Automatic searches start on the server. Look once a minute so the app shows them like any other search.
+setInterval(async () => {
+  if (job && job.status === 'running') return;
+  try { const j = await api('/api/jobs/current'); if (j && j.status === 'running' && j.id !== job?.id) { setJob(j); poll(); } } catch { /* offline */ }
+}, 60000);
+
+function notify(j) {
+  const n = Object.values(j.result.new || {}).reduce((a, b) => a + b, 0);
+  if (!n || !document.hidden || typeof Notification === 'undefined' || Notification.permission !== 'granted') return;
+  try { new Notification('leadhound', { body: t('al.notify', { n }), icon: '/static/logo.svg', tag: 'leadhound-search' }); } catch { /* not allowed here */ }
+}
+
 function setJob(j) { job = j; emit('job', j); }
 
 let queueStay = false;  // searches started from Today stay on Today instead of jumping to the Find screen
@@ -95,6 +107,7 @@ function poll() {
       if (j.status !== 'running') {
         clearInterval(timer);
         emit('job-done', j);
+        if (j.kind !== 'update') notify(j);
         const n = Object.values(j.result.new || {}).reduce((a, b) => a + b, 0);
         if (j.kind !== 'update') toast(j.status === 'cancelled' ? t('toast.stopped') : j.status === 'error' ? t('toast.failed') : t('toast.done', { n }), j.status === 'error' ? 'err' : '');
         if (queue.length && j.status !== 'cancelled') { const nx = queue.shift(); startJob(nx.kind, nx.params, queueStay); } else queue = [];

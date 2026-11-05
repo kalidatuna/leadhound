@@ -551,5 +551,14 @@
  "ins.won": "{n} won",
  "ins.best": "{src} gets you the most replies: {rate}% of {n} messages.",
  "ins.weak": "No replies from {src} after {n} messages. Make those messages more personal, or turn the source off in Settings.",
- "ins.score": "Leads scoring 60 or more replied {hi}% of the time, others {lo}%. Spend your messages on high scores."
+ "ins.score": "Leads scoring 60 or more replied {hi}% of the time, others {lo}%. Spend your messages on high scores.",
+ "set.alerts": "Alerts",
+ "set.alerts_desc": "Hear about strong new matches without opening leadhound.",
+ "set.alert_email": "Email me the best new matches after each automatic search",
+ "set.alert_email_hint": "Sent to yourself from your connected email account. Also checks for replies.",
+ "set.alert_min": "Only matches scoring at least",
+ "set.notify_btn": "Turn on desktop notifications",
+ "set.notify_on": "Desktop notifications are on in this browser: you'll see one when a search finds new matches while this tab is in the background.",
+ "set.notify_blocked": "Notifications are blocked in this browser's settings.",
+ "al.notify": "{n} new matches found"
 }

@@ -11,7 +11,8 @@ from helpers import cfg
 
 import imaplib
 
-from leadhound import accounts, config, draft, i18n, replies
+from leadhound import accounts, alerts, config, draft, i18n, licensing, replies
+from leadhound.jobs import AutoScanner, Job
 from leadhound.send import SendError
 from leadhound.dashboard.server import make_server
 from leadhound.langs import LANGUAGES
@@ -210,6 +211,86 @@ class ReplyTest(unittest.TestCase):
         backdate(self.s, self.a, 90)
         self.s.update(self.b, status="won")
         self.assertEqual(replies.candidates(self.s), [])
+
+
+class AlertTest(unittest.TestCase):
+    """After an automatic search: replies are checked, then the best new matches are emailed to yourself."""
+
+    def setUp(self):
+        self.tmp = tempfile.TemporaryDirectory()
+        self.conf = os.path.join(self.tmp.name, "config.ini")
+        config.save(config.Config(alert_email=True, alert_min_score=60), self.conf)
+        self.acc = accounts.Accounts(os.path.join(self.tmp.name, "accounts.json"))
+        self.acc.connect("email", {"provider": "gmail", "address": "me@gmail.com", "password": "app-password-1",
+                                   "host": "smtp.gmail.com", "port": 587})
+        self.store = Store(":memory:")
+        self.job = Job("scan", {}, auto=True)
+        self.job.status = "done"
+        self.job.started = time.time() - 5
+        self.store.upsert(lead("hot", score=82, title="[Hiring] Shopify fix", budget="$300"))
+        self.store.upsert(lead("weak", score=30))
+        old, _ = self.store.upsert(lead("old", score=90))
+        self.store.db.execute("UPDATE leads SET first_seen = first_seen - 999 WHERE id = ?", (old,))  # found by an earlier search
+        self.sent = []
+        self.lic = licensing.License(os.path.join(self.tmp.name, "license.json"))
+
+        class Ctx:
+            pass
+        self.ctx = Ctx()
+        self.ctx.license, self.ctx.accounts, self.ctx.store = self.lic, self.acc, self.store
+        self.ctx.lock, self.ctx.auth, self.ctx.config_path = threading.Lock(), None, self.conf
+
+    def tearDown(self):
+        self.tmp.cleanup()
+
+    def run_alert(self):
+        return alerts.after_auto_search(self.ctx, self.job, send=lambda *a: self.sent.append(a), imap_factory=FakeImap())
+
+    def test_emails_only_new_strong_matches_to_yourself(self):
+        out = self.run_alert()
+        self.assertEqual(out, {"replied": 0, "emailed": 1})
+        (acct, to, subject, body), = self.sent
+        self.assertEqual((to, subject), ("me@gmail.com", "leadhound: 1 new matches for you"))
+        self.assertIn("[82] [Hiring] Shopify fix", body)
+        self.assertIn("$300", body)
+        self.assertNotIn("Lead weak", body)
+        self.assertNotIn("Lead old", body)
+
+    def test_nothing_for_clicks_quiet_searches_or_free_plans(self):
+        self.job.auto = False
+        self.assertEqual(self.run_alert()["emailed"], 0)
+        self.job.auto = True
+        config.save(config.Config(alert_email=False), self.conf)
+        self.assertEqual(self.run_alert()["emailed"], 0)
+        config.save(config.Config(alert_email=True, alert_min_score=95), self.conf)
+        self.assertEqual(self.run_alert()["emailed"], 0)
+        old = licensing.PUBLIC_KEY_HEX, licensing.SERVER
+        licensing.PUBLIC_KEY_HEX, licensing.SERVER = "b8" * 32, ""
+        try:
+            with open(self.lic.path, "w") as f:
+                json.dump({"first_use": time.time() - 30 * DAY}, f)  # the local trial ended long ago
+            self.assertEqual(self.lic.status()["plan"], "free")
+            config.save(config.Config(alert_email=True), self.conf)
+            self.assertEqual(self.run_alert()["emailed"], 0)
+        finally:
+            licensing.PUBLIC_KEY_HEX, licensing.SERVER = old
+        self.assertEqual(self.sent, [])
+
+    def test_the_scheduler_marks_its_jobs_and_runs_the_hooks(self):
+        from leadhound.jobs import JobManager
+        from helpers import FakeFetcher
+        db = os.path.join(self.tmp.name, "d.db")
+        jm = JobManager(db, self.conf, fetcher_factory=lambda: FakeFetcher([]))
+        seen = []
+        jm.on_done.append(lambda j: seen.append((j.auto, j.status)))
+        jm.on_done.append(lambda j: 1 / 0)  # a broken hook is logged, never fatal
+        config.save(config.Config(auto_scan_hours=6, freelancer=False, hn=False, github=False, reddit_subreddits=[]), self.conf)
+        auto = AutoScanner(jm, os.path.join(self.tmp.name, "state.json"))
+        self.assertTrue(auto.tick())
+        jm.wait()
+        self.assertEqual(seen, [(True, "done")])
+        self.assertTrue(any("after search" in line for line in jm.current.log))
+        self.assertTrue(jm.current.to_dict()["auto"])
 
 
 class Api(unittest.TestCase):

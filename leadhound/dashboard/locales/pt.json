@@ -551,5 +551,14 @@
  "ins.won": "{n} fechados",
  "ins.best": "{src} traz mais respostas: {rate}% de {n} mensagens.",
  "ins.weak": "Nenhuma resposta de {src} após {n} mensagens. Deixe as mensagens mais pessoais ou desligue a fonte nas Configurações.",
- "ins.score": "Contatos com 60 ou mais responderam {hi}% das vezes; os outros, {lo}%. Use suas mensagens nas notas altas."
+ "ins.score": "Contatos com 60 ou mais responderam {hi}% das vezes; os outros, {lo}%. Use suas mensagens nas notas altas.",
+ "set.alerts": "Alertas",
+ "set.alerts_desc": "Saiba das melhores novas oportunidades sem abrir o leadhound.",
+ "set.alert_email": "Me envie por e-mail as melhores oportunidades após cada busca automática",
+ "set.alert_email_hint": "Enviado para você mesmo pela sua conta de e-mail conectada. Também verifica respostas.",
+ "set.alert_min": "Só oportunidades com nota mínima",
+ "set.notify_btn": "Ativar notificações na área de trabalho",
+ "set.notify_on": "As notificações estão ativas neste navegador: você verá uma quando uma busca encontrar novidades com esta aba em segundo plano.",
+ "set.notify_blocked": "As notificações estão bloqueadas nas configurações do navegador.",
+ "al.notify": "{n} novas oportunidades"
 }

@@ -64,12 +64,29 @@ function draw() {
       state.meta.hosted_ai && el('p', { class: 'mut sm' }, t('set.hosted_note')),
       el('div', { class: 'two' }, field(t('set.model'), t('set.model_hint'), i('llm_model')), field(t('set.server'), t('set.server_hint'), i('llm_base_url'))),
       el('p', { class: 'mut' }, key('Anthropic', cfg.keys.anthropic), ' · ', key('OpenAI', cfg.keys.openai), ' · ', t('set.keys_hint'))),
+    el('div', { class: 'card' }, el('h2', {}, t('set.alerts')), el('p', {}, t('set.alerts_desc')),
+      check('alert_email', [t('set.alert_email'), ' ', proTag()], t('set.alert_email_hint')),
+      field(t('set.alert_min'), '', el('select', { id: 's-alert_min_score', style: 'max-width:220px' }, options([50, 60, 70, 80].map(n => [n, String(n)]), cfg.alert_min_score))),
+      notifyRow()),
     el('div', { class: 'card' }, el('h2', {}, t('set.local')),
       el('div', { class: 'two' }, field(t('set.max_biz'), '', i('max_businesses', 'number', { min: 1, max: 300 })), field(t('set.radius'), '', i('radius_m', 'number', { min: 100, max: 20000 })))),
     updateCard(),
     el('div', { class: 'savebar' }, el('button', { class: 'btn primary', onclick: save }, t('set.save')),
       state.meta.cloud && el('button', { class: 'btn', onclick: () => api('/api/logout', {}).finally(() => location.reload()) }, t('set.logout')),
       el('span', { class: 'mut' }, t('set.stored_at'), ' ', state.meta.config_path)))));
+}
+
+// Desktop notifications live in this browser only: a search that finds new matches while the tab is hidden shows one.
+function notifyRow() {
+  const row = el('div', { class: 'row', style: 'margin-top:12px' });
+  const paint = () => {
+    const p = typeof Notification === 'undefined' ? 'denied' : Notification.permission;
+    row.replaceChildren(p === 'granted' ? el('span', { class: 'mut sm' }, t('set.notify_on'))
+      : p === 'denied' ? el('span', { class: 'mut sm' }, t('set.notify_blocked'))
+      : el('button', { class: 'btn sm', type: 'button', onclick: () => Notification.requestPermission().then(paint) }, t('set.notify_btn')));
+  };
+  paint();
+  return row;
 }
 
 function collect() {
@@ -81,6 +98,7 @@ function collect() {
     freelancer: c('freelancer'), freelancer_categories: v('freelancer_categories'), reddit_subreddits: v('reddit_subreddits'),
     hn: c('hn'), github: c('github'), github_labels: v('github_labels'), github_languages: v('github_languages'),
     mastodon: c('mastodon'), mastodon_instances: v('mastodon_instances'), mastodon_tags: v('mastodon_tags'), rss_feeds: v('rss_feeds'),
+    alert_email: c('alert_email'), alert_min_score: +v('alert_min_score'),
     daily_goal: +v('daily_goal') || 5, follow_up_days: +v('follow_up_days'), follow_up_max: +v('follow_up_max'), max_age_days: +v('max_age_days'), auto_scan_hours: +v('auto_scan_hours'), llm_provider: v('llm_provider'), llm_model: v('llm_model'),
     llm_base_url: v('llm_base_url'), max_businesses: +v('max_businesses'), radius_m: +v('radius_m'),
   };

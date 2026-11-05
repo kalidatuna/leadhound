@@ -75,4 +75,8 @@ M = {
     "fu.line": "跟进一下我关于“{title}”的消息。我仍然有空，很乐意帮忙。",
     "fu.ask": "用消息问几个简单问题，或者简短通个电话，会不会更方便？",
     "fu.last": "如果现在时机不合适也没关系。告诉我一声，我就不再打扰。",
+    # the email you get after an automatic search (Pro)
+    "al.subject": "leadhound：为你找到 {n} 个新匹配",
+    "al.intro": "leadhound 找到 {n} 个得分不低于 {min} 的新匹配：",
+    "al.footer": "打开 leadhound 给他们写信。你收到这封邮件是因为在设置中开启了提醒。",
 }

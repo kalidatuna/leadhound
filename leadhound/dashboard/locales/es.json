@@ -551,5 +551,14 @@
  "ins.won": "{n} ganados",
  "ins.best": "{src} te da más respuestas: {rate}% de {n} mensajes.",
  "ins.weak": "Ninguna respuesta de {src} tras {n} mensajes. Hazlos más personales o desactiva la fuente en Ajustes.",
- "ins.score": "Los clientes con 60 o más respondieron el {hi}% de las veces; el resto, el {lo}%. Dedica tus mensajes a las puntuaciones altas."
+ "ins.score": "Los clientes con 60 o más respondieron el {hi}% de las veces; el resto, el {lo}%. Dedica tus mensajes a las puntuaciones altas.",
+ "set.alerts": "Alertas",
+ "set.alerts_desc": "Entérate de las mejores coincidencias nuevas sin abrir leadhound.",
+ "set.alert_email": "Envíame por correo las mejores coincidencias tras cada búsqueda automática",
+ "set.alert_email_hint": "Se envía a ti mismo desde tu cuenta de correo conectada. También busca respuestas.",
+ "set.alert_min": "Solo coincidencias con al menos",
+ "set.notify_btn": "Activar notificaciones de escritorio",
+ "set.notify_on": "Las notificaciones están activadas en este navegador: verás una cuando una búsqueda encuentre coincidencias nuevas con esta pestaña en segundo plano.",
+ "set.notify_blocked": "Las notificaciones están bloqueadas en la configuración del navegador.",
+ "al.notify": "{n} coincidencias nuevas"
 }

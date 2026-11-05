@@ -551,5 +551,14 @@
  "ins.won": "{n} kazanıldı",
  "ins.best": "En çok yanıtı {src} getiriyor: {n} mesajın %{rate}'i.",
  "ins.weak": "{n} mesajdan sonra {src} tarafından yanıt yok. Mesajları daha kişisel yapın ya da kaynağı Ayarlar'dan kapatın.",
- "ins.score": "60 ve üzeri puanlı kişiler %{hi} oranında yanıt verdi, diğerleri %{lo}. Mesajlarınızı yüksek puanlılara ayırın."
+ "ins.score": "60 ve üzeri puanlı kişiler %{hi} oranında yanıt verdi, diğerleri %{lo}. Mesajlarınızı yüksek puanlılara ayırın.",
+ "set.alerts": "Uyarılar",
+ "set.alerts_desc": "leadhound'u açmadan güçlü yeni eşleşmelerden haberdar olun.",
+ "set.alert_email": "Her otomatik aramadan sonra en iyi yeni eşleşmeleri e-postayla gönder",
+ "set.alert_email_hint": "Bağlı e-posta hesabınızdan kendinize gönderilir. Yanıtları da kontrol eder.",
+ "set.alert_min": "Yalnızca en az şu puandakiler",
+ "set.notify_btn": "Masaüstü bildirimlerini aç",
+ "set.notify_on": "Bildirimler bu tarayıcıda açık: sekme arka plandayken bir arama yeni eşleşme bulduğunda göreceksiniz.",
+ "set.notify_blocked": "Bildirimler tarayıcı ayarlarında engellenmiş.",
+ "al.notify": "{n} yeni eşleşme"
 }

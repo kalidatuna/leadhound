@@ -551,5 +551,14 @@
  "ins.won": "{n} gewonnen",
  "ins.best": "{src} bringt dir die meisten Antworten: {rate} % von {n} Nachrichten.",
  "ins.weak": "Keine Antwort von {src} nach {n} Nachrichten. Schreib persönlicher oder schalte die Quelle in den Einstellungen ab.",
- "ins.score": "Kontakte mit 60 oder mehr Punkten antworteten zu {hi} %, die anderen zu {lo} %. Schreib vor allem den hohen Treffern."
+ "ins.score": "Kontakte mit 60 oder mehr Punkten antworteten zu {hi} %, die anderen zu {lo} %. Schreib vor allem den hohen Treffern.",
+ "set.alerts": "Benachrichtigungen",
+ "set.alerts_desc": "Erfahre von starken neuen Treffern, ohne leadhound zu öffnen.",
+ "set.alert_email": "Schick mir nach jeder automatischen Suche die besten neuen Treffer per E-Mail",
+ "set.alert_email_hint": "Geht von deinem verbundenen E-Mail-Konto an dich selbst. Sucht auch nach Antworten.",
+ "set.alert_min": "Nur Treffer ab",
+ "set.notify_btn": "Desktop-Benachrichtigungen einschalten",
+ "set.notify_on": "Benachrichtigungen sind in diesem Browser an: Du siehst eine, wenn eine Suche neue Treffer findet, während der Tab im Hintergrund ist.",
+ "set.notify_blocked": "Benachrichtigungen sind in den Browser-Einstellungen blockiert.",
+ "al.notify": "{n} neue Treffer"
 }

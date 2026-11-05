@@ -551,5 +551,14 @@
  "ins.won": "{n} gagnés",
  "ins.best": "{src} vous apporte le plus de réponses : {rate} % de {n} messages.",
  "ins.weak": "Aucune réponse de {src} après {n} messages. Personnalisez-les davantage, ou désactivez la source dans les Réglages.",
- "ins.score": "Les prospects notés 60 ou plus ont répondu dans {hi} % des cas, les autres {lo} %. Privilégiez les meilleures notes."
+ "ins.score": "Les prospects notés 60 ou plus ont répondu dans {hi} % des cas, les autres {lo} %. Privilégiez les meilleures notes.",
+ "set.alerts": "Alertes",
+ "set.alerts_desc": "Soyez prévenu des meilleures nouvelles pistes sans ouvrir leadhound.",
+ "set.alert_email": "M'envoyer par e-mail les meilleures pistes après chaque recherche automatique",
+ "set.alert_email_hint": "Envoyé à vous-même depuis votre compte e-mail connecté. Vérifie aussi les réponses.",
+ "set.alert_min": "Seulement les pistes notées au moins",
+ "set.notify_btn": "Activer les notifications du bureau",
+ "set.notify_on": "Les notifications sont activées dans ce navigateur : vous en verrez une quand une recherche trouve de nouvelles pistes, onglet en arrière-plan.",
+ "set.notify_blocked": "Les notifications sont bloquées dans les réglages du navigateur.",
+ "al.notify": "{n} nouvelles pistes"
 }

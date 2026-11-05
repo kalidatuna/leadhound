@@ -21,7 +21,7 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from urllib.parse import parse_qs, urlparse
 
-from .. import __version__, accounts as accts, config, i18n, licensing, paths, profiles, replies, sending, updates
+from .. import __version__, accounts as accts, alerts, config, i18n, licensing, paths, profiles, replies, sending, updates
 from ..draft import make_draft, make_followup
 from ..jobs import AutoScanner, JobBusy, JobManager
 from ..langs import LANGUAGES
@@ -174,7 +174,7 @@ def build_routes(c: Ctx) -> list:
             new = config.from_dict(base, b)
         except (ValueError, TypeError) as e:
             raise HttpError(400, str(e))
-        if new.auto_scan_hours and not base.auto_scan_hours:
+        if (new.auto_scan_hours and not base.auto_scan_hours) or (new.alert_email and not base.alert_email):
             pro("autosearch")
         config.save(new, c.config_path)
         return 200, config.to_dict(new)
@@ -469,6 +469,7 @@ def make_server(db_path: str, config_path: str, port: int = 8787, fetcher_factor
     # build the handler after binding so the Host allow-list uses the real port (port 0 = any free port)
     ctx = Ctx(store, config_path, token, httpd.server_address[1], jm, auth, factory)
     ctx.stop = httpd.shutdown
+    jm.on_done.append(lambda job: alerts.after_auto_search(ctx, job))
     httpd.RequestHandlerClass = make_handler(ctx)
     httpd.jobs = jm
     httpd.ctx = ctx
