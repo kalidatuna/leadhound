@@ -75,11 +75,28 @@ def cmd_list(a, cfg):
     if not leads:
         print("no leads. Run: leadhound scan   or   leadhound local \"<city>\"")
         return 0
+    _print_leads(leads)
+    return 0
+
+
+def cmd_followups(a, cfg):
+    store = Store(a.db)
+    try:
+        leads = [lead for lead, _ in store.followups_due(cfg.follow_up_days, cfg.follow_up_max)]
+    finally:
+        store.close()
+    if not leads:
+        print("no follow-ups due")
+        return 0
+    _print_leads(leads)
+    return 0
+
+
+def _print_leads(leads):
     print(f"{'id':>5} {'score':>5} {'age':>4} {'src':<7} {'status':<11} title")
     for l in leads:
         extra = f"  [{l.budget}]" if l.budget else ""
         print(f"{l.id:>5} {l.score:>5} {_age(l.created_at):>4} {l.source:<7} {l.status:<11} {l.title[:70]}{extra}")
-    return 0
 
 
 def cmd_show(a, cfg):
@@ -271,6 +288,8 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("--search", "-q")
     p.add_argument("--limit", type=int, default=30)
     p.set_defaults(fn=cmd_list)
+
+    sub.add_parser("followups", help="list leads with a follow-up due, oldest first").set_defaults(fn=cmd_followups)
 
     p = sub.add_parser("show", help="show a lead with its score breakdown")
     p.add_argument("id", type=int)

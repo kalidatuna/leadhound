@@ -205,6 +205,7 @@ Cloud mode is password-protected and rate-limits sign-in attempts (5 wrong passw
 leadhound scan                                  # search all sources
 leadhound local "Lisbon, Portugal" --category cafe,dentist --radius 0 --website no
 leadhound list --min-score 60
+leadhound followups                             # leads with a follow-up due, oldest first
 leadhound draft 12                              # message in the lead's language
 leadhound audit https://example.com --booking
 leadhound shortcut                              # desktop icon
