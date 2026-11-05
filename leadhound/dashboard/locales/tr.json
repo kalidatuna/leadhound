@@ -560,5 +560,7 @@
  "set.notify_btn": "Masaüstü bildirimlerini aç",
  "set.notify_on": "Bildirimler bu tarayıcıda açık: sekme arka plandayken bir arama yeni eşleşme bulduğunda göreceksiniz.",
  "set.notify_blocked": "Bildirimler tarayıcı ayarlarında engellenmiş.",
- "al.notify": "{n} yeni eşleşme"
+ "al.notify": "{n} yeni eşleşme",
+ "src_desc.himalayas": "Uzaktan sözleşmeli işler (tam zamanlı değil), en önemli becerilerinize göre",
+ "set.himalayas_hint": "himalayas.app'ten uzaktan sözleşmeli işler, ilk 3 beceriniz için"
 }

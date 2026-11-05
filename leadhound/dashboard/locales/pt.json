@@ -560,5 +560,7 @@
  "set.notify_btn": "Ativar notificações na área de trabalho",
  "set.notify_on": "As notificações estão ativas neste navegador: você verá uma quando uma busca encontrar novidades com esta aba em segundo plano.",
  "set.notify_blocked": "As notificações estão bloqueadas nas configurações do navegador.",
- "al.notify": "{n} novas oportunidades"
+ "al.notify": "{n} novas oportunidades",
+ "src_desc.himalayas": "Vagas remotas por contrato (não CLT), buscadas pelas suas principais habilidades",
+ "set.himalayas_hint": "Vagas remotas por contrato do himalayas.app, para suas 3 primeiras habilidades"
 }

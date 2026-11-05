@@ -560,5 +560,7 @@
  "set.notify_btn": "Activar notificaciones de escritorio",
  "set.notify_on": "Las notificaciones están activadas en este navegador: verás una cuando una búsqueda encuentre coincidencias nuevas con esta pestaña en segundo plano.",
  "set.notify_blocked": "Las notificaciones están bloqueadas en la configuración del navegador.",
- "al.notify": "{n} coincidencias nuevas"
+ "al.notify": "{n} coincidencias nuevas",
+ "src_desc.himalayas": "Trabajos remotos por contrato (no a tiempo completo), buscados por tus habilidades principales",
+ "set.himalayas_hint": "Trabajos remotos por contrato de himalayas.app, para tus 3 primeras habilidades"
 }

@@ -560,5 +560,7 @@
  "set.notify_btn": "Desktop-Benachrichtigungen einschalten",
  "set.notify_on": "Benachrichtigungen sind in diesem Browser an: Du siehst eine, wenn eine Suche neue Treffer findet, während der Tab im Hintergrund ist.",
  "set.notify_blocked": "Benachrichtigungen sind in den Browser-Einstellungen blockiert.",
- "al.notify": "{n} neue Treffer"
+ "al.notify": "{n} neue Treffer",
+ "src_desc.himalayas": "Remote-Aufträge für Selbstständige (keine Festanstellung), nach deinen Top-Fähigkeiten gesucht",
+ "set.himalayas_hint": "Remote-Aufträge von himalayas.app, für deine ersten 3 Fähigkeiten"
 }

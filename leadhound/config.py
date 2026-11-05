@@ -24,7 +24,7 @@ SCHEMA = [
     ("profile", "signature", "str"), ("profile", "draft_language", "str"), ("profile", "daily_goal", "int"),
     ("sources", "freelancer", "bool"), ("sources", "freelancer_categories", "list"),
     ("sources", "reddit_subreddits", "list"), ("sources", "hn", "bool"), ("sources", "github", "bool"),
-    ("sources", "github_labels", "list"), ("sources", "github_languages", "list"),
+    ("sources", "github_labels", "list"), ("sources", "github_languages", "list"), ("sources", "himalayas", "bool"),
     ("sources", "mastodon", "bool"), ("sources", "mastodon_instances", "list"), ("sources", "mastodon_tags", "list"),
     ("sources", "rss_feeds", "lines"), ("sources", "max_age_days", "int"), ("sources", "auto_scan_hours", "int"),
     ("outreach", "follow_up_days", "int"), ("outreach", "follow_up_max", "int"),
@@ -57,6 +57,7 @@ class Config:
     github: bool = True
     github_labels: list = field(default_factory=lambda: ["bounty", "help wanted"])
     github_languages: list = field(default_factory=list)
+    himalayas: bool = True  # remote contract roles, searched by your top 3 skills
     mastodon: bool = False  # opt-in: worldwide but low volume and noisy
     mastodon_instances: list = field(default_factory=lambda: ["mastodon.social"])
     mastodon_tags: list = field(default_factory=lambda: ["FediHire", "hiring", "freelance"])

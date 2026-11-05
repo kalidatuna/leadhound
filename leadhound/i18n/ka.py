@@ -79,4 +79,6 @@ M = {
     "al.subject": "leadhound: {n} ახალი შესატყვისი",
     "al.intro": "leadhound-მა იპოვა {n} ახალი შესატყვისი, {min} ან მეტი ქულით:",
     "al.footer": "გახსენით leadhound, რომ მისწეროთ. ამ წერილს იღებთ, რადგან შეტყობინებები ჩართულია პარამეტრებში.",
+    # score reason for Himalayas contract roles
+    "why.contract_role": "დისტანციური კონტრაქტი",
 }

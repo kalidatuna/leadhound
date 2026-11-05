@@ -5,21 +5,21 @@ import { icon } from './icons.js';
 
 let job = null, timer = null, queue = [];
 const root = $('#view-find');
-const SOURCES = ['freelancer', 'reddit', 'hn', 'github', 'mastodon', 'rss'];
+const SOURCES = ['freelancer', 'reddit', 'hn', 'github', 'himalayas', 'mastodon', 'rss'];
 const QUICK = ['restaurant', 'cafe', 'dentist', 'hairdresser', 'beauty', 'gym', 'hotel', 'plumber', 'lawyer', 'car_repair'];
 const picked = new Set();
 const srcLabel = s => BRANDS[s] || t('src.' + s);
 
 export function defaultSources() {
   const c = state.cfg;
-  const on_ = { freelancer: c.freelancer, github: c.github, hn: c.hn, mastodon: c.mastodon,
+  const on_ = { freelancer: c.freelancer, github: c.github, hn: c.hn, mastodon: c.mastodon, himalayas: c.himalayas,
     reddit: c.reddit_subreddits.length > 0, rss: c.rss_feeds.length > 0 };
   return SOURCES.filter(id => on_[id]);
 }
 
 export function initFind() {
   (state.cfg.categories || ['restaurant', 'dentist']).forEach(c => picked.add(c));
-  const enabled = { freelancer: state.cfg.freelancer, github: state.cfg.github, hn: state.cfg.hn, mastodon: state.cfg.mastodon,
+  const enabled = { freelancer: state.cfg.freelancer, github: state.cfg.github, hn: state.cfg.hn, mastodon: state.cfg.mastodon, himalayas: state.cfg.himalayas,
     reddit: state.cfg.reddit_subreddits.length > 0, rss: state.cfg.rss_feeds.length > 0 };
   const srcBoxes = SOURCES.map(id => el('label', { class: 'check' },
     el('input', { type: 'checkbox', checked: !!enabled[id], 'data-src': id }), el('span', {}, srcLabel(id), el('small', {}, t('src_desc.' + id)))));
@@ -31,7 +31,7 @@ export function initFind() {
     picked.clear();
     (state.cfg.categories || []).forEach(c => picked.add(c));
     drawCats();
-    const on_ = { freelancer: state.cfg.freelancer, github: state.cfg.github, hn: state.cfg.hn, mastodon: state.cfg.mastodon,
+    const on_ = { freelancer: state.cfg.freelancer, github: state.cfg.github, hn: state.cfg.hn, mastodon: state.cfg.mastodon, himalayas: state.cfg.himalayas,
       reddit: state.cfg.reddit_subreddits.length > 0, rss: state.cfg.rss_feeds.length > 0 };
     document.querySelectorAll('[data-src]').forEach(cb => { cb.checked = !!on_[cb.dataset.src]; });
   });

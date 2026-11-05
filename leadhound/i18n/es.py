@@ -79,4 +79,6 @@ M = {
     "al.subject": "leadhound: {n} coincidencias nuevas para ti",
     "al.intro": "leadhound encontró {n} coincidencias nuevas con {min} puntos o más:",
     "al.footer": "Abre leadhound para escribirles. Recibes este correo porque las alertas están activadas en Ajustes.",
+    # score reason for Himalayas contract roles
+    "why.contract_role": "trabajo remoto por contrato",
 }

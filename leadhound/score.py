@@ -100,6 +100,8 @@ def score_intent_lead(lead: Lead, cfg, now: float) -> Lead:
         w.add(10, "bounty_label", "bounty label, amount unknown (may be points, not cash)")
     elif lead.source == "github":
         w.add(5, "help_wanted", "help wanted (often unpaid; good door-opener)")
+    elif lead.source == "himalayas":
+        w.add(15, "contract_role", "remote contract role")
     if lead.source == "hn" and "seeking freelancer" in " ".join(lead.signals).lower():
         w.add(15, "hn_thread", "HN seeking-freelancer thread")
     intent = w.total - before

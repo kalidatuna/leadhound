@@ -79,4 +79,6 @@ M = {
     "al.subject": "leadhound: {n} neue Treffer für dich",
     "al.intro": "leadhound hat {n} neue Treffer mit {min} Punkten oder mehr gefunden:",
     "al.footer": "Öffne leadhound, um ihnen zu schreiben. Du bekommst diese E-Mail, weil Benachrichtigungen in den Einstellungen an sind.",
+    # score reason for Himalayas contract roles
+    "why.contract_role": "Remote-Auftrag",
 }

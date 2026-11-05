@@ -560,5 +560,7 @@
  "set.notify_btn": "Activer les notifications du bureau",
  "set.notify_on": "Les notifications sont activées dans ce navigateur : vous en verrez une quand une recherche trouve de nouvelles pistes, onglet en arrière-plan.",
  "set.notify_blocked": "Les notifications sont bloquées dans les réglages du navigateur.",
- "al.notify": "{n} nouvelles pistes"
+ "al.notify": "{n} nouvelles pistes",
+ "src_desc.himalayas": "Missions à distance en freelance (pas de CDI), cherchées selon vos compétences clés",
+ "set.himalayas_hint": "Missions à distance de himalayas.app, pour vos 3 premières compétences"
 }

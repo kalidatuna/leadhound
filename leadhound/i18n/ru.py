@@ -79,4 +79,6 @@ M = {
     "al.subject": "leadhound: новых совпадений — {n}",
     "al.intro": "leadhound нашёл новых совпадений с оценкой от {min}: {n}",
     "al.footer": "Откройте leadhound, чтобы написать им. Вы получили это письмо, потому что оповещения включены в настройках.",
+    # score reason for Himalayas contract roles
+    "why.contract_role": "удалённый контракт",
 }

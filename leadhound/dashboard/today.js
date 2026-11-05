@@ -201,7 +201,7 @@ function paintWeek() {
 
 function paintSources() {
   const c = state.cfg, place = store.get('lh-place');
-  const all = [['Freelancer.com', c.freelancer], ['Reddit', c.reddit_subreddits.length > 0], ['Hacker News', c.hn], ['GitHub', c.github], ['Mastodon', c.mastodon], [t('src.osm'), !!place]];
+  const all = [['Freelancer.com', c.freelancer], ['Reddit', c.reddit_subreddits.length > 0], ['Hacker News', c.hn], ['GitHub', c.github], ['Himalayas', c.himalayas], ['Mastodon', c.mastodon], [t('src.osm'), !!place]];
   $('#srcs').replaceChildren(...all.map(([n, on_]) => el('button', { class: 'srcchip' + (on_ ? '' : ' off'), onclick: () => emit('open-settings') }, el('i'), n)),
     el('button', { class: 'srcchip add', onclick: () => emit('open-settings') }, t('today.add_feed')));
 }

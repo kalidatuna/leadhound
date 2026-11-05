@@ -79,4 +79,6 @@ M = {
     "al.subject": "leadhound: आपके लिए {n} नए मैच",
     "al.intro": "leadhound को {min} या ज़्यादा स्कोर वाले {n} नए मैच मिले:",
     "al.footer": "उन्हें लिखने के लिए leadhound खोलें। यह ईमेल इसलिए आया क्योंकि सेटिंग्स में अलर्ट चालू हैं।",
+    # score reason for Himalayas contract roles
+    "why.contract_role": "रिमोट कॉन्ट्रैक्ट काम",
 }

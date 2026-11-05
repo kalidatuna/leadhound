@@ -79,4 +79,6 @@ M = {
     "al.subject": "leadhound: {n} نتائج جديدة لك",
     "al.intro": "وجد leadhound {n} نتائج جديدة بدرجة {min} أو أكثر:",
     "al.footer": "افتح leadhound لمراسلتهم. تصلك هذه الرسالة لأن التنبيهات مفعّلة في الإعدادات.",
+    # score reason for Himalayas contract roles
+    "why.contract_role": "عمل بعقد عن بُعد",
 }

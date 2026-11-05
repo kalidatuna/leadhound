@@ -560,5 +560,7 @@
  "set.notify_btn": "Turn on desktop notifications",
  "set.notify_on": "Desktop notifications are on in this browser: you'll see one when a search finds new matches while this tab is in the background.",
  "set.notify_blocked": "Notifications are blocked in this browser's settings.",
- "al.notify": "{n} new matches found"
+ "al.notify": "{n} new matches found",
+ "src_desc.himalayas": "Remote contract roles (not full-time jobs), searched by your top skills",
+ "set.himalayas_hint": "Remote contract roles from himalayas.app, for your first 3 skills"
 }

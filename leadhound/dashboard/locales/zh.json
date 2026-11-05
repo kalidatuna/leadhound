@@ -560,5 +560,7 @@
  "set.notify_btn": "开启桌面通知",
  "set.notify_on": "此浏览器已开启通知：当此标签页在后台而搜索找到新匹配时，你会收到通知。",
  "set.notify_blocked": "通知已在浏览器设置中被阻止。",
- "al.notify": "找到 {n} 个新匹配"
+ "al.notify": "找到 {n} 个新匹配",
+ "src_desc.himalayas": "远程合同岗位（非全职），按你的主要技能搜索",
+ "set.himalayas_hint": "来自 himalayas.app 的远程合同岗位，按你的前 3 项技能"
 }

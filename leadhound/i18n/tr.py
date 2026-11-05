@@ -79,4 +79,6 @@ M = {
     "al.subject": "leadhound: sizin için {n} yeni eşleşme",
     "al.intro": "leadhound, {min} ve üzeri puanlı {n} yeni eşleşme buldu:",
     "al.footer": "Onlara yazmak için leadhound'u açın. Bu e-postayı Ayarlar'da uyarılar açık olduğu için alıyorsunuz.",
+    # score reason for Himalayas contract roles
+    "why.contract_role": "uzaktan sözleşmeli iş",
 }

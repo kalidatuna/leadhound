@@ -19,7 +19,7 @@ from .net import FetchError
 from .textutil import word_hit
 
 SOURCE_LABEL = {"reddit": "Reddit", "hn": "Hacker News", "github": "GitHub", "rss": "the job board",
-                "freelancer": "Freelancer.com", "mastodon": "Mastodon"}
+                "freelancer": "Freelancer.com", "mastodon": "Mastodon", "himalayas": "Himalayas"}
 WEB_WORK = {"", "developer", "designer", "marketer", "writer"}  # professions that fix websites
 DEADLINE_RX = re.compile(r"\b(deadline|by (monday|tuesday|wednesday|thursday|friday|the end)|asap|urgent|weeks?|days?)\b|"
                          r"urgente|plazo|prazo|délai|frist|срочно|срок", re.I)

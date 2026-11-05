@@ -84,4 +84,6 @@ M = {
     "al.subject": "leadhound: {n} new matches for you",
     "al.intro": "leadhound found {n} new matches scoring {min} or more:",
     "al.footer": "Open leadhound to write to them. You get this email because alerts are on in Settings.",
+    # score reason for Himalayas contract roles
+    "why.contract_role": "remote contract role",
 }

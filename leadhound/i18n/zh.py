@@ -79,4 +79,6 @@ M = {
     "al.subject": "leadhound：为你找到 {n} 个新匹配",
     "al.intro": "leadhound 找到 {n} 个得分不低于 {min} 的新匹配：",
     "al.footer": "打开 leadhound 给他们写信。你收到这封邮件是因为在设置中开启了提醒。",
+    # score reason for Himalayas contract roles
+    "why.contract_role": "远程合同岗位",
 }
