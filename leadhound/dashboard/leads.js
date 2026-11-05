@@ -253,17 +253,39 @@ async function followupBox(l) {
   const box = $('#fu-box');
   if (!box || sel?.id !== l.id || !o.contacted_at) return;
   const max = state.cfg.follow_up_max, days = Math.floor((Date.now() / 1000 - o.contacted_at) / 86400);
+  const canWrite = canWriteFollowup(l, o);
   const act = (action, msg) => async () => {
     try { await api(`/api/leads/${l.id}/followup`, { action }); toast(msg); followupBox(l); } catch (e) { toast(e.message, 'err'); }
   };
   box.replaceChildren(el('h3', {}, t('fup.h')),
     el('p', { class: 'mut' }, o.stopped || !max ? t('fup.off') : t('fup.status', { days, n: o.followups, max })),
-    !o.stopped && max > 0 && o.followups < max && el('div', { class: 'row' },
+    canWrite && el('div', { class: 'row' },
       el('button', { class: 'btn', onclick: async () => {
-        try { $('#draft').value = (await api(`/api/leads/${l.id}/followup`, { action: 'draft' })).draft; $('#draft').focus(); } catch (e) { toast(e.message, 'err'); }
+        writeFollowup(l);
       } }, t('fup.write')),
       el('button', { class: 'btn', onclick: async () => { if (await copyText($('#draft').value)) act('sent', t('fup.sent'))(); } }, t('fup.mark')),
       el('button', { class: 'btn ghost', onclick: act('stop', t('fup.stopped')) }, t('fup.stop'))));
+}
+
+function canWriteFollowup(l, o) {
+  return l.status === 'contacted' && !!o?.contacted_at && !o.stopped &&
+    state.cfg.follow_up_max > 0 && o.followups < state.cfg.follow_up_max;
+}
+
+async function writeFollowup(l, checkEligibility = false) {
+  try {
+    if (sel?.id !== l.id) return;
+    if (checkEligibility) {
+      const { outreach } = await api('/api/leads/' + l.id);
+      if (sel?.id !== l.id || !canWriteFollowup(l, outreach)) return;
+    }
+    const { draft } = await api(`/api/leads/${l.id}/followup`, { action: 'draft' });
+    if (sel?.id !== l.id) return;
+    const field = $('#draft');
+    if (!field) return;
+    field.value = draft;
+    field.focus();
+  } catch (e) { toast(e.message, 'err'); }
 }
 
 function auditBox(a) {
@@ -288,6 +310,7 @@ function onKey(e) {
     j: () => go(i + 1), ArrowDown: () => go(i + 1), k: () => go(i - 1), ArrowUp: () => go(i - 1),
     s: () => sel && setStatus(sel, 'shortlisted'), c: () => sel && setStatus(sel, 'contacted'),
     x: () => sel && setStatus(sel, 'ignored'), g: () => sel && writeDraft(sel, false),
+    f: () => sel?.status === 'contacted' && writeFollowup(sel, true),
     o: () => sel && safeUrl(sel.url) && window.open(sel.url, '_blank', 'noopener'), '/': () => $('#q').focus(),
   };
   if (keys[e.key]) { e.preventDefault(); keys[e.key](); }

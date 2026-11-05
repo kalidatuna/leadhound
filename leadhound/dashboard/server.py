@@ -108,7 +108,11 @@ def build_routes(c: Ctx) -> list:
         lead = need_lead(int(m.group(1)))
         action, cfg = b.get("action"), c.cfg()
         if action == "draft":
-            n = store.outreach(lead.id)["followups"] + 1
+            outreach = store.outreach(lead.id)
+            if (lead.status != "contacted" or not outreach["contacted_at"] or outreach["stopped"]
+                    or cfg.follow_up_max <= 0 or outreach["followups"] >= cfg.follow_up_max):
+                raise HttpError(409, "This lead is not eligible for another follow-up.")
+            n = outreach["followups"] + 1
             return 200, {"draft": make_followup(lead, cfg, n), "n": n}
         if action == "sent":
             store.log(lead.id, "followup", str(b.get("via", "manual")))
