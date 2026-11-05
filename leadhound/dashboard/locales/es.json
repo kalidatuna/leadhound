@@ -515,5 +515,11 @@
  "plan.signup_note": "Guardamos tu correo y un código del dispositivo solo para dar una prueba por persona. Nada más sale de tu ordenador.",
  "plan.signed_up": "Prueba iniciada. ¡Disfruta Pro!",
  "prov.leadhound": "leadhound AI (Pro, sin clave)",
- "set.hosted_note": "leadhound AI envía el texto del cliente al servidor de leadhound para escribir el mensaje."
+ "set.hosted_note": "leadhound AI envía el texto del cliente al servidor de leadhound para escribir el mensaje.",
+ "hdr.more": "Más",
+ "hdr.theme": "Tema",
+ "theme.auto": "Como el ordenador",
+ "theme.light": "Claro",
+ "theme.dark": "Oscuro",
+ "prog.details": "Detalles"
 }

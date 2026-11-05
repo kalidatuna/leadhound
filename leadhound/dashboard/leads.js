@@ -4,7 +4,8 @@ import { t, whyText, findingText, catName } from './i18n.js';
 
 const STAGES = ['new', 'shortlisted', 'contacted', 'replied', 'won', 'lost', 'ignored'];
 const F = { status: 'new', q: '', kind: '', min: 0, sort: 'score' };
-let leads = [], sel = null, stats = {}, saveTimer = null;
+let leads = [], sel = null, stats = {}, saveTimer = null, autoTimer = null;
+const autoTried = new Set();  // write a draft by itself once per lead, never in a loop
 const root = $('#view-leads');
 // "new since your last visit": remember the previous visit, then start a new one
 const lastVisit = parseFloat(store.get('lh-last-visit')) || 0;
@@ -189,6 +190,10 @@ function renderDetail() {
   ];
   d.replaceChildren(...sections.flat(Infinity).filter(Boolean));
   d.scrollTop = 0;
+  clearTimeout(autoTimer);
+  if (!l.draft && l.status !== 'ignored' && !autoTried.has(l.id)) {  // short wait so j/k through the list does not write every draft
+    autoTimer = setTimeout(() => { if (sel?.id === l.id && !l.draft) { autoTried.add(l.id); writeDraft(l, false); } }, 450);
+  }
 }
 
 function messageBox(l) {

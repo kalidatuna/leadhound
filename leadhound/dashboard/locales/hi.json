@@ -515,5 +515,11 @@
  "plan.signup_note": "हम आपका ईमेल और डिवाइस कोड सिर्फ़ हर व्यक्ति को एक ट्रायल देने के लिए रखते हैं। इसके अलावा कुछ भी आपके कंप्यूटर से बाहर नहीं जाता।",
  "plan.signed_up": "ट्रायल शुरू हो गया। Pro का आनंद लें!",
  "prov.leadhound": "leadhound AI (Pro, कुंजी नहीं चाहिए)",
- "set.hosted_note": "leadhound AI संदेश लिखने के लिए लीड का टेक्स्ट leadhound सर्वर को भेजता है।"
+ "set.hosted_note": "leadhound AI संदेश लिखने के लिए लीड का टेक्स्ट leadhound सर्वर को भेजता है।",
+ "hdr.more": "और",
+ "hdr.theme": "थीम",
+ "theme.auto": "कंप्यूटर जैसा",
+ "theme.light": "हल्का",
+ "theme.dark": "गहरा",
+ "prog.details": "विवरण"
 }

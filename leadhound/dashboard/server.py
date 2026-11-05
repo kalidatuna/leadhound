@@ -35,9 +35,9 @@ from ..textutil import csv_cell
 from .auth import Auth, TooManyAttempts, cookie_value
 
 STATIC = Path(__file__).parent
-STATIC_FILES = {name: ("text/css" if name.endswith(".css") else "text/javascript")
+STATIC_FILES = {name: ("text/css" if name.endswith(".css") else "image/svg+xml" if name.endswith(".svg") else "text/javascript")
                 for name in ("app.css", "app.js", "util.js", "i18n.js", "icons.js", "today.js", "compose.js", "accounts.js", "plan.js",
-                             "leads.js", "find.js", "settings.js", "login.js")}
+                             "leads.js", "find.js", "settings.js", "login.js", "theme.js", "logo.svg")}
 FONT_RX = re.compile(r"fonts/([a-z-]+)\.woff2")
 LOCALE_RX = re.compile(r"locales/([a-z]{2})\.json")
 CSP = ("default-src 'none'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; "

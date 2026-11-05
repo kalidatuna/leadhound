@@ -1,6 +1,7 @@
 // Find view: start searches, watch live progress, see a plain-language summary.
 import { $, api, el, emit, on, state, store, toast, BRANDS } from './util.js';
 import { t, catName } from './i18n.js';
+import { icon } from './icons.js';
 
 let job = null, timer = null, queue = [];
 const root = $('#view-find');
@@ -116,15 +117,16 @@ function renderProgress(j) {
   if (busy) parts.push(el('button', { class: 'btn sm', onclick: () => api(`/api/jobs/${j.id}/cancel`, {}) }, t('stop')));
   else {
     const sum = el('div', { class: 'sum' });
-    for (const [src, n] of Object.entries(j.result.found || {})) sum.append(el('div', {}, t('prog.found', { src: srcLabel(src), n, new: (j.result.new || {})[src] || 0 })));
+    if (j.kind === 'audit') for (const [src, n] of Object.entries(j.result.found || {})) sum.append(el('div', {}, t('prog.found', { src: srcLabel(src), n, new: (j.result.new || {})[src] || 0 })));
     for (const [src, msg] of Object.entries(j.result.errors || {})) sum.append(el('div', { class: 'bad' }, `${srcLabel(src)}: ${friendly(msg)}`));
     parts.push(sum, el('div', { class: 'row' }, j.result.lead_id
       ? el('button', { class: 'btn primary', onclick: () => { emit('goto', 'leads'); emit('lead-open', j.result.lead_id); } }, t('prog.see_result'))
       : el('button', { class: 'btn primary', onclick: () => emit('goto', 'leads') }, t('prog.see_leads'))));
   }
   const log = el('div', { class: 'log', dir: 'ltr' }, j.log.join('\n') || t('prog.starting'));
-  parts.push(log);
-  box.replaceChildren(...parts);
+  parts.splice(1, 0, progressChips(j));
+  parts.push(el('details', { class: 'logbox', open: box.querySelector('details.logbox')?.open || j.status === 'error' }, el('summary', {}, t('prog.details')), log));
+  box.replaceChildren(...parts.filter(Boolean));
   log.scrollTop = log.scrollHeight;
   if (busy && !box.dataset.seen) { box.dataset.seen = 1; box.scrollIntoView({ block: 'start' }); }
   if (!busy) delete box.dataset.seen;
@@ -146,6 +148,27 @@ function runAudit() {
   const url = $('#site').value.trim();
   if (!url) return toast(t('find.enter_site'), 'err');
   startJob('audit', { url, booking: $('#booking').checked });
+}
+
+/** One chip per source with its state: waiting, searching, done (with the count) or failed. Built from the job log. */
+export function progressChips(j) {
+  if (!j || j.kind === 'update' || j.kind === 'audit') return null;
+  const st = {}, running = j.status === 'running';
+  (j.kind === 'scan' ? j.params.sources || [] : ['osm']).forEach(s => { st[s] = { s: 'wait' }; });
+  for (const line of j.log) {
+    let m = /^\s*(\w+): (collecting|searching)/.exec(line);
+    if (m) { st[m[1]] = { s: 'run' }; continue; }
+    m = /^\s*(\w+): (\d+) (leads|businesses)/.exec(line);
+    if (m) { st[m[1]] = { s: m[3] === 'businesses' && running ? 'run' : 'done', n: +m[2] }; continue; }
+    m = /^\s*audit (\d+)\/(\d+)/.exec(line);
+    if (m) { st.osm = { ...st.osm, s: 'run', a: `${m[1]}/${m[2]}` }; continue; }
+    m = /^\s*(\w+): FAILED/.exec(line);
+    if (m) st[m[1]] = { s: 'fail' };
+  }
+  if (!running) Object.values(st).forEach(x => { if (x.s === 'run') x.s = x.n != null ? 'done' : 'wait'; delete x.a; });
+  return el('div', { class: 'pchips' }, Object.entries(st).map(([src, x]) => el('span', { class: 'pchip ' + x.s },
+    x.s === 'run' ? el('span', { class: 'spin' }) : x.s === 'done' ? icon('check') : x.s === 'fail' ? icon('x') : null,
+    srcLabel(src), x.n != null && el('b', {}, x.n), x.a && el('b', {}, x.a))));
 }
 
 export const rememberPlace = p => { store.set('lh-place', p); const i = $('#place'); if (i) i.value = p; };

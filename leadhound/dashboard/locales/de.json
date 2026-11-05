@@ -515,5 +515,11 @@
  "plan.signup_note": "Wir speichern Ihre E-Mail und einen Gerätecode nur, um einen Test pro Person zu vergeben. Sonst verlässt nichts Ihren Computer.",
  "plan.signed_up": "Test gestartet. Viel Spaß mit Pro!",
  "prov.leadhound": "leadhound KI (Pro, ohne Schlüssel)",
- "set.hosted_note": "leadhound KI sendet den Text des Treffers an den leadhound-Server, um die Nachricht zu schreiben."
+ "set.hosted_note": "leadhound KI sendet den Text des Treffers an den leadhound-Server, um die Nachricht zu schreiben.",
+ "hdr.more": "Mehr",
+ "hdr.theme": "Design",
+ "theme.auto": "Wie der Computer",
+ "theme.light": "Hell",
+ "theme.dark": "Dunkel",
+ "prog.details": "Details"
 }

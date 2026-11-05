@@ -515,5 +515,11 @@
  "plan.signup_note": "Nous gardons votre e-mail et un code d'appareil uniquement pour offrir un essai par personne. Rien d'autre ne quitte votre ordinateur.",
  "plan.signed_up": "Essai démarré. Profitez de Pro !",
  "prov.leadhound": "leadhound AI (Pro, sans clé)",
- "set.hosted_note": "leadhound AI envoie le texte du prospect au serveur leadhound pour rédiger le message."
+ "set.hosted_note": "leadhound AI envoie le texte du prospect au serveur leadhound pour rédiger le message.",
+ "hdr.more": "Plus",
+ "hdr.theme": "Thème",
+ "theme.auto": "Comme l'ordinateur",
+ "theme.light": "Clair",
+ "theme.dark": "Sombre",
+ "prog.details": "Détails"
 }

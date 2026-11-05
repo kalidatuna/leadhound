@@ -515,5 +515,11 @@
  "plan.signup_note": "ვინახავთ თქვენს ელფოსტას და მოწყობილობის კოდს მხოლოდ იმისთვის, რომ ერთ ადამიანს ერთი ცდა მივცეთ. სხვა არაფერი ტოვებს თქვენს კომპიუტერს.",
  "plan.signed_up": "ცდა დაიწყო. ისიამოვნეთ Pro-თი!",
  "prov.leadhound": "leadhound AI (Pro, გასაღები არ სჭირდება)",
- "set.hosted_note": "leadhound AI ლიდის ტექსტს leadhound-ის სერვერს უგზავნის შეტყობინების დასაწერად."
+ "set.hosted_note": "leadhound AI ლიდის ტექსტს leadhound-ის სერვერს უგზავნის შეტყობინების დასაწერად.",
+ "hdr.more": "მეტი",
+ "hdr.theme": "თემა",
+ "theme.auto": "როგორც კომპიუტერში",
+ "theme.light": "ღია",
+ "theme.dark": "მუქი",
+ "prog.details": "დეტალები"
 }

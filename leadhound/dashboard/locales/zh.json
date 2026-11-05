@@ -515,5 +515,11 @@
  "plan.signup_note": "我们只保留你的邮箱和设备代码，用于每人只给一次试用。其他内容不会离开你的电脑。",
  "plan.signed_up": "试用已开始。尽情享受 Pro！",
  "prov.leadhound": "leadhound AI（Pro，无需密钥）",
- "set.hosted_note": "leadhound AI 会把线索的文字发送到 leadhound 服务器来撰写消息。"
+ "set.hosted_note": "leadhound AI 会把线索的文字发送到 leadhound 服务器来撰写消息。",
+ "hdr.more": "更多",
+ "hdr.theme": "主题",
+ "theme.auto": "跟随系统",
+ "theme.light": "浅色",
+ "theme.dark": "深色",
+ "prog.details": "详情"
 }

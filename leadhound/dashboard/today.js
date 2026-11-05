@@ -2,7 +2,7 @@
 import { $, $$, api, el, emit, on, state, store, toast } from './util.js';
 import { t, LANG } from './i18n.js';
 import { icon } from './icons.js';
-import { runQueue, defaultSources } from './find.js';
+import { runQueue, defaultSources, progressChips } from './find.js';
 import { srcName, ageText, reasonLine, isNew } from './leads.js';
 import { renderCompose } from './compose.js';
 import { SEND, LINK, TOTAL, acct, platIcon, platName, readyCount, sendCount } from './accounts.js';
@@ -124,7 +124,7 @@ function paintHero() {
   const empty = !stats.total && !busy_;
   $('#h0').textContent = found ? (found.added ? t('today.found', { new: found.added, total: n }) : t('today.found0')) : empty ? t('today.empty_title') : t('today.hero_title');
   $('#h0p').textContent = found ? (found.added && leads[0] ? t('today.found_text', { score: leads[0].score }) : t('today.found_text0')) : empty ? t('today.empty_text') : t('today.hero_text');
-  $('#prog').textContent = busy_ ? (job.log[job.log.length - 1] || '') : '';
+  $('#prog').replaceChildren(...(busy_ ? [progressChips(job) || job.log[job.log.length - 1] || ''] : []));
   acts.replaceChildren(...[el('button', { class: 'cta', disabled: busy_, onclick: findNow }, busy_ ? el('span', { class: 'spin' }) : icon('search'), busy_ ? t('today.finding') : t('today.find_btn')),
     busy_ && el('button', { class: 'cta ghost', onclick: () => api(`/api/jobs/${job.id}/cancel`, {}) }, t('stop')),
     !busy_ && n > 0 && found && el('button', { class: 'cta ghost', onclick: () => show(1) }, t('today.see'), icon('arrow'))].filter(Boolean));

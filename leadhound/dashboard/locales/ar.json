@@ -515,5 +515,11 @@
  "plan.signup_note": "نحتفظ ببريدك ورمز الجهاز فقط لمنح تجربة واحدة لكل شخص. لا يغادر جهازك أي شيء آخر.",
  "plan.signed_up": "بدأت التجربة. استمتع بـ Pro!",
  "prov.leadhound": "leadhound AI ‏(Pro، بلا مفتاح)",
- "set.hosted_note": "يرسل leadhound AI نص العميل المحتمل إلى خادم leadhound لكتابة الرسالة."
+ "set.hosted_note": "يرسل leadhound AI نص العميل المحتمل إلى خادم leadhound لكتابة الرسالة.",
+ "hdr.more": "المزيد",
+ "hdr.theme": "المظهر",
+ "theme.auto": "مثل الجهاز",
+ "theme.light": "فاتح",
+ "theme.dark": "داكن",
+ "prog.details": "التفاصيل"
 }

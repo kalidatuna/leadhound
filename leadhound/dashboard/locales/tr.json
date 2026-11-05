@@ -515,5 +515,11 @@
  "plan.signup_note": "E-postanızı ve bir cihaz kodunu yalnızca kişi başına bir deneme vermek için saklarız. Bilgisayarınızdan başka hiçbir şey çıkmaz.",
  "plan.signed_up": "Deneme başladı. Pro'nun keyfini çıkarın!",
  "prov.leadhound": "leadhound AI (Pro, anahtar gerekmez)",
- "set.hosted_note": "leadhound AI, mesajı yazmak için adayın metnini leadhound sunucusuna gönderir."
+ "set.hosted_note": "leadhound AI, mesajı yazmak için adayın metnini leadhound sunucusuna gönderir.",
+ "hdr.more": "Daha fazla",
+ "hdr.theme": "Tema",
+ "theme.auto": "Bilgisayarla aynı",
+ "theme.light": "Açık",
+ "theme.dark": "Koyu",
+ "prog.details": "Ayrıntılar"
 }

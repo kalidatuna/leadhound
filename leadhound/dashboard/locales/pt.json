@@ -515,5 +515,11 @@
  "plan.signup_note": "Guardamos seu e-mail e um código do dispositivo só para dar um teste por pessoa. Nada mais sai do seu computador.",
  "plan.signed_up": "Teste iniciado. Aproveite o Pro!",
  "prov.leadhound": "leadhound AI (Pro, sem chave)",
- "set.hosted_note": "O leadhound AI envia o texto do contato ao servidor do leadhound para escrever a mensagem."
+ "set.hosted_note": "O leadhound AI envia o texto do contato ao servidor do leadhound para escrever a mensagem.",
+ "hdr.more": "Mais",
+ "hdr.theme": "Tema",
+ "theme.auto": "Igual ao computador",
+ "theme.light": "Claro",
+ "theme.dark": "Escuro",
+ "prog.details": "Detalhes"
 }

@@ -31,4 +31,4 @@ leadhound = "leadhound.cli:main"
 packages = ["leadhound", "leadhound.sources", "leadhound.dashboard", "leadhound.i18n", "leadhound.send"]
 
 [tool.setuptools.package-data]
-"leadhound.dashboard" = ["*.html", "*.css", "*.js", "locales/*.json", "fonts/*.woff2", "fonts/OFL-*.txt"]
+"leadhound.dashboard" = ["*.html", "*.css", "*.js", "*.svg", "locales/*.json", "fonts/*.woff2", "fonts/OFL-*.txt"]
