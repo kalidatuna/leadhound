@@ -23,10 +23,12 @@ class RedditTest(unittest.TestCase):
             reddit_entry("c", "Need a developer to fix my Shopify store"),
             reddit_entry("d", "[Hiring] old one", age_h=24 * 30),
             reddit_entry("e", "Random discussion about rates"),
+            reddit_entry("f", "Seeking a tutor position"),
+            reddit_entry("g", "Looking for a tutor for algebra"),
         ]) + "</feed>"
         f = FakeFetcher([("reddit.com/r/forhire/new/.rss", feed)])
         leads = reddit.collect(f, cfg(), NOW)
-        self.assertEqual([l.external_id for l in leads], ["a", "c"])
+        self.assertEqual([l.external_id for l in leads], ["a", "c", "g"])
         a = leads[0]
         self.assertEqual(a.url, "https://www.reddit.com/r/forhire/comments/a/x/")
         self.assertEqual(a.body, "Budget $800. email me: a@b.co")  # footer stripped

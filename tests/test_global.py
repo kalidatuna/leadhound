@@ -60,6 +60,7 @@ class ProfessionTest(unittest.TestCase):
             c = config.from_dict(config.Config(), profiles.defaults(p.id))
             self.assertEqual(c.profession, p.id)
             self.assertTrue(c.freelancer_categories)
+            self.assertEqual(c.categories, list(p.local))
             for cat in c.categories:
                 osm.category_tag(cat)  # every suggested business type exists
         self.assertEqual({p["id"] for p in profiles.summary()}, set(profiles.BY_ID))

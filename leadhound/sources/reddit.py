@@ -9,7 +9,7 @@ import xml.etree.ElementTree as ET
 from datetime import datetime
 
 from ..models import Lead
-from ..langs import is_client_text
+from ..langs import SEEKER_RX, is_client_text
 from ..textutil import find_emails, strip_html
 from .base import collect_each
 
@@ -20,13 +20,17 @@ FOR_HIRE_RX = re.compile(r"[\[(]\s*for\s*hire\s*[\])]|\bfor hire\b", re.I)
 # Plain-language intent when the post has no tag
 ASK_RX = re.compile(
     r"\b(looking for|need|seeking|hire|hiring)\b.{0,40}\b(developer|dev|programmer|freelancer|designer|"
-    r"someone|expert|engineer|agency|help)\b", re.I)
+    r"someone|expert|engineer|agency|help|tutors?|teachers?|instructors?|educators?)\b", re.I)
 
 
 def is_client_post(title: str) -> bool:
     if FOR_HIRE_RX.search(title):
         return False  # a competitor offering services, not a client
-    return bool(HIRING_RX.search(title) or ASK_RX.search(title) or is_client_text(title))
+    if HIRING_RX.search(title):
+        return True  # an explicit client tag takes precedence over plain-language intent
+    if SEEKER_RX.search(title):
+        return False
+    return bool(ASK_RX.search(title) or is_client_text(title))
 
 
 def _ts(s: str) -> float:

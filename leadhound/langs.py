@@ -15,23 +15,25 @@ LANGUAGES = {  # code: native name (UI and message drafts)
 # Someone asks for help: "looking for / need / hiring" + a person or service
 CLIENT_RX = re.compile("|".join([
     r"\b(looking for|need|needs|seeking|searching for|want to hire|hiring)\b.{0,40}\b(developer|dev|programmer|freelancer|"
-    r"designer|writer|editor|translator|marketer|photographer|videographer|assistant|engineer|agency|expert|someone|help|consultant)\b",
+    r"designer|writer|editor|translator|marketer|photographer|videographer|assistant|engineer|agency|expert|someone|help|consultant|tutors?|teachers?|instructors?|educators?)\b",
     r"\[\s*(hiring|task|paid)\s*\]", r"\bseeking freelancers?\b",
-    r"\b(busco|buscamos|necesito|necesitamos|se busca|contrato)\b.{0,40}\b(desarrollador|programador|diseñador|freelance|redactor|traductor|editor|fotógrafo|alguien|ayuda|experto)",
-    r"\b(procuro|procuramos|preciso de|precisamos de|precisa-se)\b.{0,40}\b(desenvolvedor|programador|designer|freelancer|redator|tradutor|editor|fotógrafo|alguém|ajuda|especialista)",
-    r"\b(je cherche|nous cherchons|recherche|besoin d'un|besoin d’une?)\b.{0,40}\b(développeur|developpeur|graphiste|freelance|rédacteur|traducteur|monteur|photographe|quelqu'un|aide|expert)",
-    r"\b(suche|suchen|gesucht|brauche|brauchen)\b.{0,40}\b(entwickler|programmierer|designer|freelancer|texter|übersetzer|cutter|fotograf|jemanden|hilfe|experte)",
-    r"\b(ищу|ищем|нужен|нужна|нужны|требуется|требуются)\b.{0,40}(разработчик|программист|дизайнер|фрилансер|копирайтер|переводчик|монтажер|фотограф|помощь|специалист|исполнител)",
+    r"\b(busco|buscamos|necesito|necesitamos|se busca|contrato)\b.{0,40}\b(desarrollador|programador|diseñador|freelance|redactor|traductor|editor|fotógrafo|alguien|ayuda|experto|tutor|profesor|maestro|docente)",
+    r"\b(procuro|procuramos|preciso de|precisamos de|precisa-se)\b.{0,40}\b(desenvolvedor|programador|designer|freelancer|redator|tradutor|editor|fotógrafo|alguém|ajuda|especialista|tutor|professor|professora)",
+    r"\b(je cherche|nous cherchons|recherche|besoin d'un|besoin d’une?)\b.{0,40}\b(développeur|developpeur|graphiste|freelance|rédacteur|traducteur|monteur|photographe|quelqu'un|aide|expert|tuteur|tutrice|professeur|enseignant|enseignante)",
+    r"\b(suche|suchen|gesucht|brauche|brauchen)\b.{0,40}\b(entwickler|programmierer|designer|freelancer|texter|übersetzer|cutter|fotograf|jemanden|hilfe|experte|tutor|lehrer|lehrerin|nachhilfelehrer)",
+    r"\b(ищу|ищем|нужен|нужна|нужны|требуется|требуются)\b.{0,40}(разработчик|программист|дизайнер|фрилансер|копирайтер|переводчик|монтажер|фотограф|помощь|специалист|исполнител|репетитор|учител|преподавател)",
     r"\b(arıyorum|arıyoruz|aranıyor|lazım|ihtiyacım var)\b",
-    r"\b(cerco|cerchiamo|cercasi)\b.{0,40}\b(sviluppatore|programmatore|grafico|freelance|traduttore|fotografo|qualcuno|aiuto)",
+    r"\b(cerco|cerchiamo|cercasi)\b.{0,40}\b(sviluppatore|programmatore|grafico|freelance|traduttore|fotografo|qualcuno|aiuto|tutor|insegnante|docente|professore)",
     r"(ვეძებ|გვჭირდება|მჭირდება)",
     r"(أبحث عن|نبحث عن|مطلوب)",
-    r"(招聘|寻找|需要).{0,10}(开发|设计|翻译|自由职业|兼职)",
+    r"(招聘|寻找|需要).{0,10}(开发|设计|翻译|自由职业|兼职|家教|老师|教师|辅导)",
+    r"(ढूँढ रहा|ढूँढ रही|चाहिए|आवश्यक).{0,40}(शिक्षक|अध्यापक|ट्यूटर|गणित|पढ़ाने)",
 ]), re.I)
 
 # Someone offers their own services or wants a job: competitor or job seeker, not a client
 SEEKER_RX = re.compile("|".join([
     r"\bfor hire\b", r"\bhire me\b", r"#?open ?to ?work\b", r"\blooking for (a )?(new )?(job|work|gig|role|position|opportunit)",
+    r"\b(seeking|looking for)\b.{0,40}\b(tutors?|teachers?|instructors?|educators?)\b.{0,20}\b(position|job|work|role|opportunit)",
     r"\b(i am|i'm) (available|a freelance)", r"\bmy (portfolio|services|rates)\b", r"\bseeking (work|employment)\b",
     r"\bbusco (trabajo|empleo)\b", r"\bprocuro (emprego|trabalho)\b", r"\bje cherche (un )?(emploi|travail|poste)\b",
     r"\bsuche (arbeit|job|stelle)\b", r"\bищу работу\b", r"\biş arıyorum\b",

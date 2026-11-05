@@ -1,6 +1,6 @@
 """Profession profiles: one click sets skills, pitch, sources and local-business targets.
 
-Every feed URL and Freelancer.com category below was checked to return live listings (October 2026).
+Every feed URL and Freelancer.com category below was checked to return live listings (October–November 2026).
 """
 from __future__ import annotations
 
@@ -79,6 +79,10 @@ PROFESSIONS = [
                "I keep small businesses' books accurate, on time and ready for tax season",
                ("Accounting", "Bookkeeping"), COMMON_SUBS, (), False, (), (),
                ("restaurant", "cafe", "dentist", "car_repair", "plumber", "electrician")),
+    Profession("tutor", ("tutor", "tutoring", "teacher", "teaching", "online tutoring", "math tutoring",
+                         "English tutoring", "test prep", "exam prep", "homework help", "lesson planning", "curriculum"),
+               "I provide patient, one-to-one tutoring tailored to each student's goals",
+               ("Tutoring", "Teaching-Lecturing"), COMMON_SUBS + ("Tutoring", "learnmath", "satprep", "HomeworkHelp")),
 ]
 BY_ID = {p.id: p for p in PROFESSIONS}
 
@@ -90,7 +94,7 @@ def defaults(pid: str) -> dict:
         "profession": p.id, "skills": list(p.skills), "pitch": p.pitch, "freelancer_categories": list(p.freelancer),
         "reddit_subreddits": list(p.subreddits), "rss_feeds": list(p.feeds), "github": p.github,
         "github_labels": list(p.github_labels) or ["bounty"], "github_languages": list(p.github_languages),
-        "mastodon_tags": list(p.mastodon_tags), "categories": list(p.local) or ["restaurant", "dentist"],
+        "mastodon_tags": list(p.mastodon_tags), "categories": list(p.local),
     }
 
 
