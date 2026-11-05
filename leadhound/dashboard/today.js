@@ -3,7 +3,7 @@ import { $, $$, api, el, emit, on, state, store, toast } from './util.js';
 import { t, LANG } from './i18n.js';
 import { icon } from './icons.js';
 import { runQueue, defaultSources, progressChips } from './find.js';
-import { srcName, ageText, reasonLine, isNew } from './leads.js';
+import { srcName, ageText, reasonLine, isNew, checkReplies } from './leads.js';
 import { renderCompose } from './compose.js';
 import { SEND, LINK, TOTAL, acct, platIcon, platName, readyCount, sendCount } from './accounts.js';
 
@@ -34,6 +34,7 @@ export function initToday() {
   on('profile-changed', refresh);
   on('plan-changed', refresh);
   on('accounts-changed', paintConnect);
+  on('replies-checked', refresh);
   window.addEventListener('resize', () => slide());
   draw();
   refresh();
@@ -136,7 +137,9 @@ function paintFollowups() {
   if (!box) return;
   if (!fups.length) return box.replaceChildren();
   box.replaceChildren(el('div', { class: 'tile fups' },
-    el('h4', {}, t('fup.title'), el('span', { class: 'cnt' }, fups.length)), el('p', { class: 'sd' }, t('fup.text')),
+    el('div', { class: 'fuh' }, el('h4', {}, t('fup.title'), el('span', { class: 'cnt' }, fups.length)),
+      el('button', { class: 'btn ghost sm', onclick: e => checkReplies(e.currentTarget) }, t('rep.check'))),
+    el('p', { class: 'sd' }, t('fup.text')),
     el('div', { class: 'furows' }, fups.slice(0, 5).map(l => el('div', { class: 'furow' },
       el('div', { class: 'fut' }, el('b', {}, l.title), el('small', {}, srcName(l.source), ' · ', t('fup.row', { days: l.outreach.days, n: l.outreach.followups + 1, max: l.outreach.max }))),
       el('button', { class: 'btn primary sm', onclick: () => { pick = l; pickFu = true; show(2); } }, icon('pen'), t('fup.write')),

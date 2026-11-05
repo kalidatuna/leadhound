@@ -9,7 +9,10 @@ import unittest
 
 from helpers import cfg
 
-from leadhound import config, draft, i18n
+import imaplib
+
+from leadhound import accounts, config, draft, i18n, replies
+from leadhound.send import SendError
 from leadhound.dashboard.server import make_server
 from leadhound.langs import LANGUAGES
 from leadhound.models import Lead
@@ -108,6 +111,84 @@ class ProofTest(unittest.TestCase):
             self.assertEqual(config.load(os.path.join(d, "c.ini")).proof, ["a, b: one", "c: two"])
 
 
+class FakeImap:
+    """Answers SEARCH FROM "x" SINCE d from a fixed set of senders. Records what it was asked."""
+
+    def __init__(self, senders=(), password="app-password-1"):
+        self.senders, self.password, self.calls, self.readonly = set(senders), password, [], None
+
+    def __call__(self, host):
+        self.host = host
+        return self
+
+    def login(self, user, pw):
+        if pw != self.password:
+            raise imaplib.IMAP4.error("AUTHENTICATIONFAILED")
+
+    def select(self, box, readonly=False):
+        self.readonly = readonly
+        return "OK", [b"3"]
+
+    def search(self, charset, *crit):
+        self.calls.append(crit)
+        return "OK", [b"7 9" if crit[1].strip('"') in self.senders else b""]
+
+    def logout(self):
+        pass
+
+
+class ReplyTest(unittest.TestCase):
+    def setUp(self):
+        self.tmp = tempfile.TemporaryDirectory()
+        self.acc = accounts.Accounts(os.path.join(self.tmp.name, "accounts.json"))
+        self.s = Store(":memory:")
+        self.a, _ = self.s.upsert(lead("a", contact="ann@example.com"))
+        self.b, _ = self.s.upsert(lead("b", contact="bob@example.com, +995 555 12 34 56"))
+        self.c, _ = self.s.upsert(lead("c", contact="reddit DM: u/cat"))  # no email: nothing to look for
+        for lid in (self.a, self.b, self.c):
+            self.s.update(lid, status="contacted")
+        self.lock = threading.Lock()
+
+    def tearDown(self):
+        self.tmp.cleanup()
+
+    def connect(self, host="smtp.gmail.com"):
+        self.acc.connect("email", {"provider": "gmail", "address": "me@gmail.com", "password": "app-password-1", "host": host, "port": 587})
+
+    def test_moves_leads_that_answered_and_only_reads(self):
+        self.connect()
+        imap = FakeImap({"bob@example.com"})
+        res = replies.check(self.acc, self.s, self.lock, imap_factory=imap)
+        self.assertEqual(res, {"checked": 2, "replied": 1})
+        self.assertEqual((self.s.get(self.b).status, self.s.get(self.a).status), ("replied", "contacted"))
+        self.assertTrue(imap.readonly)
+        self.assertEqual(imap.host, "imap.gmail.com")
+        self.assertEqual(imap.calls[0][:2], ("FROM", '"ann@example.com"'))
+        self.assertRegex(imap.calls[0][3], r"^\d\d-[A-Z][a-z]{2}-\d{4}$")
+        self.assertEqual(replies.check(self.acc, self.s, self.lock, imap_factory=FakeImap({"bob@example.com"}))["replied"], 0)
+
+    def test_errors_are_clear(self):
+        with self.assertRaises(SendError):  # nothing connected
+            replies.check(self.acc, self.s, self.lock, imap_factory=FakeImap())
+        self.connect()
+        with self.assertRaisesRegex(SendError, "refused the login"):
+            replies.check(self.acc, self.s, self.lock, imap_factory=FakeImap(password="other"))
+
+    def test_imap_host(self):
+        self.assertEqual(replies.imap_host({"host": "smtp-mail.outlook.com"}), "outlook.office365.com")
+        self.assertEqual(replies.imap_host({"host": "smtp.fastmail.com"}), "imap.fastmail.com")
+        self.assertEqual(replies.imap_host({"host": "mail.example.org"}), "imap.example.org")
+        self.assertEqual(replies.imap_host({"host": "localhost"}), "localhost")  # a local test server
+        for bad, cloud in (("bad host", False), ("localhost", True)):
+            with self.assertRaises(SendError):
+                replies.imap_host({"host": bad}, cloud=cloud)
+
+    def test_old_and_answered_leads_are_skipped(self):
+        backdate(self.s, self.a, 90)
+        self.s.update(self.b, status="won")
+        self.assertEqual(replies.candidates(self.s), [])
+
+
 class Api(unittest.TestCase):
     def setUp(self):
         self.tmp = tempfile.TemporaryDirectory()
@@ -155,6 +236,11 @@ class FollowupApiTest(Api):
         self.assertEqual(self.req("POST", "/api/leads/999/followup", {"action": "draft"})[0], 404)
         self.assertEqual(self.req("POST", "/api/config", {"follow_up_days": 0})[0], 400)
         self.assertEqual(self.req("POST", "/api/config", {"follow_up_days": 5, "follow_up_max": 0})[1]["follow_up_max"], 0)
+
+    def test_reply_check_needs_an_email_account(self):
+        code, body = self.req("POST", "/api/replies", {})
+        self.assertEqual(code, 400)  # licensing is off in tests: allowed, but nothing connected
+        self.assertIn("Connect your email", body["error"])
 
 
 if __name__ == "__main__":

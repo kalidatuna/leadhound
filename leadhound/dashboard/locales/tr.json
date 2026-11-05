@@ -541,5 +541,9 @@
  "set.fu_off": "Asla",
  "set.proof": "Çalışmanızdan örnekler",
  "set.proof_hint": "Satır başına bir tane: anahtar kelimeler, iki nokta ve bağlantılı tek bir cümle. En uygun olanı İngilizce mesajlara ve yapay zekâ taslaklarına eklenir.",
- "set.proof_ph": "wordpress, randevu: Bir diş kliniğinin WordPress sitesini online randevuyla yeniledim: https://…"
+ "set.proof_ph": "wordpress, randevu: Bir diş kliniğinin WordPress sitesini online randevuyla yeniledim: https://…",
+ "rep.check": "Yanıtları kontrol et",
+ "rep.checking": "Gelen kutusu kontrol ediliyor…",
+ "rep.found": "{n} kişi yanıt verdi. Yanıtladı'ya taşındılar.",
+ "rep.none": "Henüz yeni yanıt yok ({n} kontrol edildi)."
 }

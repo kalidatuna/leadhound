@@ -22,6 +22,16 @@ export function reasonLine(l) {  // the two strongest reasons this lead matches,
   const good = (l.extra.why || []).filter(w => w[0] > 0 && w[1] !== 'age_unknown').sort((a, b) => b[0] - a[0]).slice(0, 2);
   return good.length ? good.map(w => whyText([null, w[1], w[2]])).join(' · ') : t('today.reason_none');
 }
+/** Pro: look in the connected inbox for answers and move those leads to Replied. */
+export async function checkReplies(btn) {
+  if (btn) { btn.disabled = true; btn.replaceChildren(el('span', { class: 'spin' }), t('rep.checking')); }
+  try {
+    const r = await api('/api/replies', {});
+    toast(r.replied ? t('rep.found', { n: r.replied }) : t('rep.none', { n: r.checked }));
+    emit('replies-checked');
+  } catch (e) { toast(e.message, 'err'); }
+  if (btn) { btn.disabled = false; btn.replaceChildren(t('rep.check')); }
+}
 export const isNew = l => !!lastVisit && l.first_seen > lastVisit && l.status === 'new';
 const debounce = (fn, ms) => { let tm; return (...a) => { clearTimeout(tm); tm = setTimeout(() => fn(...a), ms); }; };
 const select = (id, opts, onchange) => el('select', { id, onchange: e => onchange(e.target.value) }, opts.map(([v, l]) => el('option', { value: v }, l)));
@@ -38,11 +48,13 @@ export function initLeads() {
         el('div', { class: 'row wide' },
           el('button', { class: 'btn sm', onclick: exportCsv }, t('leads.export')),
           el('button', { class: 'btn sm', onclick: skipLow }, t('leads.skip_low')),
+          el('button', { class: 'btn sm', onclick: e => checkReplies(e.currentTarget) }, t('rep.check')),
           el('span', { class: 'mut sm', id: 'newcount' }))),
       el('div', { class: 'list', id: 'list' })),
     el('section', { class: 'detail', id: 'detail' })));
   document.addEventListener('keydown', onKey);
   on('job-done', () => refresh());
+  on('replies-checked', () => refresh());
   on('lead-open', id => { F.status = ''; F.q = ''; refresh(id); });
   refresh();
 }

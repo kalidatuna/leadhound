@@ -21,7 +21,7 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from urllib.parse import parse_qs, urlparse
 
-from .. import __version__, accounts as accts, config, i18n, licensing, paths, profiles, sending, updates
+from .. import __version__, accounts as accts, config, i18n, licensing, paths, profiles, replies, sending, updates
 from ..draft import make_draft, make_followup
 from ..jobs import AutoScanner, JobBusy, JobManager
 from ..langs import LANGUAGES
@@ -233,6 +233,15 @@ def build_routes(c: Ctx) -> list:
                 store.update(lead.id, status="contacted", draft=b["body"], via=res["via"])
         return 200, res
 
+    def replies_check(m, q, b):  # talks to your mail server: unlocked, the store is locked by hand
+        pro("replies")
+        try:
+            res = replies.check(c.accounts, store, c.lock, bool(c.auth))
+        except SendError as e:
+            raise HttpError(e.code, str(e))
+        c.license.count_use()
+        return 200, res
+
     def accounts_get(m, q, b):
         return 200, c.accounts.public()
 
@@ -281,7 +290,7 @@ def build_routes(c: Ctx) -> list:
         ("GET", r"/api/meta", meta), ("GET", r"/api/stats", lambda m, q, b: (200, store.stats())),
         ("GET", r"/api/leads", leads_list), ("GET", r"/api/leads/(\d+)", lead_get),
         ("POST", r"/api/leads/(\d+)", lead_update), ("POST", r"/api/leads/(\d+)/draft", lead_draft, False),
-        ("GET", r"/api/followups", followups), ("POST", r"/api/leads/(\d+)/followup", lead_followup),
+        ("GET", r"/api/followups", followups), ("POST", r"/api/replies", replies_check, False), ("POST", r"/api/leads/(\d+)/followup", lead_followup),
         ("GET", r"/api/leads/(\d+)/channels", lead_channels), ("POST", r"/api/leads/(\d+)/send", lead_send, False),
         ("GET", r"/api/plan", plan_get, False), ("POST", r"/api/plan", plan_post, False),
         ("GET", r"/api/accounts", accounts_get), ("POST", r"/api/accounts/([a-z]+)", account_post, False),

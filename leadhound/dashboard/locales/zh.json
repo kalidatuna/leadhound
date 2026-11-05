@@ -541,5 +541,9 @@
  "set.fu_off": "从不",
  "set.proof": "你的作品证明",
  "set.proof_hint": "每行一条：关键词、冒号，然后是一句带链接的话。最匹配的一条会加入英文消息和 AI 草稿。",
- "set.proof_ph": "wordpress, 预约: 为一家牙科诊所重做了带在线预约的 WordPress 网站: https://…"
+ "set.proof_ph": "wordpress, 预约: 为一家牙科诊所重做了带在线预约的 WordPress 网站: https://…",
+ "rep.check": "检查回复",
+ "rep.checking": "正在检查收件箱…",
+ "rep.found": "{n} 个线索已回复，已移到“已回复”。",
+ "rep.none": "暂无新回复（已检查 {n} 个）。"
 }

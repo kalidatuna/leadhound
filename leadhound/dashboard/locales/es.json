@@ -541,5 +541,9 @@
  "set.fu_off": "Nunca",
  "set.proof": "Pruebas de tu trabajo",
  "set.proof_hint": "Una por línea: palabras clave, dos puntos y una frase con un enlace. La que mejor encaje se añade a los mensajes en inglés y a los borradores con IA.",
- "set.proof_ph": "wordpress, reservas: Rehice la web WordPress de una clínica dental con reservas online: https://…"
+ "set.proof_ph": "wordpress, reservas: Rehice la web WordPress de una clínica dental con reservas online: https://…",
+ "rep.check": "Buscar respuestas",
+ "rep.checking": "Revisando tu bandeja…",
+ "rep.found": "{n} cliente(s) respondieron. Pasaron a Respondió.",
+ "rep.none": "Aún no hay respuestas nuevas ({n} revisados)."
 }

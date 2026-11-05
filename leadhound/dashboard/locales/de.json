@@ -541,5 +541,9 @@
  "set.fu_off": "Nie",
  "set.proof": "Belege deiner Arbeit",
  "set.proof_hint": "Eine pro Zeile: Stichwörter, Doppelpunkt, dann ein Satz mit Link. Der beste Treffer kommt in englische Nachrichten und KI-Entwürfe.",
- "set.proof_ph": "wordpress, buchung: WordPress-Seite einer Zahnarztpraxis mit Online-Buchung neu gebaut: https://…"
+ "set.proof_ph": "wordpress, buchung: WordPress-Seite einer Zahnarztpraxis mit Online-Buchung neu gebaut: https://…",
+ "rep.check": "Nach Antworten suchen",
+ "rep.checking": "Posteingang wird geprüft…",
+ "rep.found": "{n} Kontakt(e) haben geantwortet und sind jetzt unter Geantwortet.",
+ "rep.none": "Noch keine neuen Antworten ({n} geprüft)."
 }

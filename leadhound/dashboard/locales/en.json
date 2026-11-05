@@ -541,5 +541,9 @@
  "set.fu_off": "Never",
  "set.proof": "Proof of your work",
  "set.proof_hint": "One per line: keywords, a colon, then one sentence with a link. The best match goes into English messages and AI drafts.",
- "set.proof_ph": "wordpress, booking: Rebuilt a dental clinic's WordPress site with online booking: https://…"
+ "set.proof_ph": "wordpress, booking: Rebuilt a dental clinic's WordPress site with online booking: https://…",
+ "rep.check": "Check for replies",
+ "rep.checking": "Checking your inbox…",
+ "rep.found": "{n} lead(s) replied. They moved to Replied.",
+ "rep.none": "No new replies yet ({n} checked)."
 }

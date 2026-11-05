@@ -541,5 +541,9 @@
  "set.fu_off": "Nunca",
  "set.proof": "Provas do seu trabalho",
  "set.proof_hint": "Uma por linha: palavras-chave, dois-pontos e uma frase com link. A que melhor combinar entra nas mensagens em inglês e nos rascunhos com IA.",
- "set.proof_ph": "wordpress, agendamento: Refiz o site WordPress de uma clínica odontológica com agendamento online: https://…"
+ "set.proof_ph": "wordpress, agendamento: Refiz o site WordPress de uma clínica odontológica com agendamento online: https://…",
+ "rep.check": "Verificar respostas",
+ "rep.checking": "Verificando sua caixa…",
+ "rep.found": "{n} contato(s) responderam. Foram para Respondeu.",
+ "rep.none": "Ainda sem respostas novas ({n} verificados)."
 }
