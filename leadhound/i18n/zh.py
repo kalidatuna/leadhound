@@ -70,4 +70,15 @@ M = {
     "why.site_issues": "网站有 {n} 个问题，严重度 {sev}", "why.critical": "发现严重问题",
     "why.site_healthy": "网站看起来没问题", "why.not_audited": "有网站（尚未检查）",
     "why.public_email": "公开邮箱", "why.public_phone": "公开电话", "why.no_contact": "没有公开联系方式",
+    # follow-ups to a lead that has not answered
+    "fu.subject": "跟进：{name}",
+    "fu.line": "跟进一下我关于“{title}”的消息。我仍然有空，很乐意帮忙。",
+    "fu.ask": "用消息问几个简单问题，或者简短通个电话，会不会更方便？",
+    "fu.last": "如果现在时机不合适也没关系。告诉我一声，我就不再打扰。",
+    # the email you get after an automatic search (Pro)
+    "al.subject": "leadhound：为你找到 {n} 个新匹配",
+    "al.intro": "leadhound 找到 {n} 个得分不低于 {min} 的新匹配：",
+    "al.footer": "打开 leadhound 给他们写信。你收到这封邮件是因为在设置中开启了提醒。",
+    # score reason for Himalayas contract roles
+    "why.contract_role": "远程合同岗位",
 }

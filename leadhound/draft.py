@@ -1,6 +1,8 @@
 """First-message drafts built from the lead's own evidence, in the lead's language. You send them yourself.
 
 Language: your setting, or "auto" = the business website's language, then its country, else English.
+Proof of work: Settings holds lines like "wordpress, booking: Rebuilt a clinic site with online booking: https://...".
+The line whose keywords best match the lead goes into English drafts (and into the AI prompt in any language).
 In English drafts your own pitch is used; in other languages a translated sentence for your profession
 replaces it, so a message never mixes two languages.
 """
@@ -17,7 +19,7 @@ from .net import FetchError
 from .textutil import word_hit
 
 SOURCE_LABEL = {"reddit": "Reddit", "hn": "Hacker News", "github": "GitHub", "rss": "the job board",
-                "freelancer": "Freelancer.com", "mastodon": "Mastodon"}
+                "freelancer": "Freelancer.com", "mastodon": "Mastodon", "himalayas": "Himalayas"}
 WEB_WORK = {"", "developer", "designer", "marketer", "writer"}  # professions that fix websites
 DEADLINE_RX = re.compile(r"\b(deadline|by (monday|tuesday|wednesday|thursday|friday|the end)|asap|urgent|weeks?|days?)\b|"
                          r"urgente|plazo|prazo|délai|frist|срочно|срок", re.I)
@@ -54,6 +56,21 @@ def _name(author: str) -> str:
     return "" if a.lower() in ("", "[deleted]", "deleted") else a
 
 
+def pick_proof(lead: Lead, cfg) -> str:
+    """The proof-of-work line whose keywords best match the lead ("wordpress, booking: Rebuilt a clinic site: https://...").
+    Empty when nothing matches: a proof that has nothing to do with the request reads like spam."""
+    text = f"{lead.text} {' '.join(lead.extra.get('skills', []))} {lead.extra.get('category', '')}".lower()
+    best, best_hits = "", 0
+    for line in getattr(cfg, "proof", []) or []:
+        keys, sep, sentence = line.partition(": ")
+        if not sep or not sentence.strip():
+            continue
+        hits = sum(1 for k in keys.split(",") if k.strip() and word_hit(k.strip(), text))
+        if hits > best_hits:
+            best, best_hits = sentence.strip(), hits
+    return best if not best or re.search(r"https?://\S+$", best) else _sentence(best)  # no full stop glued to a link
+
+
 def template_post(lead: Lead, cfg, lang: str = "en") -> str:
     skills = [s for s in cfg.skills if word_hit(s, lead.text.lower())][:3]
     skill_line = msg(lang, "p.skills", skills=", ".join(skills)) if skills else msg(lang, "p.generic")
@@ -63,8 +80,11 @@ def template_post(lead: Lead, cfg, lang: str = "en") -> str:
     if lead.source == "github":
         lines.append(f"{msg(lang, 'p.github', title=title)} {skill_line}")
     else:
-        where = SOURCE_LABEL.get(lead.source, lead.source)
+        where = SOURCE_LABEL.get(lead.source) or urlparse(lead.url).netloc.removeprefix("www.") or lead.source
         lines.append(f"{msg(lang, 'p.saw', where=where, title=title)} {skill_line} {_offer(cfg, lang)}")
+    proof = pick_proof(lead, cfg) if lang == "en" else ""  # your own words: only in English drafts, like your pitch
+    if proof:
+        lines.append(proof)
     if cfg.portfolio:
         lines.append(msg(lang, "p.recent", portfolio=cfg.portfolio))
     if not lead.budget:
@@ -101,6 +121,9 @@ def template_business(lead: Lead, cfg, lang: str = "en") -> str:
         body = [subject("b.subj_site", domain=domain), "", hello, "", msg(lang, "b.site_intro", domain=domain),
                 "\n".join(_finding_line(f, lang) for f in findings), "",
                 f"{_offer(cfg, lang)} {msg(lang, 'b.quick_fixes')}", msg(lang, "b.ask_report")]
+        proof = pick_proof(lead, cfg) if lang == "en" else ""
+        if proof:
+            body[-1:-1] = [proof]
     else:  # healthy site, blocked check, or work that is not about websites: no invented problems
         intro = msg(lang, "b.healthy_intro", domain=domain) if website else msg(lang, "b.generic_intro", name=name)
         extra = f" {msg(lang, 'b.healthy_offer')}" if web else ""
@@ -110,13 +133,29 @@ def template_business(lead: Lead, cfg, lang: str = "en") -> str:
     return "\n".join(body)
 
 
+def make_followup(lead: Lead, cfg, n: int) -> str:
+    """The n-th follow-up (1 or more) to a lead that has not answered, in the lead's language. Short and easy to ignore."""
+    lang = draft_language(lead, cfg)
+    title = re.sub(r"^\[[^\]]*\]\s*", "", lead.title).strip()[:90]
+    lines = []
+    if lead.kind == "business":
+        lines += [f"{msg(lang, 'b.subject')}: {msg(lang, 'fu.subject', name=lead.title)}", "", msg(lang, "b.hello", name=lead.title)]
+    else:
+        name = _name(lead.author)
+        lines.append(msg(lang, "p.hi", name=name) if name else msg(lang, "p.hi_anon"))
+    lines += ["", msg(lang, "fu.line", title=title), msg(lang, "fu.last" if n >= max(1, cfg.follow_up_max) else "fu.ask"),
+              "", cfg.signature or cfg.name]
+    return "\n".join(lines)
+
+
 def llm_prompt(lead: Lead, cfg, lang: str) -> str:
     evidence = lead.body[:2500]
     if lead.kind == "business":
         findings = (lead.extra.get("audit") or {}).get("findings", [])
         evidence = "\n".join(f"- {f['title']}: {f['pitch']}" for f in findings) or "No website listed."
     return (f"About me: {cfg.name}. {cfg.pitch}. Skills: {', '.join(cfg.skills)}. "
-            f"Portfolio: {cfg.portfolio or 'none'}. Sign as: {cfg.signature or cfg.name}.\n\n"
+            f"Portfolio: {cfg.portfolio or 'none'}. Sign as: {cfg.signature or cfg.name}.\n"
+            f"Relevant past work (use it only if it fits, never invent more): {pick_proof(lead, cfg) or 'none'}\n\n"
             f"Lead type: {lead.kind} from {lead.source}\nName/author: {lead.author or lead.title}\n"
             f"Title: {lead.title}\nCategory: {lead.extra.get('category', '')}\n"
             f"Budget: {lead.budget or 'not stated'}\nEvidence:\n{evidence}\n\n"

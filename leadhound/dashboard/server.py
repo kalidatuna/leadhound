@@ -7,6 +7,7 @@ login with an HttpOnly session cookie. Both send a strict Content-Security-Polic
 from __future__ import annotations
 
 import csv
+import hashlib
 import io
 import json
 import os
@@ -21,23 +22,24 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from urllib.parse import parse_qs, urlparse
 
-from .. import __version__, accounts as accts, config, i18n, licensing, paths, profiles, sending, updates
-from ..draft import make_draft
+from .. import __version__, accounts as accts, alerts, config, i18n, licensing, paths, profiles, replies, sending, updates
+from ..draft import make_draft, make_followup
 from ..jobs import AutoScanner, JobBusy, JobManager
 from ..langs import LANGUAGES
-from ..models import KINDS, STATUSES
+from ..models import KINDS, STATUSES, Lead
+from ..score import score
 from ..money import CURRENCIES
 from ..net import Fetcher
 from ..send import SendError
 from ..sources import SOURCES, osm
 from ..store import Store
-from ..textutil import csv_cell
+from ..textutil import csv_cell, find_emails
 from .auth import Auth, TooManyAttempts, cookie_value
 
 STATIC = Path(__file__).parent
-STATIC_FILES = {name: ("text/css" if name.endswith(".css") else "text/javascript")
+STATIC_FILES = {name: ("text/css" if name.endswith(".css") else "image/svg+xml" if name.endswith(".svg") else "text/javascript")
                 for name in ("app.css", "app.js", "util.js", "i18n.js", "icons.js", "today.js", "compose.js", "accounts.js", "plan.js",
-                             "leads.js", "find.js", "settings.js", "login.js")}
+                             "leads.js", "find.js", "settings.js", "login.js", "theme.js", "logo.svg")}
 FONT_RX = re.compile(r"fonts/([a-z-]+)\.woff2")
 LOCALE_RX = re.compile(r"locales/([a-z]{2})\.json")
 CSP = ("default-src 'none'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; "
@@ -53,8 +55,8 @@ class HttpError(Exception):
 class Ctx:
     """Everything a request needs; one per server."""
 
-    def __init__(self, store, config_path, token, port, jobs, auth=None, fetcher_factory=Fetcher):
-        self.store, self.config_path, self.token, self.port = store, config_path, token, port
+    def __init__(self, store, config_path, token, port, jobs, auth=None, fetcher_factory=Fetcher, demo=False):
+        self.store, self.config_path, self.token, self.port, self.demo = store, config_path, token, port, demo
         self.jobs, self.auth, self.fetcher_factory = jobs, auth, fetcher_factory
         self.lock = threading.Lock()
         self.license = licensing.License(os.path.join(os.path.dirname(os.path.abspath(config_path)), "license.json"))
@@ -76,7 +78,7 @@ def build_routes(c: Ctx) -> list:
                      "sources": list(SOURCES), "statuses": list(STATUSES), "kinds": list(KINDS),
                      "languages": LANGUAGES, "currencies": sorted(CURRENCIES), "professions": profiles.summary(),
                      "llm_ready": cfg.llm_provider != "none", "hosted_ai": bool(licensing.SERVER), "profession": cfg.profession,
-                     "config_path": c.config_path, "db_path": store_path(store)}
+                     "config_path": c.config_path, "db_path": store_path(store), "demo": c.demo}
 
     def pro(feature: str):
         try:
@@ -87,7 +89,7 @@ def build_routes(c: Ctx) -> list:
     def leads_list(m, q, b):
         leads = store.query(status=q.get("status") or None, kind=q.get("kind") or None,
                             source=q.get("source") or None, min_score=int(q.get("min", 0) or 0),
-                            search=q.get("q", ""), limit=max(1, min(int(q.get("limit", 300)), 1000, c.license.max_leads())),
+                            search=q.get("q", ""), limit=max(1, min(int(q.get("limit", 300)), 1000)),
                             sort=q.get("sort", "score"))
         return 200, [asdict(l) for l in leads]
 
@@ -95,7 +97,26 @@ def build_routes(c: Ctx) -> list:
         lead = store.get(int(m.group(1)))
         if not lead:
             raise HttpError(404, "lead not found")
-        return 200, asdict(lead)
+        return 200, {**asdict(lead), "outreach": store.outreach(lead.id)}
+
+    def followups(m, q, b):
+        cfg = c.cfg()
+        due = store.followups_due(cfg.follow_up_days, cfg.follow_up_max)
+        return 200, [{**asdict(l), "outreach": {**info, "max": cfg.follow_up_max}} for l, info in due]
+
+    def lead_followup(m, q, b):
+        lead = need_lead(int(m.group(1)))
+        action, cfg = b.get("action"), c.cfg()
+        if action == "draft":
+            n = store.outreach(lead.id)["followups"] + 1
+            return 200, {"draft": make_followup(lead, cfg, n), "n": n}
+        if action == "sent":
+            store.log(lead.id, "followup", str(b.get("via", "manual")))
+        elif action == "stop":
+            store.log(lead.id, "nofollow")
+        else:
+            raise HttpError(400, "unknown action")
+        return 200, store.outreach(lead.id)
 
     def lead_update(m, q, b):
         lid = int(m.group(1))
@@ -107,10 +128,7 @@ def build_routes(c: Ctx) -> list:
         for k in ("notes", "draft"):
             if k in fields and (not isinstance(fields[k], str) or len(fields[k]) > 20000):
                 raise HttpError(400, f"{k} must be text under 20000 characters")
-        was = store.get(lid).status
         store.update(lid, **fields)
-        if fields.get("status") == "contacted" and was != "contacted":
-            c.license.count_use()
         return 200, asdict(store.get(lid))
 
     def lead_draft(m, q, b):  # runs unlocked: an LLM call can take a minute and must not freeze the app
@@ -118,16 +136,32 @@ def build_routes(c: Ctx) -> list:
             lead = store.get(int(m.group(1)))
         if not lead:
             raise HttpError(404, "lead not found")
-        if b.get("llm"):
-            pro("ai")
         cfg = c.cfg()
-        token = c.license.ai_token() if cfg.llm_provider == "leadhound" else None
+        hosted = bool(b.get("llm")) and cfg.llm_provider == "leadhound"
+        if hosted:  # your own AI key or a local model is free; the hosted AI costs the seller money
+            pro("ai")
+        token = c.license.ai_token() if hosted else None
         text, engine = make_draft(lead, cfg, use_llm=bool(b.get("llm")), ai_token=token)
-        if b.get("llm"):
+        if hosted:
             c.license.count_use()
         with c.lock:
             store.update(lead.id, draft=text)
         return 200, {"draft": text, "engine": engine}
+
+    def lead_add(m, q, b):
+        """A post or page you found yourself (or sent from the browser extension). Scored like any other lead."""
+        url = str(b.get("url", "")).strip()
+        if not re.match(r"^https?://[^\s/]+\.[^\s]+$", url) or len(url) > 500:
+            raise HttpError(400, "Enter the full link, starting with https://")
+        host = urlparse(url).netloc.removeprefix("www.")
+        title = " ".join(str(b.get("title") or host).split())[:200]
+        body, contact = str(b.get("body") or "")[:6000], " ".join(str(b.get("contact") or "").split())[:300]
+        contact = contact or ", ".join(find_emails(body)[:2])  # an address in the pasted post
+        lead = Lead(source="added", external_id=hashlib.sha1(url.encode(), usedforsecurity=False).hexdigest()[:16],
+                    kind="post", title=title, url=url, body=body, contact=contact, created_at=time.time(),
+                    signals=[f"added by you from {host}"])
+        lead_id, is_new = store.upsert(score(lead, c.cfg(), time.time()))
+        return 200, {"id": lead_id, "new": is_new}
 
     def bulk(m, q, b):
         ids = b.get("ids")
@@ -157,27 +191,18 @@ def build_routes(c: Ctx) -> list:
             new = config.from_dict(base, b)
         except (ValueError, TypeError) as e:
             raise HttpError(400, str(e))
-        if new.auto_scan_hours and not base.auto_scan_hours:
+        if (new.auto_scan_hours and not base.auto_scan_hours) or (new.alert_email and not base.alert_email):
             pro("autosearch")
         config.save(new, c.config_path)
         return 200, config.to_dict(new)
 
     def job_start(m, q, b):
-        kind = str(b.get("kind", ""))
-        if kind in ("local", "audit"):
-            pro("business")
         try:
             job = c.jobs.start(str(b.get("kind", "")), b.get("params") or {})
         except JobBusy as e:
             raise HttpError(409, str(e))
         except (ValueError, TypeError) as e:
             raise HttpError(400, str(e))
-        if kind == "scan":
-            try:
-                c.license.use_search()
-            except licensing.ProRequired:
-                c.jobs.cancel(job.id)
-                raise HttpError(402, "You used today's free searches. Upgrade for unlimited searches.")
         return 200, job.to_dict()
 
     def job_get(m, q, b):
@@ -210,8 +235,12 @@ def build_routes(c: Ctx) -> list:
     def lead_channels(m, q, b):
         return 200, sending.channels_for(need_lead(int(m.group(1))), c.accounts.public())
 
+    def no_demo():
+        if c.demo:
+            raise HttpError(400, "Sending is turned off in the demo. Your own leadhound sends from your own accounts.")
+
     def lead_send(m, q, b):  # network call: unlocked, store access is locked by hand
-        pro("send")
+        no_demo()
         with c.lock:
             lead = need_lead(int(m.group(1)))
         try:
@@ -220,8 +249,19 @@ def build_routes(c: Ctx) -> list:
         except SendError as e:
             raise HttpError(e.code, str(e))
         with c.lock:
-            store.update(lead.id, status="contacted", draft=b["body"], via=res["via"])
-            c.license.count_use()
+            if b.get("followup"):  # a nudge to someone you already wrote to: keep the first message as the draft
+                store.log(lead.id, "followup", res["via"])
+            else:
+                store.update(lead.id, status="contacted", draft=b["body"], via=res["via"])
+        return 200, res
+
+    def replies_check(m, q, b):  # talks to your mail server: unlocked, the store is locked by hand
+        pro("replies")
+        try:
+            res = replies.check(c.accounts, store, c.lock, bool(c.auth))
+        except SendError as e:
+            raise HttpError(e.code, str(e))
+        c.license.count_use()
         return 200, res
 
     def accounts_get(m, q, b):
@@ -233,7 +273,7 @@ def build_routes(c: Ctx) -> list:
         if not spec:
             raise HttpError(404, "unknown platform")
         if action == "connect":
-            pro("send")
+            no_demo()
             try:
                 who = sending.connect(c.accounts, pid, b.get("fields") or {}, bool(c.auth))
             except SendError as e:
@@ -271,12 +311,14 @@ def build_routes(c: Ctx) -> list:
 
     return [
         ("GET", r"/api/meta", meta), ("GET", r"/api/stats", lambda m, q, b: (200, store.stats())),
+        ("GET", r"/api/insights", lambda m, q, b: (200, store.insights())),
         ("GET", r"/api/leads", leads_list), ("GET", r"/api/leads/(\d+)", lead_get),
         ("POST", r"/api/leads/(\d+)", lead_update), ("POST", r"/api/leads/(\d+)/draft", lead_draft, False),
+        ("GET", r"/api/followups", followups), ("POST", r"/api/replies", replies_check, False), ("POST", r"/api/leads/(\d+)/followup", lead_followup),
         ("GET", r"/api/leads/(\d+)/channels", lead_channels), ("POST", r"/api/leads/(\d+)/send", lead_send, False),
         ("GET", r"/api/plan", plan_get, False), ("POST", r"/api/plan", plan_post, False),
         ("GET", r"/api/accounts", accounts_get), ("POST", r"/api/accounts/([a-z]+)", account_post, False),
-        ("POST", r"/api/leads/bulk", bulk), ("GET", r"/api/export", export),
+        ("POST", r"/api/leads/bulk", bulk), ("POST", r"/api/leads", lead_add), ("GET", r"/api/export", export),
         ("GET", r"/api/config", lambda m, q, b: (200, config.to_dict(c.cfg()))), ("POST", r"/api/config", config_set),
         ("POST", r"/api/jobs", job_start),
         ("GET", r"/api/jobs/current", lambda m, q, b: (200, c.jobs.current.to_dict() if c.jobs.current else None)),
@@ -390,7 +432,7 @@ def make_handler(c: Ctx):
                 c.auth.logout(self._session())
                 return self._send(200, {"ok": True}, headers={"Set-Cookie": "lh_session=; Path=/; Max-Age=0"})
             if method == "GET" and u.path == "/api/ping":  # lets a second launch find this one; reveals only the version
-                return self._send(200, {"leadhound": __version__, "cloud": bool(c.auth)})
+                return self._send(200, {"leadhound": __version__, "cloud": bool(c.auth), "demo": c.demo})
             if not self._authed():
                 return self._send(401, {"error": "please sign in"})
             if not secrets.compare_digest(self.headers.get("X-Leadhound-Token", ""), c.token):
@@ -440,7 +482,7 @@ def store_path(store: Store) -> str:
 
 
 def make_server(db_path: str, config_path: str, port: int = 8787, fetcher_factory=None,
-                host: str = "127.0.0.1", password: str | None = None):
+                host: str = "127.0.0.1", password: str | None = None, demo: bool = False):
     store = Store(db_path)
     token = secrets.token_urlsafe(24)
     auth = Auth(password) if password else None
@@ -448,23 +490,25 @@ def make_server(db_path: str, config_path: str, port: int = 8787, fetcher_factor
     jm = JobManager(db_path, config_path, fetcher_factory=factory, cloud=bool(auth))
     httpd = ThreadingHTTPServer((host, port), BaseHTTPRequestHandler)
     # build the handler after binding so the Host allow-list uses the real port (port 0 = any free port)
-    ctx = Ctx(store, config_path, token, httpd.server_address[1], jm, auth, factory)
+    ctx = Ctx(store, config_path, token, httpd.server_address[1], jm, auth, factory, demo)
     ctx.stop = httpd.shutdown
+    jm.on_done.append(lambda job: alerts.after_auto_search(ctx, job))
     httpd.RequestHandlerClass = make_handler(ctx)
     httpd.jobs = jm
     httpd.ctx = ctx
-    httpd.auto = AutoScanner(jm, os.path.join(os.path.dirname(os.path.abspath(config_path)), "state.json"))
+    httpd.auto = AutoScanner(jm, os.path.join(os.path.dirname(os.path.abspath(config_path)), "state.json"),
+                             allowed=ctx.license.is_pro)
     return httpd, token
 
 
-def find_running(port: int = 8787, tries: int = 20) -> int | None:
-    """Port of a leadhound already running on this computer, if any."""
+def find_running(port: int = 8787, tries: int = 20, demo: bool = False) -> int | None:
+    """Port of a leadhound already running on this computer, if any (the demo and your real one are told apart)."""
     import urllib.request
     for p in range(port, port + tries):
         try:
             with urllib.request.urlopen(f"http://127.0.0.1:{p}/api/ping", timeout=0.4) as r:
                 info = json.loads(r.read(500))
-            if info.get("leadhound") and not info.get("cloud"):
+            if info.get("leadhound") and not info.get("cloud") and bool(info.get("demo")) == demo:
                 return p
         except Exception:
             continue
@@ -481,7 +525,8 @@ def bind(db_path: str, config_path: str, port: int, tries: int = 20, **kw):
     raise OSError(f"no free port in {port}-{port + tries - 1}")
 
 
-def serve(db_path: str, config_path: str, port: int = 8787, open_browser: bool = True, cloud: bool = False) -> None:
+def serve(db_path: str, config_path: str, port: int = 8787, open_browser: bool = True, cloud: bool = False,
+          demo: bool = False) -> None:
     if cloud:
         password = os.environ.get("LEADHOUND_PASSWORD", "")
         if len(password) < 8:
@@ -490,12 +535,12 @@ def serve(db_path: str, config_path: str, port: int = 8787, open_browser: bool =
         print(f"leadhound (cloud mode) listening on port {httpd.server_address[1]}", flush=True)
         open_browser = False
     else:
-        running = find_running(port) if open_browser else None
+        running = find_running(port, demo=demo) if open_browser else None
         if running:  # double-clicked twice: just show the window that is already there
             print(f"leadhound is already running at http://127.0.0.1:{running}/, opening it.", flush=True)
             webbrowser.open(f"http://127.0.0.1:{running}/")
             return
-        httpd, _ = bind(db_path, config_path, port)
+        httpd, _ = bind(db_path, config_path, port, demo=demo)
         url = f"http://127.0.0.1:{httpd.server_address[1]}/"
         print(f"leadhound is running at {url}  (close this window or press Ctrl+C to stop)", flush=True)
         if open_browser:

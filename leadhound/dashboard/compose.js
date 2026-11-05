@@ -22,24 +22,34 @@ function openLink(url) {
 /**
  * Draw the compose step into `box` for lead `l`.
  * cb.onBack(), cb.onSent({via, as}) after leadhound sent it or the user confirmed they did.
+ * opt.followup: write a follow-up to someone already contacted (the first message stays saved as the lead's draft).
  */
-export async function renderCompose(box, l, cb) {
-  if (!l.draft) {
-    try { l.draft = (await api(`/api/leads/${l.id}/draft`, { llm: false })).draft; } catch (e) { return toast(e.message, 'err'); }
-  }
+export async function renderCompose(box, l, cb, opt = {}) {
+  const fu = !!opt.followup;
+  let text = l.draft;
+  try {
+    if (fu) text = (await api(`/api/leads/${l.id}/followup`, { action: 'draft' })).draft;
+    else if (!l.draft) text = l.draft = (await api(`/api/leads/${l.id}/draft`, { llm: false })).draft;
+  } catch (e) { return toast(e.message, 'err'); }
   let chans = [];
   try { chans = await api(`/api/leads/${l.id}/channels`); } catch (e) { toast(e.message, 'err'); }
   const pickDefault = () => chans.findIndex(c => c.mode === 'send' && c.ready) >= 0 ? chans.findIndex(c => c.mode === 'send' && c.ready) : Math.max(chans.findIndex(c => c.ready), 0);
   let sel = chans.length ? pickDefault() : -1, opened = false, saveTimer = null;
 
-  const ta = el('textarea', { spellcheck: false, value: l.draft, oninput: () => { l.draft = ta.value; clearTimeout(saveTimer); saveTimer = setTimeout(() => api('/api/leads/' + l.id, { draft: l.draft }).catch(() => {}), 600); } });
+  const ta = el('textarea', { spellcheck: false, value: text, oninput: () => {
+    if (fu) return;  // a follow-up is not saved over the first message
+    l.draft = ta.value; clearTimeout(saveTimer); saveTimer = setTimeout(() => api('/api/leads/' + l.id, { draft: l.draft }).catch(() => {}), 600);
+  } });
   const via = el('div', { class: 'via' });
   const prim = el('span', { class: 'prim' });
   const parts = () => { const m = SUBJECT.exec(ta.value); return { subject: m ? m[1] : l.title, body: m ? ta.value.slice(m[0].length) : ta.value }; };
   const cur = () => chans[sel];
 
   const markSent = async (viaId, info) => {
-    try { await api('/api/leads/' + l.id, { status: 'contacted', draft: ta.value, via: viaId }); } catch (e) { return toast(e.message, 'err'); }
+    try {
+      if (fu) await api(`/api/leads/${l.id}/followup`, { action: 'sent', via: viaId });
+      else await api('/api/leads/' + l.id, { status: 'contacted', draft: ta.value, via: viaId });
+    } catch (e) { return toast(e.message, 'err'); }
     cb.onSent(info || { via: null });
   };
 
@@ -49,7 +59,7 @@ export async function renderCompose(box, l, cb) {
       const btn = prim.querySelector('[data-act]');
       btn.disabled = true; btn.replaceChildren(el('span', { class: 'spin' }), t('compose.sending'));
       try {
-        const r = await api(`/api/leads/${l.id}/send`, { channel: c.id, to: c.to, subject, body });
+        const r = await api(`/api/leads/${l.id}/send`, { channel: c.id, to: c.to, subject, body, followup: fu });
         acct(c.id).used = r.used;
         cb.onSent({ via: name, as: r.as });
       } catch (e) { toast(e.message, 'err'); draw(); }
@@ -120,7 +130,7 @@ export async function renderCompose(box, l, cb) {
     l.created_at > 0 && el('div', {}, el('dt', {}, t('compose.posted')), el('dd', {}, ageText(l.created_at))),
     el('div', {}, el('dt', {}, t('compose.match')), el('dd', {}, el('span', { class: 'rate' }, ratePips(n)), el('span', { class: 'num' }, l.score))));
   box.replaceChildren(el('div', { class: 'compose' },
-    el('div', { class: 'mini' }, el('div', {}, el('span', { class: 'src' }, srcName(l.source))), el('h3', {}, l.title), facts,
+    el('div', { class: 'mini' }, el('div', { class: 'row' }, el('span', { class: 'src' }, srcName(l.source)), fu && el('span', { class: 'src fresh' }, t('fup.badge'))), el('h3', {}, l.title), facts,
       el('p', {}, reasonLine(l)),
       el('div', { class: 'tips' }, el('h5', {}, t('compose.tips')), el('ul', {}, ['compose.tip1', 'compose.tip2', 'compose.tip3'].map(k => el('li', {}, icon('check'), t(k)))))),
     el('div', { class: 'paper' }, via, ta,

@@ -2,7 +2,7 @@ import unittest
 
 from helpers import NOW, FakeFetcher, cfg
 
-from leadhound.sources import github, hn, osm, reddit, rss
+from leadhound.sources import github, himalayas, hn, osm, reddit, rss
 
 
 def reddit_entry(id, title, age_h=2, body="", author="/u/alice"):
@@ -171,6 +171,33 @@ class OSMTest(unittest.TestCase):
         f = FakeFetcher([("nominatim", [])])
         with self.assertRaises(ValueError):
             osm.geocode(f, "Nowhere")
+
+
+
+
+class HimalayasTest(unittest.TestCase):
+    def job(self, slug, title, age_h=3, **kw):
+        return {"title": title, "companyName": "Acme", "guid": f"https://himalayas.app/companies/acme/jobs/{slug}",
+                "applicationLink": f"https://himalayas.app/companies/acme/jobs/{slug}", "pubDate": str(int(NOW - age_h * 3600)),
+                "description": "<p>Contract. Email jobs@acme.dev</p>", "categories": ["WordPress-Developer"],
+                "parentCategories": ["Software Development"], "locationRestrictions": ["Canada"], **kw}
+
+    def test_contract_roles_by_skill(self):
+        page1 = {"jobs": [self.job("a", "WordPress dev", minSalary="50", maxSalary="80", currency="USD", salaryPeriod="hourly"),
+                          self.job("old", "Old role", age_h=24 * 40), self.job("x", "No link", applicationLink="javascript:x", guid="")]}
+        page2 = {"jobs": [self.job("a", "WordPress dev"), self.job("b", "React contractor", minSalary="90000", currency="EUR")]}
+        f = FakeFetcher([("q=python", page1), ("q=django", page2), ("q=react", RuntimeError("down"))])
+        c = cfg(himalayas=True)
+        with self.assertRaises(Exception) as cm:  # one failed search keeps the others
+            himalayas.collect(f, c, NOW)
+        leads = cm.exception.leads
+        self.assertEqual([l.external_id for l in leads], ["a", "b"])  # deduplicated, old and unsafe links dropped
+        a, b = leads
+        self.assertEqual((a.title, a.budget, a.location, a.contact), ("WordPress dev · Acme", "$50-$80/hr", "Canada", "jobs@acme.dev"))
+        self.assertEqual(b.budget, "€90,000")
+        self.assertEqual(a.extra["skills"], ["WordPress Developer"])
+        self.assertEqual(len(f.calls), 3)  # top 3 skills only
+        self.assertEqual(himalayas.collect(f, cfg(himalayas=False), NOW), [])
 
 
 if __name__ == "__main__":

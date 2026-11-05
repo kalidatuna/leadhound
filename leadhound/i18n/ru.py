@@ -70,4 +70,15 @@ M = {
     "why.site_issues": "{n} проблем(ы) на сайте, тяжесть {sev}", "why.critical": "найдены критические проблемы",
     "why.site_healthy": "сайт выглядит нормально", "why.not_audited": "есть сайт (ещё не проверен)",
     "why.public_email": "публичный email", "why.public_phone": "публичный телефон", "why.no_contact": "нет публичных контактов",
+    # follow-ups to a lead that has not answered
+    "fu.subject": "Напоминание: {name}",
+    "fu.line": "Напоминаю о своём сообщении насчёт «{title}». Я всё ещё свободен и с радостью помогу.",
+    "fu.ask": "Может, удобнее обсудить пару вопросов в переписке или коротко созвониться?",
+    "fu.last": "Если сейчас неудобно, ничего страшного. Просто дайте знать, и я больше не буду писать.",
+    # the email you get after an automatic search (Pro)
+    "al.subject": "leadhound: новых совпадений — {n}",
+    "al.intro": "leadhound нашёл новых совпадений с оценкой от {min}: {n}",
+    "al.footer": "Откройте leadhound, чтобы написать им. Вы получили это письмо, потому что оповещения включены в настройках.",
+    # score reason for Himalayas contract roles
+    "why.contract_role": "удалённый контракт",
 }

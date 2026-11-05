@@ -70,4 +70,15 @@ M = {
     "why.site_issues": "{n} مشكلة في الموقع، الخطورة {sev}", "why.critical": "وُجدت مشكلات حرجة",
     "why.site_healthy": "الموقع يبدو سليمًا", "why.not_audited": "لديه موقع (لم يُفحص بعد)",
     "why.public_email": "بريد عام", "why.public_phone": "هاتف عام", "why.no_contact": "لا توجد وسيلة تواصل عامة",
+    # follow-ups to a lead that has not answered
+    "fu.subject": "متابعة: {name}",
+    "fu.line": "أتابع رسالتي بخصوص \"{title}\". ما زلت متاحًا ويسعدني المساعدة.",
+    "fu.ask": "هل يكون من الأسهل تبادل بعض الأسئلة القصيرة برسالة أو مكالمة قصيرة؟",
+    "fu.last": "إن لم يكن التوقيت مناسبًا فلا مشكلة. أخبرني ولن أراسلك مجددًا.",
+    # the email you get after an automatic search (Pro)
+    "al.subject": "leadhound: {n} نتائج جديدة لك",
+    "al.intro": "وجد leadhound {n} نتائج جديدة بدرجة {min} أو أكثر:",
+    "al.footer": "افتح leadhound لمراسلتهم. تصلك هذه الرسالة لأن التنبيهات مفعّلة في الإعدادات.",
+    # score reason for Himalayas contract roles
+    "why.contract_role": "عمل بعقد عن بُعد",
 }

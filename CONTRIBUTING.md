@@ -2,6 +2,14 @@
 
 Thanks for helping. leadhound has one hard rule: **standard library only**. No runtime dependencies, so it installs anywhere Python 3.10+ runs and builds into small standalone apps.
 
+## Start here
+
+- Issues labelled [good first issue](https://github.com/kalidatuna/leadhound/labels/good%20first%20issue) are small and
+  say which file to change. Translation fixes by native speakers are the most wanted.
+- `leadhound demo` opens the app with made-up sample leads in its own folder: handy for trying a change or taking
+  screenshots without your real data. `leadhound demo --reset` starts over.
+- The browser extension lives in `extension/` (plain Manifest V3, no build step).
+
 ## Run the tests
 
 ```bash

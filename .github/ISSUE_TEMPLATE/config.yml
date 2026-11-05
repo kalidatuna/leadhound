@@ -1,0 +1,5 @@
+blank_issues_enabled: true
+contact_links:
+  - name: Questions and show-and-tell
+    url: https://github.com/kalidatuna/leadhound/discussions
+    about: How do I..., what works for you, clients you won with leadhound.

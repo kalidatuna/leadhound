@@ -70,4 +70,15 @@ M = {
     "why.site_issues": "वेबसाइट में {n} समस्या, गंभीरता {sev}", "why.critical": "गंभीर समस्याएँ मिलीं",
     "why.site_healthy": "वेबसाइट ठीक लगती है", "why.not_audited": "वेबसाइट है (अभी जाँची नहीं गई)",
     "why.public_email": "सार्वजनिक ईमेल", "why.public_phone": "सार्वजनिक फ़ोन", "why.no_contact": "कोई सार्वजनिक संपर्क नहीं",
+    # follow-ups to a lead that has not answered
+    "fu.subject": "फ़ॉलो-अप: {name}",
+    "fu.line": "\"{title}\" के बारे में अपने संदेश पर फ़ॉलो-अप कर रहा हूँ। मैं अब भी उपलब्ध हूँ और मदद करके खुशी होगी।",
+    "fu.ask": "क्या संदेश में कुछ छोटे सवाल या एक छोटी कॉल आसान रहेगी?",
+    "fu.last": "अगर अभी सही समय नहीं है तो कोई बात नहीं। बस बता दें, मैं फिर नहीं लिखूँगा।",
+    # the email you get after an automatic search (Pro)
+    "al.subject": "leadhound: आपके लिए {n} नए मैच",
+    "al.intro": "leadhound को {min} या ज़्यादा स्कोर वाले {n} नए मैच मिले:",
+    "al.footer": "उन्हें लिखने के लिए leadhound खोलें। यह ईमेल इसलिए आया क्योंकि सेटिंग्स में अलर्ट चालू हैं।",
+    # score reason for Himalayas contract roles
+    "why.contract_role": "रिमोट कॉन्ट्रैक्ट काम",
 }

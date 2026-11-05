@@ -1,0 +1,24 @@
+name: Suggest a lead source
+description: A place where people ask for freelance help, publicly, right now.
+labels: [source]
+body:
+  - type: input
+    id: where
+    attributes:
+      label: Website or feed
+    validations:
+      required: true
+  - type: textarea
+    id: why
+    attributes:
+      label: Who posts there, and for what kind of work?
+    validations:
+      required: true
+  - type: checkboxes
+    id: rules
+    attributes:
+      label: Fits leadhound's rules
+      options:
+        - label: Posts are public (no login needed to read them)
+          required: true
+        - label: It has an API or feed, or its terms allow reading it automatically

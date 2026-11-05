@@ -24,9 +24,9 @@ class JobBusy(Exception):
 
 
 class Job:
-    def __init__(self, kind: str, params: dict):
+    def __init__(self, kind: str, params: dict, auto: bool = False):
         self.id = uuid.uuid4().hex[:10]
-        self.kind, self.params = kind, params
+        self.kind, self.params, self.auto = kind, params, auto  # auto: started by the scheduler, not by a click
         self.status = "running"  # running | done | error | cancelled
         self.log: list[str] = []
         self.result: dict = {}
@@ -39,7 +39,7 @@ class Job:
         del self.log[:-MAX_LOG]
 
     def to_dict(self) -> dict:
-        return {"id": self.id, "kind": self.kind, "params": self.params, "status": self.status,
+        return {"id": self.id, "kind": self.kind, "params": self.params, "status": self.status, "auto": self.auto,
                 "log": list(self.log), "result": self.result, "started": self.started, "finished": self.finished}
 
 
@@ -97,13 +97,14 @@ class JobManager:
         self.current: Job | None = None
         self._lock = threading.Lock()
         self._threads: list[threading.Thread] = []
+        self.on_done: list = []  # fn(job), called in the job's thread after it ends (alerts after automatic searches)
 
-    def start(self, kind: str, params: dict) -> Job:
+    def start(self, kind: str, params: dict, auto: bool = False) -> Job:
         params = clean_params(kind, params, self.cloud)
         with self._lock:
             if self.current and self.current.status == "running":
                 raise JobBusy("another search is still running")
-            job = Job(kind, params)
+            job = Job(kind, params, auto)
             self.jobs[job.id] = job
             self.current = job
             for old in sorted(self.jobs.values(), key=lambda j: j.started)[:-20]:
@@ -162,6 +163,11 @@ class JobManager:
         finally:
             if store:
                 store.close()
+            for fn in self.on_done:
+                try:
+                    fn(job)
+                except Exception as e:  # an alert must never break searching
+                    job.add(f"after search: {e}")
             job.finished = time.time()
 
     def _audit_one(self, store, cfg, fetcher, job):
@@ -185,8 +191,9 @@ class JobManager:
 class AutoScanner:
     """Runs a full search every N hours (Settings > auto search) while leadhound is running."""
 
-    def __init__(self, jobs: JobManager, state_path: str, interval: float = 60):
+    def __init__(self, jobs: JobManager, state_path: str, interval: float = 60, allowed=lambda: True):
         self.jobs, self.state_path, self.interval = jobs, state_path, interval
+        self.allowed = allowed  # automatic search is a Pro feature: stops by itself when Pro or the trial ends
         self._stop = threading.Event()
 
     def _last(self) -> float:
@@ -207,10 +214,10 @@ class AutoScanner:
         """Start a scan if one is due. Returns True if it started one."""
         now = now or time.time()
         hours = config.load(self.jobs.config_path).auto_scan_hours
-        if not hours or now - self._last() < hours * 3600:
+        if not hours or now - self._last() < hours * 3600 or not self.allowed():
             return False
         try:
-            job = self.jobs.start("scan", {})
+            job = self.jobs.start("scan", {}, auto=True)
         except JobBusy:
             return False
         job.add("automatic search (Settings > search automatically)")

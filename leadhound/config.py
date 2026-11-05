@@ -19,14 +19,16 @@ AUTO_SCAN_HOURS = (0, 6, 12, 24)
 # (section, key, kind). kind: str | list | lines | bool | float | int
 SCHEMA = [
     ("profile", "name", "str"), ("profile", "profession", "str"), ("profile", "pitch", "str"),
-    ("profile", "skills", "list"), ("profile", "avoid", "list"), ("profile", "portfolio", "str"),
+    ("profile", "skills", "list"), ("profile", "avoid", "list"), ("profile", "portfolio", "str"), ("profile", "proof", "lines"),
     ("profile", "currency", "str"), ("profile", "min_budget", "float"), ("profile", "min_rate", "float"),
     ("profile", "signature", "str"), ("profile", "draft_language", "str"), ("profile", "daily_goal", "int"),
     ("sources", "freelancer", "bool"), ("sources", "freelancer_categories", "list"),
     ("sources", "reddit_subreddits", "list"), ("sources", "hn", "bool"), ("sources", "github", "bool"),
-    ("sources", "github_labels", "list"), ("sources", "github_languages", "list"),
+    ("sources", "github_labels", "list"), ("sources", "github_languages", "list"), ("sources", "himalayas", "bool"),
     ("sources", "mastodon", "bool"), ("sources", "mastodon_instances", "list"), ("sources", "mastodon_tags", "list"),
     ("sources", "rss_feeds", "lines"), ("sources", "max_age_days", "int"), ("sources", "auto_scan_hours", "int"),
+    ("outreach", "follow_up_days", "int"), ("outreach", "follow_up_max", "int"),
+    ("alerts", "alert_email", "bool"), ("alerts", "alert_min_score", "int"),
     ("local", "categories", "list"), ("local", "radius_m", "int"), ("local", "max_businesses", "int"),
     ("llm", "llm_provider", "str"), ("llm", "llm_model", "str"), ("llm", "llm_base_url", "str"),
 ]
@@ -41,6 +43,7 @@ class Config:
     skills: list = field(default_factory=lambda: ["python", "javascript", "wordpress"])
     avoid: list = field(default_factory=lambda: ["unpaid", "equity only", "rev share", "for exposure"])
     portfolio: str = ""
+    proof: list = field(default_factory=list)  # "keywords: one sentence about work you did, with a link", one per line
     currency: str = "USD"
     min_budget: float = 0
     min_rate: float = 0
@@ -54,12 +57,17 @@ class Config:
     github: bool = True
     github_labels: list = field(default_factory=lambda: ["bounty", "help wanted"])
     github_languages: list = field(default_factory=list)
+    himalayas: bool = True  # remote contract roles, searched by your top 3 skills
     mastodon: bool = False  # opt-in: worldwide but low volume and noisy
     mastodon_instances: list = field(default_factory=lambda: ["mastodon.social"])
     mastodon_tags: list = field(default_factory=lambda: ["FediHire", "hiring", "freelance"])
     rss_feeds: list = field(default_factory=list)
     max_age_days: int = 21
     auto_scan_hours: int = 0
+    follow_up_days: int = 3  # days without a reply before a follow-up is due
+    follow_up_max: int = 2  # follow-ups per lead; 0 = never remind
+    alert_email: bool = False  # Pro: after an automatic search, email yourself the best new matches
+    alert_min_score: int = 60
     categories: list = field(default_factory=lambda: ["restaurant", "dentist"])
     radius_m: int = 3000
     max_businesses: int = 60
@@ -163,7 +171,8 @@ def to_dict(cfg: Config) -> dict:
 SLUG_RX = re.compile(r"^[A-Za-z0-9][A-Za-z0-9-]{0,60}$")
 HOST_RX = re.compile(r"^[a-z0-9]([a-z0-9-]*[a-z0-9])?(\.[a-z0-9]([a-z0-9-]*[a-z0-9])?)+$")
 TAG_RX = re.compile(r"^\w{1,60}$")
-RANGES = {"daily_goal": (1, 50), "max_age_days": (1, 90), "radius_m": (100, 20000), "max_businesses": (1, 300), "auto_scan_hours": (0, 24)}
+RANGES = {"daily_goal": (1, 50), "max_age_days": (1, 90), "radius_m": (100, 20000), "max_businesses": (1, 300), "auto_scan_hours": (0, 24),
+          "follow_up_days": (1, 30), "follow_up_max": (0, 5), "alert_min_score": (0, 100)}
 KINDS = {key: kind for _, key, kind in SCHEMA}
 
 

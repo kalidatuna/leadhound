@@ -1,25 +1,25 @@
 // Find view: start searches, watch live progress, see a plain-language summary.
 import { $, api, el, emit, on, state, store, toast, BRANDS } from './util.js';
 import { t, catName } from './i18n.js';
-import { proTag } from './plan.js';
+import { icon } from './icons.js';
 
 let job = null, timer = null, queue = [];
 const root = $('#view-find');
-const SOURCES = ['freelancer', 'reddit', 'hn', 'github', 'mastodon', 'rss'];
+const SOURCES = ['freelancer', 'reddit', 'hn', 'github', 'himalayas', 'mastodon', 'rss'];
 const QUICK = ['restaurant', 'cafe', 'dentist', 'hairdresser', 'beauty', 'gym', 'hotel', 'plumber', 'lawyer', 'car_repair'];
 const picked = new Set();
 const srcLabel = s => BRANDS[s] || t('src.' + s);
 
 export function defaultSources() {
   const c = state.cfg;
-  const on_ = { freelancer: c.freelancer, github: c.github, hn: c.hn, mastodon: c.mastodon,
+  const on_ = { freelancer: c.freelancer, github: c.github, hn: c.hn, mastodon: c.mastodon, himalayas: c.himalayas,
     reddit: c.reddit_subreddits.length > 0, rss: c.rss_feeds.length > 0 };
   return SOURCES.filter(id => on_[id]);
 }
 
 export function initFind() {
   (state.cfg.categories || ['restaurant', 'dentist']).forEach(c => picked.add(c));
-  const enabled = { freelancer: state.cfg.freelancer, github: state.cfg.github, hn: state.cfg.hn, mastodon: state.cfg.mastodon,
+  const enabled = { freelancer: state.cfg.freelancer, github: state.cfg.github, hn: state.cfg.hn, mastodon: state.cfg.mastodon, himalayas: state.cfg.himalayas,
     reddit: state.cfg.reddit_subreddits.length > 0, rss: state.cfg.rss_feeds.length > 0 };
   const srcBoxes = SOURCES.map(id => el('label', { class: 'check' },
     el('input', { type: 'checkbox', checked: !!enabled[id], 'data-src': id }), el('span', {}, srcLabel(id), el('small', {}, t('src_desc.' + id)))));
@@ -31,7 +31,7 @@ export function initFind() {
     picked.clear();
     (state.cfg.categories || []).forEach(c => picked.add(c));
     drawCats();
-    const on_ = { freelancer: state.cfg.freelancer, github: state.cfg.github, hn: state.cfg.hn, mastodon: state.cfg.mastodon,
+    const on_ = { freelancer: state.cfg.freelancer, github: state.cfg.github, hn: state.cfg.hn, mastodon: state.cfg.mastodon, himalayas: state.cfg.himalayas,
       reddit: state.cfg.reddit_subreddits.length > 0, rss: state.cfg.rss_feeds.length > 0 };
     document.querySelectorAll('[data-src]').forEach(cb => { cb.checked = !!on_[cb.dataset.src]; });
   });
@@ -44,7 +44,7 @@ export function initFind() {
     el('div', { class: 'card' }, el('h2', {}, t('find.hiring_title')), el('p', {}, t('find.hiring_desc')),
       srcBoxes, el('div', { class: 'row', style: 'margin-top:10px' }, el('button', { class: 'btn primary', id: 'run-scan', onclick: runScan }, t('find.search_now')),
         el('span', { class: 'mut' }, t('find.search_hint')))),
-    el('div', { class: 'card' }, el('h2', {}, t('find.local_title'), ' ', proTag()), el('p', {}, t('find.local_desc')),
+    el('div', { class: 'card' }, el('h2', {}, t('find.local_title')), el('p', {}, t('find.local_desc')),
       el('label', { class: 'f' }, el('small', {}, t('find.city')), el('input', { id: 'place', placeholder: t('find.city_ph'), value: store.get('lh-place') })),
       el('label', { class: 'f' }, el('small', {}, t('find.kind_q'))), catChips,
       el('div', { class: 'row' }, more,
@@ -56,7 +56,7 @@ export function initFind() {
       el('label', { class: 'check' }, el('input', { type: 'checkbox', id: 'do-audit', checked: true }), el('span', {}, t('find.check_sites'), el('small', {}, t('find.check_sites_hint')))),
       el('div', { class: 'row', style: 'margin-top:8px' }, el('button', { class: 'btn primary', id: 'run-local', onclick: runLocal }, t('find.local_btn')),
         el('span', { class: 'mut' }, t('find.local_tip')))),
-    el('div', { class: 'card' }, el('h2', {}, t('find.check_title'), ' ', proTag()), el('p', {}, t('find.check_desc')),
+    el('div', { class: 'card' }, el('h2', {}, t('find.check_title')), el('p', {}, t('find.check_desc')),
       el('div', { class: 'row' }, el('input', { id: 'site', placeholder: 'example.com', style: 'flex:1;min-width:220px', onkeydown: e => e.key === 'Enter' && runAudit() }),
         el('button', { class: 'btn primary', id: 'run-audit', onclick: runAudit }, t('find.check_btn'))),
       el('label', { class: 'check' }, el('input', { type: 'checkbox', id: 'booking' }), el('span', {}, t('find.booking')))))));
@@ -70,6 +70,18 @@ function sel(id, opts, def) {
 
 async function resume() {
   try { const j = await api('/api/jobs/current'); if (j) { setJob(j); if (j.status === 'running') poll(); } else renderProgress(null); } catch { renderProgress(null); }
+}
+
+// Automatic searches start on the server. Look once a minute so the app shows them like any other search.
+setInterval(async () => {
+  if (job && job.status === 'running') return;
+  try { const j = await api('/api/jobs/current'); if (j && j.status === 'running' && j.id !== job?.id) { setJob(j); poll(); } } catch { /* offline */ }
+}, 60000);
+
+function notify(j) {
+  const n = Object.values(j.result.new || {}).reduce((a, b) => a + b, 0);
+  if (!n || !document.hidden || typeof Notification === 'undefined' || Notification.permission !== 'granted') return;
+  try { new Notification('leadhound', { body: t('al.notify', { n }), icon: '/static/logo.svg', tag: 'leadhound-search' }); } catch { /* not allowed here */ }
 }
 
 function setJob(j) { job = j; emit('job', j); }
@@ -95,6 +107,7 @@ function poll() {
       if (j.status !== 'running') {
         clearInterval(timer);
         emit('job-done', j);
+        if (j.kind !== 'update') notify(j);
         const n = Object.values(j.result.new || {}).reduce((a, b) => a + b, 0);
         if (j.kind !== 'update') toast(j.status === 'cancelled' ? t('toast.stopped') : j.status === 'error' ? t('toast.failed') : t('toast.done', { n }), j.status === 'error' ? 'err' : '');
         if (queue.length && j.status !== 'cancelled') { const nx = queue.shift(); startJob(nx.kind, nx.params, queueStay); } else queue = [];
@@ -117,15 +130,16 @@ function renderProgress(j) {
   if (busy) parts.push(el('button', { class: 'btn sm', onclick: () => api(`/api/jobs/${j.id}/cancel`, {}) }, t('stop')));
   else {
     const sum = el('div', { class: 'sum' });
-    for (const [src, n] of Object.entries(j.result.found || {})) sum.append(el('div', {}, t('prog.found', { src: srcLabel(src), n, new: (j.result.new || {})[src] || 0 })));
+    if (j.kind === 'audit') for (const [src, n] of Object.entries(j.result.found || {})) sum.append(el('div', {}, t('prog.found', { src: srcLabel(src), n, new: (j.result.new || {})[src] || 0 })));
     for (const [src, msg] of Object.entries(j.result.errors || {})) sum.append(el('div', { class: 'bad' }, `${srcLabel(src)}: ${friendly(msg)}`));
     parts.push(sum, el('div', { class: 'row' }, j.result.lead_id
       ? el('button', { class: 'btn primary', onclick: () => { emit('goto', 'leads'); emit('lead-open', j.result.lead_id); } }, t('prog.see_result'))
       : el('button', { class: 'btn primary', onclick: () => emit('goto', 'leads') }, t('prog.see_leads'))));
   }
   const log = el('div', { class: 'log', dir: 'ltr' }, j.log.join('\n') || t('prog.starting'));
-  parts.push(log);
-  box.replaceChildren(...parts);
+  parts.splice(1, 0, progressChips(j));
+  parts.push(el('details', { class: 'logbox', open: box.querySelector('details.logbox')?.open || j.status === 'error' }, el('summary', {}, t('prog.details')), log));
+  box.replaceChildren(...parts.filter(Boolean));
   log.scrollTop = log.scrollHeight;
   if (busy && !box.dataset.seen) { box.dataset.seen = 1; box.scrollIntoView({ block: 'start' }); }
   if (!busy) delete box.dataset.seen;
@@ -147,6 +161,27 @@ function runAudit() {
   const url = $('#site').value.trim();
   if (!url) return toast(t('find.enter_site'), 'err');
   startJob('audit', { url, booking: $('#booking').checked });
+}
+
+/** One chip per source with its state: waiting, searching, done (with the count) or failed. Built from the job log. */
+export function progressChips(j) {
+  if (!j || j.kind === 'update' || j.kind === 'audit') return null;
+  const st = {}, running = j.status === 'running';
+  (j.kind === 'scan' ? j.params.sources || [] : ['osm']).forEach(s => { st[s] = { s: 'wait' }; });
+  for (const line of j.log) {
+    let m = /^\s*(\w+): (collecting|searching)/.exec(line);
+    if (m) { st[m[1]] = { s: 'run' }; continue; }
+    m = /^\s*(\w+): (\d+) (leads|businesses)/.exec(line);
+    if (m) { st[m[1]] = { s: m[3] === 'businesses' && running ? 'run' : 'done', n: +m[2] }; continue; }
+    m = /^\s*audit (\d+)\/(\d+)/.exec(line);
+    if (m) { st.osm = { ...st.osm, s: 'run', a: `${m[1]}/${m[2]}` }; continue; }
+    m = /^\s*(\w+): FAILED/.exec(line);
+    if (m) st[m[1]] = { s: 'fail' };
+  }
+  if (!running) Object.values(st).forEach(x => { if (x.s === 'run') x.s = x.n != null ? 'done' : 'wait'; delete x.a; });
+  return el('div', { class: 'pchips' }, Object.entries(st).map(([src, x]) => el('span', { class: 'pchip ' + x.s },
+    x.s === 'run' ? el('span', { class: 'spin' }) : x.s === 'done' ? icon('check') : x.s === 'fail' ? icon('x') : null,
+    srcLabel(src), x.n != null && el('b', {}, x.n), x.a && el('b', {}, x.a))));
 }
 
 export const rememberPlace = p => { store.set('lh-place', p); const i = $('#place'); if (i) i.value = p; };

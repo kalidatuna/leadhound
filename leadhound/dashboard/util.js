@@ -74,7 +74,7 @@ export async function copyText(text) {
 
 export const scoreClass = s => (s >= 60 ? 'hi' : s >= 35 ? 'mid' : 'lo');
 export const safeUrl = u => (/^https?:\/\//i.test(u || '') ? u : null);
-export const BRANDS = { reddit: 'Reddit', hn: 'Hacker News', github: 'GitHub', freelancer: 'Freelancer.com', mastodon: 'Mastodon' };
+export const BRANDS = { reddit: 'Reddit', hn: 'Hacker News', github: 'GitHub', freelancer: 'Freelancer.com', mastodon: 'Mastodon', himalayas: 'Himalayas' };
 
 export function openModal(content) {
   const m = $('#modal');

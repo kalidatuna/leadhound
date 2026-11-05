@@ -2,14 +2,13 @@
 import { $, $$, api, el, emit, on, state, store, toast } from './util.js';
 import { t, LANG } from './i18n.js';
 import { icon } from './icons.js';
-import { runQueue, defaultSources } from './find.js';
-import { srcName, ageText, reasonLine, isNew } from './leads.js';
+import { runQueue, defaultSources, progressChips } from './find.js';
+import { srcName, ageText, reasonLine, isNew, checkReplies } from './leads.js';
 import { renderCompose } from './compose.js';
 import { SEND, LINK, TOTAL, acct, platIcon, platName, readyCount, sendCount } from './accounts.js';
-import { isPro, loadPlan, openPlan, plan } from './plan.js';
 
 const root = $('#view-today');
-let leads = [], stats = {}, job = null, step = 0, pick = null, found = null, busy = false, wasRunning = false;
+let leads = [], stats = {}, fups = [], ins = null, job = null, step = 0, pick = null, pickFu = false, found = null, busy = false, wasRunning = false;
 const running = () => job && job.status === 'running';
 const goal = () => state.cfg.daily_goal || 5;
 const rate = n => [1, 2, 3, 4, 5].map(i => el('i', { class: i <= n ? 'on' : '' }));
@@ -30,12 +29,12 @@ export function initToday() {
   on('job-done', j => {
     const added = Object.values(j.result?.new || {}).reduce((a, b) => a + b, 0);
     if (j.status === 'done' && j.kind !== 'update') found = { added };
-    loadPlan().then(paintHero);  // the free search counter moved
     refresh();
   });
   on('profile-changed', refresh);
   on('plan-changed', refresh);
   on('accounts-changed', paintConnect);
+  on('replies-checked', refresh);
   window.addEventListener('resize', () => slide());
   draw();
   refresh();
@@ -58,7 +57,7 @@ function draw() {
       [0, 1, 2].map(i => el('button', { class: 'step', onclick: () => stepClick(i) }, el('span', { class: 'badge' }, i + 1),
         el('span', {}, el('b', {}, [t('today.step1'), t('today.step2'), t('today.step3')][i]), el('small', { id: 's' + i }))))),
     el('div', { class: 'stage' },
-      el('section', { class: 'panel', id: 'p0' }, hero(), tiles(), el('div', { id: 'cityask' }), connectBar()),
+      el('section', { class: 'panel', id: 'p0' }, hero(), el('div', { id: 'fups' }), tiles(), el('div', { id: 'cityask' }), connectBar()),
       el('section', { class: 'panel', id: 'p1' }, el('div', { class: 'grid', id: 'grid' })),
       el('section', { class: 'panel', id: 'p2' }))));
   show(0, false);
@@ -75,7 +74,7 @@ function show(i, animate = true) {
   step = i;
   $$('.panel').forEach((p, k) => { p.classList.toggle('show', k === i); if (k === i && animate) { p.style.animation = 'none'; void p.offsetWidth; p.style.animation = ''; } });
   if (i === 1) paintGrid();
-  if (i === 2 && pick) renderCompose($('#p2'), pick, { onBack: () => show(1), onSent });
+  if (i === 2 && pick) renderCompose($('#p2'), pick, { onBack: () => show(pickFu ? 0 : 1), onSent }, { followup: pickFu });
   paintSteps();
   slide();
 }
@@ -98,8 +97,9 @@ function slide() {
 }
 
 async function refresh() {
-  try { [leads, stats] = await Promise.all([api('/api/leads?status=new&sort=score&limit=60'), api('/api/stats')]); } catch (e) { return toast(e.message, 'err'); }
-  paintSteps(); paintHero(); paintGoal(); paintBest(); paintWeek(); paintSources(); paintConnect(); paintCity();
+  try { [leads, stats, fups] = await Promise.all([api('/api/leads?status=new&sort=score&limit=60'), api('/api/stats'), api('/api/followups')]);
+    ins = await api('/api/insights').catch(() => null); } catch (e) { return toast(e.message, 'err'); }
+  paintSteps(); paintHero(); paintFollowups(); paintGoal(); paintBest(); paintWeek(); paintSources(); paintInsights(); paintConnect(); paintCity();
   if (step === 1) paintGrid();
 }
 
@@ -112,10 +112,9 @@ function hero() {
 }
 
 function findNow() {
-  if (!isPro() && plan().searches_left === 0) return openPlan();  // today's free searches are used
   const jobs = [{ kind: 'scan', params: { sources: defaultSources() } }];
   const place = store.get('lh-place');
-  if (isPro() && place && state.cfg.categories.length) jobs.push({ kind: 'local', params: { place, categories: state.cfg.categories, website: 'no', audit: false, limit: 40 } });
+  if (place && state.cfg.categories.length) jobs.push({ kind: 'local', params: { place, categories: state.cfg.categories, website: 'no', audit: false, limit: 40 } });
   runQueue(jobs, true);
 }
 
@@ -127,11 +126,27 @@ function paintHero() {
   const empty = !stats.total && !busy_;
   $('#h0').textContent = found ? (found.added ? t('today.found', { new: found.added, total: n }) : t('today.found0')) : empty ? t('today.empty_title') : t('today.hero_title');
   $('#h0p').textContent = found ? (found.added && leads[0] ? t('today.found_text', { score: leads[0].score }) : t('today.found_text0')) : empty ? t('today.empty_text') : t('today.hero_text');
-  const left = plan().searches_left;
-  $('#prog').textContent = busy_ ? (job.log[job.log.length - 1] || '') : !isPro() && left != null ? t('plan.searches_left', { n: left }) : '';
+  $('#prog').replaceChildren(...(busy_ ? [progressChips(job) || job.log[job.log.length - 1] || ''] : []));
   acts.replaceChildren(...[el('button', { class: 'cta', disabled: busy_, onclick: findNow }, busy_ ? el('span', { class: 'spin' }) : icon('search'), busy_ ? t('today.finding') : t('today.find_btn')),
     busy_ && el('button', { class: 'cta ghost', onclick: () => api(`/api/jobs/${job.id}/cancel`, {}) }, t('stop')),
     !busy_ && n > 0 && found && el('button', { class: 'cta ghost', onclick: () => show(1) }, t('today.see'), icon('arrow'))].filter(Boolean));
+}
+
+// People you wrote to who have not answered yet: a short nudge often gets the reply.
+function paintFollowups() {
+  const box = $('#fups');
+  if (!box) return;
+  if (!fups.length) return box.replaceChildren();
+  box.replaceChildren(el('div', { class: 'tile fups' },
+    el('div', { class: 'fuh' }, el('h4', {}, t('fup.title'), el('span', { class: 'cnt' }, fups.length)),
+      el('button', { class: 'btn ghost sm', onclick: e => checkReplies(e.currentTarget) }, t('rep.check'))),
+    el('p', { class: 'sd' }, t('fup.text')),
+    el('div', { class: 'furows' }, fups.slice(0, 5).map(l => el('div', { class: 'furow' },
+      el('div', { class: 'fut' }, el('b', {}, l.title), el('small', {}, srcName(l.source), ' · ', t('fup.row', { days: l.outreach.days, n: l.outreach.followups + 1, max: l.outreach.max }))),
+      el('button', { class: 'btn primary sm', onclick: () => { pick = l; pickFu = true; show(2); } }, icon('pen'), t('fup.write')),
+      el('button', { class: 'btn ghost sm', onclick: async () => {
+        try { await api(`/api/leads/${l.id}/followup`, { action: 'stop' }); toast(t('fup.stopped')); refresh(); } catch (e) { toast(e.message, 'err'); }
+      } }, t('fup.stop')))))));
 }
 
 function tiles() {
@@ -142,7 +157,8 @@ function tiles() {
       el('p', { id: 'goalp' })),
     el('div', { class: 'tile t-best', id: 'best' }),
     el('div', { class: 'tile t-week' }, el('h4', {}, t('today.week')), el('div', { class: 'wk' }, el('b', { class: 'num', id: 'weekn' }), el('span', {}, t('today.week_sent'))), el('div', { class: 'bars', id: 'bars' })),
-    el('div', { class: 'tile t-src' }, el('h4', {}, t('today.sources')), el('div', { class: 'srcs', id: 'srcs' }), el('p', {}, t('today.sources_text'))));
+    el('div', { class: 'tile t-src' }, el('h4', {}, t('today.sources')), el('div', { class: 'srcs', id: 'srcs' }), el('p', {}, t('today.sources_text'))),
+    el('div', { class: 'tile t-ins', id: 'ins', hidden: true }));
 }
 
 const C = 2 * Math.PI * 44;
@@ -185,9 +201,25 @@ function paintWeek() {
 
 function paintSources() {
   const c = state.cfg, place = store.get('lh-place');
-  const all = [['Freelancer.com', c.freelancer], ['Reddit', c.reddit_subreddits.length > 0], ['Hacker News', c.hn], ['GitHub', c.github], ['Mastodon', c.mastodon], [t('src.osm'), !!place]];
+  const all = [['Freelancer.com', c.freelancer], ['Reddit', c.reddit_subreddits.length > 0], ['Hacker News', c.hn], ['GitHub', c.github], ['Himalayas', c.himalayas], ['Mastodon', c.mastodon], [t('src.osm'), !!place]];
   $('#srcs').replaceChildren(...all.map(([n, on_]) => el('button', { class: 'srcchip' + (on_ ? '' : ' off'), onclick: () => emit('open-settings') }, el('i'), n)),
     el('button', { class: 'srcchip add', onclick: () => emit('open-settings') }, t('today.add_feed')));
+}
+
+// What works: reply rate per source, and tips that say the numbers behind them. Shown after 3 messages.
+function paintInsights() {
+  const box = $('#ins');
+  if (!box) return;
+  box.hidden = !ins || ins.contacted < 3;
+  if (box.hidden) return;
+  const tip = ([key, a]) => el('li', {}, icon('check'), t('ins.' + key, { ...a, src: a.src ? srcName(a.src) : '' }));
+  box.replaceChildren(el('h4', {}, t('ins.title')),
+    el('div', { class: 'insrows' }, ins.sources.slice(0, 6).map(s => {
+      const bar = el('i', {}); bar.style.setProperty('--w', Math.max(2, s.rate) + '%');
+      return el('div', { class: 'insrow' }, el('b', {}, srcName(s.source)), el('span', { class: 'insbar' }, bar),
+        el('span', { class: 'num' }, s.rate + '%'), el('small', {}, t('ins.row', { replied: s.replied, contacted: s.contacted }), s.won ? ' · ' + t('ins.won', { n: s.won }) : ''));
+    })),
+    ins.tips.length > 0 && el('ul', { class: 'instips' }, ins.tips.map(tip)));
 }
 
 function connectBar() {
@@ -220,7 +252,6 @@ function paintGrid() {
     return;
   }
   grid.replaceChildren(...[...leads.slice(0, 40).map((l, i) => post(l, i)),
-    !isPro() && (stats.by_status || {}).new > leads.length && el('div', { class: 'more rise', style: '--i:2' }, el('b', {}, t('plan.badge')), el('p', {}, t('plan.upgrade_matches', { n: leads.length, total: stats.by_status.new })), el('button', { class: 'btn primary', onclick: openPlan }, t('plan.upgrade_btn'))),
     leads.length % 2 === 1 && el('div', { class: 'more rise', style: '--i:3' }, el('b', {}, t('today.more_title')), el('p', {}, t('today.more_text')), el('button', { class: 'btn', onclick: () => { show(0); findNow(); } }, icon('search'), t('today.search_again')))].filter(Boolean));
 }
 
@@ -234,7 +265,7 @@ function post(l, i) {
   return card;
 }
 
-function write(l) { pick = l; show(2); }
+function write(l) { pick = l; pickFu = false; show(2); }
 
 async function skip(l, card) {
   card.classList.add('leaving');
@@ -258,10 +289,11 @@ async function onSent(info) {
   if (busy) return;
   busy = true;
   await celebrate();
-  pick = null;
+  const wasFu = pickFu;
+  pick = null; pickFu = false;
   await refresh();
-  show(1);
+  show(wasFu ? 0 : 1);
   busy = false;
   const g = (stats.sent_today || 0) >= goal();
-  toast(g ? t('today.goal_done') : info && info.via ? t('compose.sent_toast', { name: info.via, as: info.as }) : t('today.nice'));
+  toast(g ? t('today.goal_done') : info && info.via ? t('compose.sent_toast', { name: info.via, as: info.as }) : wasFu ? t('fup.sent') : t('today.nice'));
 }

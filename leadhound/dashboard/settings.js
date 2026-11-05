@@ -2,6 +2,7 @@
 import { $, api, el, emit, state, toast, openModal, closeModal } from './util.js';
 import { t, LANG, setLang, catName } from './i18n.js';
 import { runQueue, rememberPlace, startJob, defaultSources } from './find.js';
+import { proTag } from './plan.js';
 
 const root = $('#view-settings');
 const list = v => (v || []).join(', ');
@@ -31,6 +32,9 @@ function draw() {
       el('p', { class: 'mut sm' }, t('set.profession_hint')),
       el('div', { class: 'two' }, field(t('set.name'), '', i('name')), field(t('set.signature'), t('set.signature_hint'), i('signature'))),
       field(t('set.daily_goal'), t('set.daily_goal_hint'), i('daily_goal', 'number', { min: 1, max: 50 })),
+      el('div', { class: 'two' },
+        field(t('set.fu_days'), t('set.fu_days_hint'), el('select', { id: 's-follow_up_days' }, options([2, 3, 5, 7, 14].map(d => [d, t('set.days', { n: d })]), cfg.follow_up_days))),
+        field(t('set.fu_max'), t('set.fu_max_hint'), el('select', { id: 's-follow_up_max' }, options([[0, t('set.fu_off')], [1, '1'], [2, '2'], [3, '3']], cfg.follow_up_max)))),
       field(t('set.pitch'), t('set.pitch_hint'), i('pitch')),
       field(t('set.skills'), t('set.skills_hint'), i('skills', 'text', { value: list(cfg.skills) })),
       field(t('set.avoid'), t('set.avoid_hint'), i('avoid', 'text', { value: list(cfg.avoid) })),
@@ -38,7 +42,8 @@ function draw() {
         field(t('set.currency'), '', el('select', { id: 's-currency' }, options(state.meta.currencies.map(c => [c, c]), cfg.currency))),
         field(t('set.min_budget'), t('set.zero_hint'), i('min_budget', 'number', { min: 0 })),
         field(t('set.min_rate'), t('set.zero_hint'), i('min_rate', 'number', { min: 0 }))),
-      field(t('set.portfolio'), t('set.portfolio_hint'), i('portfolio'))),
+      field(t('set.portfolio'), t('set.portfolio_hint'), i('portfolio')),
+      field(t('set.proof'), t('set.proof_hint'), el('textarea', { id: 's-proof', rows: 3, placeholder: t('set.proof_ph'), value: (cfg.proof || []).join('\n') }))),
     el('div', { class: 'card' }, el('h2', {}, t('set.where')),
       check('freelancer', 'Freelancer.com', t('set.freelancer_hint')),
       field(t('set.freelancer_cats'), t('set.freelancer_cats_hint'), i('freelancer_categories', 'text', { value: list(cfg.freelancer_categories) })),
@@ -46,19 +51,24 @@ function draw() {
       check('hn', 'Hacker News', ''), check('github', 'GitHub', t('set.github_hint')),
       el('div', { class: 'two' }, field(t('set.gh_labels'), '', i('github_labels', 'text', { value: list(cfg.github_labels) })),
         field(t('set.gh_langs'), t('set.gh_langs_hint'), i('github_languages', 'text', { value: list(cfg.github_languages) }))),
+      check('himalayas', 'Himalayas', t('set.himalayas_hint')),
       check('mastodon', 'Mastodon', t('set.mastodon_hint')),
       el('div', { class: 'two' }, field(t('set.mastodon_servers'), '', i('mastodon_instances', 'text', { value: list(cfg.mastodon_instances) })),
         field(t('set.mastodon_tags'), '', i('mastodon_tags', 'text', { value: list(cfg.mastodon_tags) }))),
       field(t('set.rss'), t('set.rss_hint'), el('textarea', { id: 's-rss_feeds', rows: 3, value: (cfg.rss_feeds || []).join('\n') })),
       el('div', { class: 'two' },
         field(t('set.max_age'), '', el('select', { id: 's-max_age_days' }, options([7, 14, 21, 30, 60].map(d => [d, t('set.days', { n: d })]), cfg.max_age_days))),
-        field(t('set.auto'), t('set.auto_hint'), el('select', { id: 's-auto_scan_hours' }, options([[0, t('set.auto_off')], [6, t('set.auto_every', { n: 6 })], [12, t('set.auto_every', { n: 12 })], [24, t('set.auto_daily')]], cfg.auto_scan_hours)))),
+        field([t('set.auto'), ' ', proTag()], t('set.auto_hint'), el('select', { id: 's-auto_scan_hours' }, options([[0, t('set.auto_off')], [6, t('set.auto_every', { n: 6 })], [12, t('set.auto_every', { n: 12 })], [24, t('set.auto_daily')]], cfg.auto_scan_hours)))),
       el('p', { class: 'mut' }, key('GitHub', cfg.keys.github), ' · ', t('set.gh_token_hint'))),
     el('div', { class: 'card' }, el('h2', {}, t('set.ai')), el('p', {}, t('set.ai_desc')),
       field(t('set.provider'), '', el('select', { id: 's-llm_provider' }, options([['none', t('prov.none')], ...(state.meta.hosted_ai ? [['leadhound', t('prov.leadhound')]] : []), ['anthropic', t('prov.anthropic')], ['openai', t('prov.openai')]], cfg.llm_provider))),
       state.meta.hosted_ai && el('p', { class: 'mut sm' }, t('set.hosted_note')),
       el('div', { class: 'two' }, field(t('set.model'), t('set.model_hint'), i('llm_model')), field(t('set.server'), t('set.server_hint'), i('llm_base_url'))),
       el('p', { class: 'mut' }, key('Anthropic', cfg.keys.anthropic), ' · ', key('OpenAI', cfg.keys.openai), ' · ', t('set.keys_hint'))),
+    el('div', { class: 'card' }, el('h2', {}, t('set.alerts')), el('p', {}, t('set.alerts_desc')),
+      check('alert_email', [t('set.alert_email'), ' ', proTag()], t('set.alert_email_hint')),
+      field(t('set.alert_min'), '', el('select', { id: 's-alert_min_score', style: 'max-width:220px' }, options([50, 60, 70, 80].map(n => [n, String(n)]), cfg.alert_min_score))),
+      notifyRow()),
     el('div', { class: 'card' }, el('h2', {}, t('set.local')),
       el('div', { class: 'two' }, field(t('set.max_biz'), '', i('max_businesses', 'number', { min: 1, max: 300 })), field(t('set.radius'), '', i('radius_m', 'number', { min: 100, max: 20000 })))),
     updateCard(),
@@ -67,16 +77,30 @@ function draw() {
       el('span', { class: 'mut' }, t('set.stored_at'), ' ', state.meta.config_path)))));
 }
 
+// Desktop notifications live in this browser only: a search that finds new matches while the tab is hidden shows one.
+function notifyRow() {
+  const row = el('div', { class: 'row', style: 'margin-top:12px' });
+  const paint = () => {
+    const p = typeof Notification === 'undefined' ? 'denied' : Notification.permission;
+    row.replaceChildren(p === 'granted' ? el('span', { class: 'mut sm' }, t('set.notify_on'))
+      : p === 'denied' ? el('span', { class: 'mut sm' }, t('set.notify_blocked'))
+      : el('button', { class: 'btn sm', type: 'button', onclick: () => Notification.requestPermission().then(paint) }, t('set.notify_btn')));
+  };
+  paint();
+  return row;
+}
+
 function collect() {
   const v = id => $('#s-' + id).value;
   const c = id => $('#s-' + id).checked;
   return {
     name: v('name'), signature: v('signature'), pitch: v('pitch'), skills: v('skills'), avoid: v('avoid'), profession: v('profession'),
-    currency: v('currency'), min_budget: v('min_budget'), min_rate: v('min_rate'), portfolio: v('portfolio'), draft_language: v('draft_language'),
+    currency: v('currency'), min_budget: v('min_budget'), min_rate: v('min_rate'), portfolio: v('portfolio'), proof: v('proof'), draft_language: v('draft_language'),
     freelancer: c('freelancer'), freelancer_categories: v('freelancer_categories'), reddit_subreddits: v('reddit_subreddits'),
     hn: c('hn'), github: c('github'), github_labels: v('github_labels'), github_languages: v('github_languages'),
-    mastodon: c('mastodon'), mastodon_instances: v('mastodon_instances'), mastodon_tags: v('mastodon_tags'), rss_feeds: v('rss_feeds'),
-    daily_goal: +v('daily_goal') || 5, max_age_days: +v('max_age_days'), auto_scan_hours: +v('auto_scan_hours'), llm_provider: v('llm_provider'), llm_model: v('llm_model'),
+    himalayas: c('himalayas'), mastodon: c('mastodon'), mastodon_instances: v('mastodon_instances'), mastodon_tags: v('mastodon_tags'), rss_feeds: v('rss_feeds'),
+    alert_email: c('alert_email'), alert_min_score: +v('alert_min_score'),
+    daily_goal: +v('daily_goal') || 5, follow_up_days: +v('follow_up_days'), follow_up_max: +v('follow_up_max'), max_age_days: +v('max_age_days'), auto_scan_hours: +v('auto_scan_hours'), llm_provider: v('llm_provider'), llm_model: v('llm_model'),
     llm_base_url: v('llm_base_url'), max_businesses: +v('max_businesses'), radius_m: +v('radius_m'),
   };
 }

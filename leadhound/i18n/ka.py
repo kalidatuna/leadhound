@@ -70,4 +70,15 @@ M = {
     "why.site_issues": "საიტზე {n} პრობლემა, სიმძიმე {sev}", "why.critical": "ნაპოვნია კრიტიკული პრობლემები",
     "why.site_healthy": "საიტი კარგ მდგომარეობაშია", "why.not_audited": "აქვს საიტი (ჯერ არ შემოწმებულა)",
     "why.public_email": "საჯარო ელფოსტა", "why.public_phone": "საჯარო ტელეფონი", "why.no_contact": "საჯარო კონტაქტი არ არის",
+    # follow-ups to a lead that has not answered
+    "fu.subject": "შეხსენება: {name}",
+    "fu.line": "გწერთ ჩემი შეტყობინების გამო „{title}“-თან დაკავშირებით. ისევ თავისუფალი ვარ და სიამოვნებით დაგეხმარებით.",
+    "fu.ask": "იქნებ უფრო მარტივი იყოს რამდენიმე კითხვა შეტყობინებით ან მოკლე ზარი?",
+    "fu.last": "თუ ახლა შესაფერისი დრო არ არის, არაუშავს. მითხარით და აღარ მოგწერთ.",
+    # the email you get after an automatic search (Pro)
+    "al.subject": "leadhound: {n} ახალი შესატყვისი",
+    "al.intro": "leadhound-მა იპოვა {n} ახალი შესატყვისი, {min} ან მეტი ქულით:",
+    "al.footer": "გახსენით leadhound, რომ მისწეროთ. ამ წერილს იღებთ, რადგან შეტყობინებები ჩართულია პარამეტრებში.",
+    # score reason for Himalayas contract roles
+    "why.contract_role": "დისტანციური კონტრაქტი",
 }

@@ -1,6 +1,31 @@
-# leadhound
+<p align="center"><img src="site/logo.svg" width="72" alt=""></p>
+<h1 align="center">leadhound</h1>
 
-**Find freelance clients anywhere in the world, by live intent, not stale contact lists.**
+<p align="center"><b>Find freelance clients anywhere in the world, by live intent, not stale contact lists.</b><br>
+Free, open source and local-first. Your leads never leave your computer.</p>
+
+<p align="center">
+<a href="https://pypi.org/project/leadhound/"><img src="https://img.shields.io/pypi/v/leadhound?color=174a37" alt="PyPI"></a>
+<a href="https://github.com/kalidatuna/leadhound/actions/workflows/test.yml"><img src="https://github.com/kalidatuna/leadhound/actions/workflows/test.yml/badge.svg" alt="tests"></a>
+<img src="https://img.shields.io/pypi/pyversions/leadhound?color=174a37" alt="Python 3.10+">
+<img src="https://img.shields.io/badge/dependencies-0-174a37" alt="zero dependencies">
+<a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-174a37" alt="MIT"></a>
+</p>
+
+<p align="center"><a href="https://kalidatuna.github.io/leadhound/">Website</a> · <a href="#install">Install</a> · <a href="#try-it-in-10-seconds">Try the demo</a> · <a href="CHANGELOG.md">What's new</a></p>
+
+<p align="center"><img src="docs/img/demo.gif" width="880" alt="leadhound: today's matches, follow-ups due, and a first message ready to send"></p>
+
+## Try it in 10 seconds
+
+```bash
+pipx run leadhound demo
+```
+
+The demo opens the app with made-up sample leads in its own folder (sending is off), so you can click through
+everything before you set anything up. `uvx leadhound demo` works too.
+
+## What it does
 
 Most lead tools sell you a database of names, then you cold-email strangers who never asked for anything. leadhound does the opposite. It finds people and businesses that need your kind of work **right now**, shows why each one fits, and drafts a first message from that evidence, in the client's own language. You review it and send it yourself.
 
@@ -11,7 +36,13 @@ It works for **any freelancer**: developers, designers, writers, translators, ma
 - **Evidence-based pitch.** The website check finds problems an owner understands, such as "Chrome marks your site Not secure" or "customers can't book online". The message cites only those.
 - **Explainable scores.** Every lead gets a 0–100 score with a line-by-line reason list. No black box.
 - **11 languages.** English, Español, Português, Français, Deutsch, Русский, ქართული, Türkçe, العربية, हिन्दी and 中文, for both the app and the messages.
+- **Follow-ups that don't slip.** Leads you wrote to who haven't answered come back after a few days with a short follow-up ready.
+- **Learns what works for you.** Reply rates per source, with tips that show the numbers behind them.
 - **Private and free.** Your data stays on your computer. No account, no tracking, no API key needed. Zero dependencies.
+
+| Today | A lead, with reasons and website findings | On your phone |
+|---|---|---|
+| ![Today screen](docs/img/today.png) | ![Lead detail with score reasons and a draft in Georgian](docs/img/leads.png) | ![Phone](docs/img/phone.png) |
 
 ## Install
 
@@ -42,7 +73,19 @@ Or clone the repo and run `python -m leadhound`. Python 3.10 or newer is needed.
 
 That is the whole simple view. **Find new clients** searches again whenever you like. **Not for me** hides a match. **Quit** closes leadhound. Double-clicking the icon twice just reopens the same window.
 
-Everything else lives behind the **Advanced** button: the full list with filters and stages, detailed searches, settings, export and updates.
+Everything else lives behind the **Advanced** button: the full list with filters and stages, detailed searches, settings, export and updates. Light or dark: the ⋯ menu has the theme and the language.
+
+## After you write: follow-ups, replies and what works
+
+- **Follow-ups.** After a few days without a reply (you choose 2–14), the lead shows under **Follow-ups due** on Today with a short, polite follow-up already written in the client's language. Two by default; the last one says you won't write again. **Stop following up** ends it.
+- **Reply detection** *(Pro)*. **Check for replies** looks in the inbox of the email account you connected, read-only, for answers from leads you wrote to, and moves them to *Replied*. It never downloads, marks, moves or deletes mail.
+- **What works.** After three messages, Today shows the reply rate per source and plain tips such as "No replies from Reddit after 10 messages" or "Leads scoring 60+ replied 30% of the time, others 0%".
+- **Proof of your work.** In Settings, add a few lines like `wordpress, booking: Rebuilt a clinic's site with online booking: https://…`. Each draft adds the one that matches the lead best, and leaves it out when none fits.
+- **Alerts.** Desktop notifications when a search finds new matches in the background (free), and *(Pro)* an email to yourself with the best new matches after each automatic search.
+
+## Browser extension
+
+Found a client post or a business website yourself? The extension in [`extension/`](extension/) sends the page to leadhound: **Save this page as a lead** (with any text you selected) or **Check this website**. It only talks to leadhound on your own computer, and you confirm inside the app. You can also paste a link with **Add lead** on the Leads screen.
 
 ## Send from your own accounts
 
@@ -62,7 +105,15 @@ Each account has a daily cap (10 for email and Mastodon, 5 for GitHub and Reddit
 
 ## Free and Pro
 
-Everything works for free: searching, matches, drafts, and opening Gmail, Outlook, WhatsApp and more with your message ready (3 searches a day, your top 10 matches). Every install gets a **free taste** (7 uses), then a **7-day Pro trial** after a quick email sign-up (one trial per person). **Pro** unlocks sending from your connected accounts, unlimited searches and matches, AI-written messages, the local business finder with website checks, and automatic search. Pro is a license key checked offline. The sign-up and the optional hosted AI talk to the seller's license server and send only your email, a device code, and (for AI) the text of the lead. Sellers: see [docs/SELLING.md](docs/SELLING.md).
+**Free has no limits on anything you do yourself**, and needs no account: every source, all your matches, the local business finder, website checks, drafts, follow-ups, sending from your own connected accounts, and AI drafts with your own key (Claude, OpenAI) or a local model.
+
+**Pro** pays for the things that run for you or cost money to provide:
+
+- **leadhound AI**: AI-written messages with no API key.
+- **Automatic search** every 6, 12 or 24 hours, with an email of the best new matches.
+- **Reply detection**: leadhound checks your inbox and moves leads that answered to *Replied*.
+
+You can try Pro a few times for free, then start a **7-day trial** with an email sign-up (one per person). Pro is a license key checked offline. The sign-up and the hosted AI talk to the seller's license server and send only your email, a device code, and (for AI) the text of the lead. Sellers: see [docs/SELLING.md](docs/SELLING.md).
 
 ## Advanced
 
@@ -74,9 +125,10 @@ Everything works for free: searching, matches, drafts, and opening Gmail, Outloo
 **Leads**
 - The list is ranked best first. A pipeline tracks each lead: Inbox, Shortlist, Contacted, Replied, Won, Lost, Skipped. **NEW** marks what appeared since your last visit.
 - Each lead shows why it scored what it did, the original post or website problems, and contact buttons (Copy, Open, Call). **Write with AI** uses Claude, OpenAI or a local Ollama model if you set one up.
+- **Add lead** saves a post you found yourself; **Check for replies** looks for answers in your inbox (Pro).
 - Every move has an **Undo**. Keyboard: `j`/`k` move, `s` shortlist, `c` contacted, `x` skip, `g` write, `o` open, `/` search. **Skip low scores…** clears weak leads; **Export CSV** gives you a spreadsheet.
 
-**Settings**: app language, message language (automatic = the client's language), your work and skills, currency and minimum budget, sources, **automatic search** every 6/12/24 hours, and the optional AI provider. **Updates**: the app tells you when a new version exists and installs it with one click.
+**Settings**: app language, message language (automatic = the client's language), your work and skills, proof of your work, currency and minimum budget, follow-up timing, sources, **automatic search** every 6/12/24 hours, alerts, and the optional AI provider. **Updates**: the app tells you when a new version exists and installs it with one click.
 
 ## Where leads come from
 
@@ -86,6 +138,7 @@ Everything works for free: searching, matches, drafts, and opening Gmail, Outloo
 | **Reddit** | `[Hiring]` and "need a ..." posts in r/forhire, r/jobbit, r/hiring and communities for your work (r/HireaWriter, r/DesignJobs, r/HireAnEditor, ...). Competitors' `[For Hire]` posts are dropped. |
 | **Hacker News** | `SEEKING FREELANCER` posts and contract roles from the monthly threads. |
 | **GitHub** | Open, unassigned issues with bounty labels. Only cash amounts count as **paid bounty**; points don't. Max 3 per owner. |
+| **Himalayas** | Remote **contract** roles (not full-time jobs) from himalayas.app, searched by your top 3 skills, with pay when stated. |
 | **Mastodon** *(off by default)* | Fediverse posts asking for help, in any language. Worldwide but low-volume. |
 | **Job boards** | Any RSS feed. Presets per profession: We Work Remotely, Dribbble, Jobspresso, Authentic Jobs. |
 | **Local** | OpenStreetMap businesses near any place, by type, with automatic fallback between map servers. |
@@ -156,11 +209,13 @@ leadhound draft 12                              # message in the lead's language
 leadhound audit https://example.com --booking
 leadhound shortcut                              # desktop icon
 leadhound serve --cloud                         # server mode (needs LEADHOUND_PASSWORD)
+leadhound demo                                  # try it with sample leads (separate folder)
+leadhound trends --days 30                      # what clients asked for lately, as a Markdown table
 ```
 
 ## Contributing
 
-Translations, sources, professions and website checks are all welcome. See [CONTRIBUTING.md](CONTRIBUTING.md). The translations were machine-assisted, so native speakers fixing wording would help a lot.
+Translations, sources, professions and website checks are all welcome. See [CONTRIBUTING.md](CONTRIBUTING.md) and the issues labelled [good first issue](https://github.com/kalidatuna/leadhound/labels/good%20first%20issue). The translations were machine-assisted, so native speakers fixing wording would help a lot: each language is a short JSON file and a short Python file.
 
 ```bash
 python -m unittest discover -s tests -t tests

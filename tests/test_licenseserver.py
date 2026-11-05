@@ -65,7 +65,7 @@ class TasteAndSignupTests(Base):
         st = self.lic.status()
         self.assertEqual((st["plan"], st["need_signup"], st["trial_used"]), ("free", True, False))
         with self.assertRaises(licensing.ProRequired):
-            self.lic.require("send")
+            self.lic.require("ai")
 
     def test_taste_also_ends_after_seven_days(self):
         self.lic.status()
@@ -143,7 +143,7 @@ class GumroadTests(Base):
             self.lic.count_use()
         st = self.lic.activate("GOOD-KEY-1234")  # not an LH1 key, so it is redeemed with the server
         self.assertEqual((st["plan"], st["email"], st["key_state"]), ("pro", "buyer@example.com", "ok"))
-        self.lic.require("send")
+        self.lic.require("ai")
         self.assertIn("gumroad_key", json.load(open(self.lic.path)))
 
     def test_refunded_ended_unknown_and_junk_keys_are_refused(self):

@@ -3,7 +3,11 @@
 <title>leadhound: find freelance clients who need you right now</title>
 <meta name="description" content="leadhound finds people hiring freelancers right now, shows why each one fits, and writes your first message in their language. You send it yourself. Free to start, runs on your computer.">
 <meta property="og:title" content="leadhound: find freelance clients who need you right now">
-<meta property="og:description" content="Live hiring posts and local businesses, scored and explained. Your data stays on your computer.">
+<meta property="og:description" content="Live hiring posts and local businesses, scored and explained. Free and open source; your data stays on your computer.">
+<meta property="og:image" content="https://kalidatuna.github.io/leadhound/social-preview.png">
+<meta property="og:type" content="website">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="icon" href="logo.svg" type="image/svg+xml">
 <style>
 @font-face{font-family:Fraunces;src:url(fonts/fraunces.woff2) format("woff2");font-weight:300 700;font-display:swap}
 @font-face{font-family:Fraunces;src:url(fonts/fraunces-italic.woff2) format("woff2");font-weight:300 700;font-style:italic;font-display:swap}
@@ -17,7 +21,9 @@ a{color:inherit}
 .wrap{max-width:1040px;margin:0 auto;padding:0 24px}
 header{display:flex;align-items:center;gap:8px;padding:20px 0}
 .brand{display:flex;align-items:center;gap:12px;margin-right:auto;font:500 24px/1 var(--display);text-decoration:none}
-.logo{display:grid;place-items:center;width:34px;height:34px;border-radius:50%;box-shadow:inset 0 0 0 1px var(--gold);color:var(--gold-ink);font:italic 400 22px/1 var(--display);padding-bottom:3px}
+.logo{display:block;width:38px;height:38px}
+.shot{display:block;width:100%;border-radius:20px;box-shadow:0 0 0 1px var(--hair),0 30px 60px -36px oklch(0 0 0/.4)}
+code{font:15px ui-monospace,monospace;background:color-mix(in oklch,var(--ink) 7%,transparent);padding:3px 8px;border-radius:8px}
 nav a{display:inline-flex;align-items:center;min-height:44px;padding:0 14px;border-radius:99px;color:var(--mut);text-decoration:none;font-weight:500}
 nav a:hover{background:color-mix(in oklch,var(--ink) 6%,transparent);color:var(--ink)}
 .btn{display:inline-flex;align-items:center;gap:10px;min-height:56px;padding:0 28px;border-radius:99px;background:var(--gold);color:var(--gold-on);font:500 19px/1 var(--display);text-decoration:none;transition:transform 150ms var(--ease),filter 150ms var(--ease)}
@@ -52,14 +58,14 @@ footer{padding:40px 0 60px;color:var(--mut);font-size:14.5px;border-top:1px soli
 @media(prefers-reduced-motion:reduce){*{transition:none!important;scroll-behavior:auto!important}}
 </style></head><body>
 <div class="wrap">
-<header><a class="brand" href="#"><span class="logo">l</span>leadhound</a><nav><a class="hide" href="#how">How it works</a><a href="#pricing">Pricing</a><a class="hide" href="#faq">Questions</a></nav></header>
+<header><a class="brand" href="#"><img class="logo" src="logo.svg" alt="">leadhound</a><nav><a class="hide" href="#how">How it works</a><a href="#pricing">Pricing</a><a class="hide" href="#faq">Questions</a></nav></header>
 
 <div class="hero">
   <p class="eyebrow">For freelancers</p>
   <h1>Find clients who need you <em>right now</em></h1>
   <p class="lead">leadhound finds people hiring freelancers today, shows exactly why each one fits, and writes your first message in their language. You read it and send it yourself.</p>
-  <div class="cta"><a class="btn" href="https://github.com/kalidatuna/leadhound/releases/latest">Download free</a><a class="btn line" href="#pricing">See Pro</a></div>
-  <p class="small">Windows, macOS and Linux. Runs on your computer. No account needed to start.</p>
+  <div class="cta"><a class="btn" href="https://github.com/kalidatuna/leadhound/releases/latest">Download free</a><a class="btn line" href="https://github.com/kalidatuna/leadhound">Source on GitHub</a></div>
+  <p class="small">Windows, macOS and Linux. Runs on your computer. Free with no limits, no account needed. Just curious? <code>pipx run leadhound demo</code> opens it with sample leads.</p>
 </div>
 
 <section style="padding-top:0">
@@ -97,26 +103,31 @@ footer{padding:40px 0 60px;color:var(--mut);font-size:14.5px;border-top:1px soli
     <div class="card"><h3>Honest scores</h3><p>Each lead shows a line-by-line list of why it scored what it did. No black box.</p></div>
     <div class="card"><h3>Local businesses</h3><p>Find shops, clinics and cafes in any country and check their websites for problems you can fix.</p></div>
     <div class="card"><h3>Send for you</h3><p>Optionally connect email, Mastodon, GitHub or Reddit so leadhound sends through your own account, with daily limits that protect it.</p></div>
-    <div class="card"><h3>Open source</h3><p>The code is public. You can read exactly what it does.</p></div>
+    <div class="card"><h3>Follow-ups</h3><p>Leads that haven't answered come back after a few days with a short, polite follow-up ready. A short nudge often gets the reply.</p></div>
+    <div class="card"><h3>Browser extension</h3><p>Found a post or a business site yourself? Send it to leadhound in one click, scored and drafted like the rest.</p></div>
+    <div class="card"><h3>Learns what works</h3><p>See which sources actually reply to you, with tips that show the numbers behind them.</p></div>
+    <div class="card"><h3>Open source</h3><p>The code is public under the MIT license. You can read exactly what it does, and change it.</p></div>
   </div>
+  <img class="shot" style="margin-top:28px" src="https://raw.githubusercontent.com/kalidatuna/leadhound/main/docs/img/leads.png" alt="A lead in leadhound: score with reasons, website problems found, and a first message in Georgian" loading="lazy">
+  <p class="small">A dental clinic in Tbilisi: the website check found three problems, so the message cites them, in Georgian.</p>
 </section>
 
 <section id="pricing">
   <p class="eyebrow">Pricing</p>
-  <h2>Start free. Upgrade when it pays for itself.</h2>
+  <h2>Free for everything you do yourself.</h2>
   <div class="plans" style="margin-top:28px">
     <div class="card plan">
-      <h3>Free</h3><div class="price">$0</div><p>After your 7-day trial.</p>
-      <ul class="tick"><li>3 searches a day</li><li>Your top 10 matches</li><li>Scores, reasons and drafted messages</li><li>Open Gmail, Outlook, WhatsApp and more with the message ready</li></ul>
+      <h3>Free</h3><div class="price">$0</div><p>Forever. No account, no limits.</p>
+      <ul class="tick"><li>Unlimited searches and all your matches</li><li>Local business finder and website checks</li><li>Drafts in the client's language, and follow-up reminders</li><li>Send from your own email, Mastodon, GitHub or Reddit, or open Gmail, Outlook and WhatsApp with the message ready</li><li>Use your own AI key (Claude, OpenAI) or a local model</li></ul>
       <a class="btn line" href="https://github.com/kalidatuna/leadhound/releases/latest">Download</a>
     </div>
     <div class="card plan pro">
       <h3>Pro</h3><div class="price">$12.99 <small>a month</small></div><p>or $89.99 a year (save 42%)</p>
-      <ul class="tick"><li>Unlimited searches and all your matches</li><li>Send from your connected accounts</li><li>AI-written messages, no API key needed</li><li>Local business finder and website checks</li><li>Automatic search every few hours</li></ul>
+      <ul class="tick"><li>AI-written messages, no API key needed</li><li>Automatic search every few hours, with an email of the best new matches</li><li>Reply detection: leads that answer move to Replied by themselves</li><li>Keeps leadhound independent and open source</li></ul>
       <a class="btn" href="https://leadhound.gumroad.com/l/tfoewu">Buy Pro</a>
     </div>
   </div>
-  <p class="small">Every new install gets 7 uses free, then a 7-day Pro trial after a quick email sign-up. To buy: pay on Gumroad with a card, Apple Pay, Google Pay or PayPal, and your license key arrives by email right away. Paste it into the Pro button in the app.</p>
+  <p class="small">You can try the Pro features a few times for free, then start a 7-day trial with a quick email sign-up. To buy: pay on Gumroad with a card, Apple Pay, Google Pay or PayPal, and your license key arrives by email right away. Paste it into the Pro button in the app.</p>
 </section>
 
 <section id="faq">
@@ -126,7 +137,7 @@ footer{padding:40px 0 60px;color:var(--mut);font-size:14.5px;border-top:1px soli
   <details><summary>Does it send messages on its own?</summary><p>Never. You press send on every message. The daily limits exist to protect your accounts, not to set a target.</p></details>
   <details><summary>What data leaves my computer?</summary><p>Searches go to the public sources (Freelancer.com, Reddit and so on) the way a browser would. If you sign up for the trial, your email and a device code go to the license server. If you use the hosted AI, the lead's text goes to the server and then to Anthropic to write the message. Nothing else.</p></details>
   <details><summary>Windows says "protected your PC". Is it safe?</summary><p>The downloaded apps are not code-signed yet, so Windows and macOS warn you. On Windows click More info, then Run anyway. On macOS right-click the file and choose Open. The code is public if you want to check it, or install it with pip.</p></details>
-  <details><summary>Is it really open source if Pro costs money?</summary><p>Yes. The code is public under the MIT license. Pro is a license key for convenience features and the hosted AI. Anyone technical can read and change the code; paying supports the person who maintains it.</p></details>
+  <details><summary>Is it really open source if Pro costs money?</summary><p>Yes. The code is public under the MIT license, and everything you do yourself is free with no limits. Pro pays for the things that run for you or cost money to provide: the hosted AI, automatic search with email alerts, and reply detection. Paying supports the person who maintains it.</p></details>
   <details><summary>Will it get me banned on Reddit or other sites?</summary><p>leadhound identifies itself, limits how fast it asks, and only reads public posts. When you connect an account to send, it caps messages per day and pauses between them. Cold messages can still break a site's rules, so keep them personal and short.</p></details>
   <details><summary>How do I get help?</summary><p>Open an issue on <a href="https://github.com/kalidatuna/leadhound/issues">GitHub</a>.</p></details>
   </div>

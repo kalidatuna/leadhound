@@ -1,4 +1,4 @@
-"""Ed25519, license keys, trial and Free limits, and the API gates."""
+"""Ed25519, license keys, the trial, and the API gates for the few Pro features."""
 import http.client
 import json
 import os
@@ -49,7 +49,7 @@ class PlanTests(Base):
         licensing.PUBLIC_KEY_HEX = ""
         st = self.lic.status()
         self.assertEqual((st["plan"], st["configured"]), ("pro", False))
-        self.lic.require("send")  # no error
+        self.lic.require("autosearch")  # no error
 
     def test_trial_lasts_14_days_then_free(self):
         st = self.lic.status()
@@ -58,22 +58,12 @@ class PlanTests(Base):
         self.assertEqual(self.lic.status()["trial_left"], 3)
         self.lic.require("ai")
         self.now = T0 + 7 * DAY + 5
-        st = self.lic.status()
-        self.assertEqual((st["plan"], st["searches_left"]), ("free", 3))
-        with self.assertRaises(licensing.ProRequired):
-            self.lic.require("send")
-        self.assertEqual(self.lic.max_leads(), 10)
-
-    def test_free_searches_are_limited_per_day(self):
-        self.lic.status()
-        self.now = T0 + 20 * DAY
-        for _ in range(3):
-            self.lic.use_search()
-        with self.assertRaises(licensing.ProRequired):
-            self.lic.use_search()
-        self.assertEqual(self.lic.status()["searches_left"], 0)
-        self.now += DAY
-        self.lic.use_search()  # new day
+        self.assertEqual(self.lic.status()["plan"], "free")
+        for feature in ("ai", "autosearch", "replies"):
+            with self.assertRaises(licensing.ProRequired):
+                self.lic.require(feature)
+        with self.assertRaises(ValueError):
+            self.lic.require("send")  # sending is not a Pro feature any more
 
     def test_a_genuine_key_unlocks_pro_until_it_ends(self):
         self.lic.status()
@@ -81,7 +71,7 @@ class PlanTests(Base):
         key = licensing.make_key(SECRET, "ann@example.com", 31, now=self.now)
         st = self.lic.activate(key)
         self.assertEqual((st["plan"], st["email"], st["key_state"]), ("pro", "ann@example.com", "ok"))
-        self.lic.require("send")
+        self.lic.require("replies")
         self.now += 32 * DAY
         st = self.lic.status()
         self.assertEqual((st["plan"], st["key_state"]), ("free", "expired"))
@@ -135,21 +125,28 @@ class ApiGateTests(Base):
         c.close()
         return r.status, json.loads(raw)
 
-    def test_free_plan_gates_pro_features_with_402(self):
+    def test_free_plan_gates_only_pro_features_with_402(self):
         self.assertEqual(self.req("GET", "/api/plan")[1]["plan"], "free")
-        self.assertEqual(self.req("POST", "/api/jobs", {"kind": "local", "params": {"place": "Tbilisi", "categories": ["cafe"]}})[0], 402)
-        self.assertEqual(self.req("POST", "/api/jobs", {"kind": "audit", "params": {"url": "https://example.com"}})[0], 402)
-        self.assertEqual(self.req("POST", "/api/leads/1/draft", {"llm": True})[0], 402)
-        self.assertEqual(self.req("POST", "/api/leads/1/send", {"channel": "email", "to": "a@b.co", "body": "x"})[0], 402)
-        self.assertEqual(self.req("POST", "/api/accounts/email", {"action": "connect", "fields": {}})[0], 402)
         self.assertEqual(self.req("POST", "/api/config", {"auto_scan_hours": 6})[0], 402)
-        self.assertEqual(self.req("POST", "/api/config", {"name": "Ann"})[0], 200)  # ordinary settings stay free
+        self.assertEqual(self.req("POST", "/api/config", {"llm_provider": "leadhound"})[0], 200)
+        self.assertEqual(self.req("POST", "/api/leads/1/draft", {"llm": True})[0], 402)  # the hosted AI
+        self.assertEqual(self.req("POST", "/api/config", {"llm_provider": "none"})[0], 200)
+        self.assertEqual(self.req("POST", "/api/leads/1/draft", {"llm": True})[0], 200)  # your own AI (none here: template)
+        self.assertEqual(self.req("POST", "/api/config", {"name": "Ann"})[0], 200)
+        # everything you do yourself is free: sending, connecting accounts, local businesses, website checks
+        self.assertEqual(self.req("POST", "/api/leads/1/send", {"channel": "email", "to": "a@b.co", "body": "x"})[0], 400)
+        self.assertEqual(self.req("POST", "/api/accounts/email", {"action": "connect", "fields": {}})[0], 400)
+        self.assertEqual(self.req("POST", "/api/jobs", {"kind": "audit", "params": {"url": "nodots"}})[0], 400)
 
-    def test_free_plan_shows_only_the_top_leads(self):
+    def test_free_plan_shows_every_lead(self):
         code, leads = self.req("GET", "/api/leads?limit=100")
-        self.assertEqual((code, len(leads)), (200, 10))
+        self.assertEqual((code, len(leads)), (200, 15))
         self.assertEqual(leads[0]["score"], 90)
-        self.assertEqual(self.req("GET", "/api/stats")[1]["total"], 15)  # the total is still honest
+
+    def test_automatic_search_stops_when_pro_ends(self):
+        self.assertFalse(self.httpd.auto.allowed())
+        self.ctx_lic.activate(licensing.make_key(SECRET, "ann@example.com", 31, now=self.now))
+        self.assertTrue(self.httpd.auto.allowed())
 
     def test_a_key_unlocks_everything_and_can_be_removed(self):
         code, body = self.req("POST", "/api/plan", {"action": "activate", "key": "nonsense"})
@@ -157,7 +154,7 @@ class ApiGateTests(Base):
         key = licensing.make_key(SECRET, "ann@example.com", 31, now=self.now)
         code, st = self.req("POST", "/api/plan", {"action": "activate", "key": key})
         self.assertEqual((code, st["plan"]), (200, "pro"))
-        self.assertEqual(len(self.req("GET", "/api/leads?limit=100")[1]), 15)
+        self.assertEqual(self.req("POST", "/api/config", {"auto_scan_hours": 6})[0], 200)
         self.assertEqual(self.req("POST", "/api/config", {"auto_scan_hours": 6})[0], 200)
         self.assertEqual(self.req("POST", "/api/plan", {"action": "remove"})[1]["plan"], "free")
 

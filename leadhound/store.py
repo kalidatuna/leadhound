@@ -1,4 +1,8 @@
-"""SQLite lead store. Re-scans update content and score but never touch status, notes or draft."""
+"""SQLite lead store. Re-scans update content and score but never touch status, notes or draft.
+
+The activity table records what you did, one row per event: contacted (first message), followup (a later
+nudge), nofollow (stop reminding me), replied (found in your inbox). Follow-ups and the week chart read it.
+"""
 from __future__ import annotations
 
 import json
@@ -174,14 +178,78 @@ class Store:
         out["sent_today"] = out["sent_week"][-1]
         return out
 
+    def log(self, lead_id: int, kind: str, via: str = "") -> None:
+        if kind not in ("contacted", "followup", "nofollow", "replied"):
+            raise ValueError(f"unknown activity {kind}")
+        self.db.execute("INSERT INTO activity (lead_id, kind, via, at) VALUES (?, ?, ?, ?)",
+                        (lead_id, kind, str(via)[:30], time.time()))
+        self.db.commit()
+
+    def outreach(self, lead_id: int) -> dict:
+        """When you first wrote, how many follow-ups went out, the last message, and whether reminders are off."""
+        row = self.db.execute(
+            "SELECT MIN(CASE WHEN kind='contacted' THEN at END) first, MAX(CASE WHEN kind IN ('contacted','followup') THEN at END) last, "
+            "SUM(kind='followup') n, SUM(kind='nofollow') stop FROM activity WHERE lead_id=?", (lead_id,)).fetchone()
+        return {"contacted_at": row["first"] or 0, "last_at": row["last"] or 0, "followups": row["n"] or 0,
+                "stopped": bool(row["stop"])}
+
+    def followups_due(self, days: int, max_n: int, now: float | None = None, limit: int = 50) -> list[tuple[Lead, dict]]:
+        """Contacted leads with no reply for `days` days and fewer than `max_n` follow-ups, oldest first."""
+        if max_n <= 0:
+            return []
+        now = now or time.time()
+        rows = self.db.execute(
+            "SELECT l.id, MAX(CASE WHEN a.kind IN ('contacted','followup') THEN a.at END) last, "
+            "SUM(a.kind='followup') n, SUM(a.kind='nofollow') stop FROM leads l JOIN activity a ON a.lead_id = l.id "
+            "WHERE l.status = 'contacted' GROUP BY l.id HAVING stop = 0 AND n < ? AND last IS NOT NULL AND last < ? "
+            "ORDER BY last LIMIT ?", (max_n, now - days * 86400, limit)).fetchall()
+        out = []
+        for r in rows:
+            lead = self.get(r["id"])
+            if lead:
+                out.append((lead, {**self.outreach(r["id"]), "days": int((now - r["last"]) // 86400)}))
+        return out
+
+    def insights(self) -> dict:
+        """What works: per source, how many leads you wrote to, how many answered and how many you won,
+        plus plain tips. Every tip states the numbers behind it, like the score reasons do."""
+        rows = self.db.execute(
+            "SELECT l.source, l.score, l.status, MAX(a.kind = 'replied') got_reply FROM leads l "
+            "JOIN activity a ON a.lead_id = l.id WHERE a.kind IN ('contacted', 'replied') GROUP BY l.id").fetchall()
+        by: dict[str, dict] = {}
+        bands = {"hi": [0, 0], "lo": [0, 0]}  # [contacted, replied] for scores >= 60 and below
+        for r in rows:
+            replied = bool(r["got_reply"]) or r["status"] in ("replied", "won")
+            s = by.setdefault(r["source"], {"source": r["source"], "contacted": 0, "replied": 0, "won": 0})
+            s["contacted"] += 1
+            s["replied"] += replied
+            s["won"] += r["status"] == "won"
+            band = bands["hi" if r["score"] >= 60 else "lo"]
+            band[0] += 1
+            band[1] += replied
+        sources = sorted(by.values(), key=lambda s: (-s["replied"] / s["contacted"], -s["contacted"]))
+        for s in sources:
+            s["rate"] = round(100 * s["replied"] / s["contacted"])
+        tips = []
+        tried = [s for s in sources if s["contacted"] >= 3]
+        if tried and tried[0]["replied"]:
+            tips.append(["best", {"src": tried[0]["source"], "rate": tried[0]["rate"], "n": tried[0]["contacted"]}])
+        for s in sources:
+            if s["contacted"] >= 8 and not s["replied"]:
+                tips.append(["weak", {"src": s["source"], "n": s["contacted"]}])
+        (hc, hr), (lc, lr) = bands["hi"], bands["lo"]
+        if hc >= 5 and lc >= 5 and hr / hc > lr / lc:
+            tips.append(["score", {"hi": round(100 * hr / hc), "lo": round(100 * lr / lc)}])
+        return {"contacted": len(rows), "sources": sources, "tips": tips}
+
     def sent_per_day(self, days: int) -> list[int]:
-        """Messages marked as sent per local day, oldest first, ending with today."""
+        """Messages marked as sent (first messages and follow-ups) per local day, oldest first, ending with today."""
         midnight = datetime.now().replace(hour=0, minute=0, second=0, microsecond=0)
         counts = []
         for i in range(days - 1, -1, -1):
             start = midnight - timedelta(days=i)
             end = start + timedelta(days=1)
-            row = self.db.execute("SELECT COUNT(*) c FROM activity WHERE kind='contacted' AND at >= ? AND at < ?",
+            row = self.db.execute("SELECT COUNT(*) c FROM activity WHERE kind IN ('contacted','followup') AND at >= ? AND at < ?",
                                   (start.timestamp(), end.timestamp())).fetchone()
             counts.append(row["c"])
         return counts

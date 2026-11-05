@@ -1,10 +1,11 @@
 // Leads view: pipeline stages, ranked list, lead detail with one-click actions, keyboard shortcuts.
-import { $, api, el, emit, on, state, store, toast, copyText, scoreClass, safeUrl, BRANDS, modalOpen } from './util.js';
+import { $, api, el, emit, on, state, store, toast, copyText, scoreClass, safeUrl, BRANDS, modalOpen, openModal, closeModal } from './util.js';
 import { t, whyText, findingText, catName } from './i18n.js';
 
 const STAGES = ['new', 'shortlisted', 'contacted', 'replied', 'won', 'lost', 'ignored'];
 const F = { status: 'new', q: '', kind: '', min: 0, sort: 'score' };
-let leads = [], sel = null, stats = {}, saveTimer = null;
+let leads = [], sel = null, stats = {}, saveTimer = null, autoTimer = null;
+const autoTried = new Set();  // write a draft by itself once per lead, never in a loop
 const root = $('#view-leads');
 // "new since your last visit": remember the previous visit, then start a new one
 const lastVisit = parseFloat(store.get('lh-last-visit')) || 0;
@@ -20,6 +21,16 @@ export function ageText(ts) {
 export function reasonLine(l) {  // the two strongest reasons this lead matches, in plain words
   const good = (l.extra.why || []).filter(w => w[0] > 0 && w[1] !== 'age_unknown').sort((a, b) => b[0] - a[0]).slice(0, 2);
   return good.length ? good.map(w => whyText([null, w[1], w[2]])).join(' · ') : t('today.reason_none');
+}
+/** Pro: look in the connected inbox for answers and move those leads to Replied. */
+export async function checkReplies(btn) {
+  if (btn) { btn.disabled = true; btn.replaceChildren(el('span', { class: 'spin' }), t('rep.checking')); }
+  try {
+    const r = await api('/api/replies', {});
+    toast(r.replied ? t('rep.found', { n: r.replied }) : t('rep.none', { n: r.checked }));
+    emit('replies-checked');
+  } catch (e) { toast(e.message, 'err'); }
+  if (btn) { btn.disabled = false; btn.replaceChildren(t('rep.check')); }
 }
 export const isNew = l => !!lastVisit && l.first_seen > lastVisit && l.status === 'new';
 const debounce = (fn, ms) => { let tm; return (...a) => { clearTimeout(tm); tm = setTimeout(() => fn(...a), ms); }; };
@@ -37,11 +48,14 @@ export function initLeads() {
         el('div', { class: 'row wide' },
           el('button', { class: 'btn sm', onclick: exportCsv }, t('leads.export')),
           el('button', { class: 'btn sm', onclick: skipLow }, t('leads.skip_low')),
+          el('button', { class: 'btn sm', onclick: e => checkReplies(e.currentTarget) }, t('rep.check')),
+          el('button', { class: 'btn sm', onclick: () => addLead() }, t('add.btn')),
           el('span', { class: 'mut sm', id: 'newcount' }))),
       el('div', { class: 'list', id: 'list' })),
     el('section', { class: 'detail', id: 'detail' })));
   document.addEventListener('keydown', onKey);
   on('job-done', () => refresh());
+  on('replies-checked', () => refresh());
   on('lead-open', id => { F.status = ''; F.q = ''; refresh(id); });
   refresh();
 }
@@ -139,6 +153,29 @@ async function skipLow() {
   try { await api('/api/leads/bulk', { ids, status: 'ignored' }); toast(t('leads.skipped', { n: ids.length })); refresh(); } catch (e) { toast(e.message, 'err'); }
 }
 
+/** Add a lead you found yourself. `pre` fills the form (from the browser extension: url, title, text). */
+export function addLead(pre = {}) {
+  const f = (id, label, input) => el('label', { class: 'f' }, label, input);
+  const url = el('input', { id: 'add-url', type: 'url', placeholder: 'https://', value: pre.url || '' });
+  const title = el('input', { id: 'add-title', value: pre.title || '' });
+  const body = el('textarea', { id: 'add-body', rows: 5, value: pre.text || '' });
+  const contact = el('input', { id: 'add-contact', placeholder: 'name@example.com', value: pre.contact || '' });
+  const save = async () => {
+    try {
+      const r = await api('/api/leads', { url: url.value, title: title.value, body: body.value, contact: contact.value });
+      closeModal();
+      toast(t('add.saved'));
+      emit('goto', 'leads');
+      emit('lead-open', r.id);
+    } catch (e) { toast(e.message, 'err'); }
+  };
+  openModal([el('h2', {}, t('add.title')), el('p', { class: 'mut' }, t('add.text')),
+    f('add-url', t('add.url'), url), f('add-title', t('add.name'), title), f('add-body', t('add.body'), body), f('add-contact', t('add.contact'), contact),
+    el('div', { class: 'row', style: 'margin-top:16px' }, el('button', { class: 'btn primary', onclick: save }, t('add.save')),
+      el('button', { class: 'btn ghost', onclick: closeModal }, t('sheet.close')))]);
+  (pre.url ? title : url).focus();
+}
+
 // ---- detail ----
 const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const copyBtn = text => el('button', { class: 'btn sm', onclick: async () => toast(await copyText(text) ? t('copied') : t('copy_blocked')) }, t('copy'));
@@ -181,6 +218,7 @@ function renderDetail() {
     el('div', { class: 'stagebar' }, STAGES.map(k => el('button', { class: 'chip' + (l.status === k ? ' on' : ''), onclick: () => setStatus(l, k) }, t('stage.' + k)))),
     l.contact && el('h3', {}, t('h.contact')), l.contact && contactRows(l),
     el('h3', {}, t('h.message')), messageBox(l),
+    l.status === 'contacted' && el('div', { id: 'fu-box' }),
     el('h3', {}, t('h.why', { score: l.score })),
     el('ul', { class: 'why' }, why.map(([p, text]) => el('li', { class: p != null && p < 0 ? 'neg' : '' }, text))),
     l.extra.audit && auditBox(l.extra.audit),
@@ -189,6 +227,11 @@ function renderDetail() {
   ];
   d.replaceChildren(...sections.flat(Infinity).filter(Boolean));
   d.scrollTop = 0;
+  if (l.status === 'contacted') followupBox(l);
+  clearTimeout(autoTimer);
+  if (!l.draft && l.status !== 'ignored' && !autoTried.has(l.id)) {  // short wait so j/k through the list does not write every draft
+    autoTimer = setTimeout(() => { if (sel?.id === l.id && !l.draft) { autoTried.add(l.id); writeDraft(l, false); } }, 450);
+  }
 }
 
 function messageBox(l) {
@@ -202,6 +245,25 @@ function messageBox(l) {
       el('button', { class: 'btn', disabled: !l.draft, onclick: async () => toast(await copyText(l.draft) ? t('copied') : t('copy_blocked')) }, t('copy')),
       el('button', { class: 'btn', disabled: !l.draft, onclick: async () => { if (await copyText(l.draft)) setStatus(l, 'contacted'); } }, t('msg.copy_mark')),
       mail && el('a', { class: 'btn', href: mail }, t('msg.email'))));
+}
+
+async function followupBox(l) {
+  let o;
+  try { o = (await api('/api/leads/' + l.id)).outreach; } catch { return; }
+  const box = $('#fu-box');
+  if (!box || sel?.id !== l.id || !o.contacted_at) return;
+  const max = state.cfg.follow_up_max, days = Math.floor((Date.now() / 1000 - o.contacted_at) / 86400);
+  const act = (action, msg) => async () => {
+    try { await api(`/api/leads/${l.id}/followup`, { action }); toast(msg); followupBox(l); } catch (e) { toast(e.message, 'err'); }
+  };
+  box.replaceChildren(el('h3', {}, t('fup.h')),
+    el('p', { class: 'mut' }, o.stopped || !max ? t('fup.off') : t('fup.status', { days, n: o.followups, max })),
+    !o.stopped && max > 0 && o.followups < max && el('div', { class: 'row' },
+      el('button', { class: 'btn', onclick: async () => {
+        try { $('#draft').value = (await api(`/api/leads/${l.id}/followup`, { action: 'draft' })).draft; $('#draft').focus(); } catch (e) { toast(e.message, 'err'); }
+      } }, t('fup.write')),
+      el('button', { class: 'btn', onclick: async () => { if (await copyText($('#draft').value)) act('sent', t('fup.sent'))(); } }, t('fup.mark')),
+      el('button', { class: 'btn ghost', onclick: act('stop', t('fup.stopped')) }, t('fup.stop'))));
 }
 
 function auditBox(a) {
