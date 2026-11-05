@@ -126,7 +126,7 @@ You can try Pro a few times for free, then start a **7-day trial** with an email
 - The list is ranked best first. A pipeline tracks each lead: Inbox, Shortlist, Contacted, Replied, Won, Lost, Skipped. **NEW** marks what appeared since your last visit.
 - Each lead shows why it scored what it did, the original post or website problems, and contact buttons (Copy, Open, Call). **Write with AI** uses Claude, OpenAI or a local Ollama model if you set one up.
 - **Add lead** saves a post you found yourself; **Check for replies** looks for answers in your inbox (Pro).
-- Every move has an **Undo**. Keyboard: `j`/`k` move, `s` shortlist, `c` contacted, `x` skip, `g` write, `o` open, `/` search. **Skip low scores…** clears weak leads; **Export CSV** gives you a spreadsheet.
+- Every move has an **Undo**. Keyboard: `j`/`k` move, `s` shortlist, `c` contacted, `x` skip, `g` write, `f` write a follow-up for a contacted lead, `o` open, `/` search. **Skip low scores…** clears weak leads; **Export CSV** gives you a spreadsheet.
 
 **Settings**: app language, message language (automatic = the client's language), your work and skills, proof of your work, currency and minimum budget, follow-up timing, sources, **automatic search** every 6/12/24 hours, alerts, and the optional AI provider. **Updates**: the app tells you when a new version exists and installs it with one click.
 

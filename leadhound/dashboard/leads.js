@@ -260,10 +260,17 @@ async function followupBox(l) {
     el('p', { class: 'mut' }, o.stopped || !max ? t('fup.off') : t('fup.status', { days, n: o.followups, max })),
     !o.stopped && max > 0 && o.followups < max && el('div', { class: 'row' },
       el('button', { class: 'btn', onclick: async () => {
-        try { $('#draft').value = (await api(`/api/leads/${l.id}/followup`, { action: 'draft' })).draft; $('#draft').focus(); } catch (e) { toast(e.message, 'err'); }
+        writeFollowup(l);
       } }, t('fup.write')),
       el('button', { class: 'btn', onclick: async () => { if (await copyText($('#draft').value)) act('sent', t('fup.sent'))(); } }, t('fup.mark')),
       el('button', { class: 'btn ghost', onclick: act('stop', t('fup.stopped')) }, t('fup.stop'))));
+}
+
+async function writeFollowup(l) {
+  try {
+    $('#draft').value = (await api(`/api/leads/${l.id}/followup`, { action: 'draft' })).draft;
+    $('#draft').focus();
+  } catch (e) { toast(e.message, 'err'); }
 }
 
 function auditBox(a) {
@@ -288,6 +295,7 @@ function onKey(e) {
     j: () => go(i + 1), ArrowDown: () => go(i + 1), k: () => go(i - 1), ArrowUp: () => go(i - 1),
     s: () => sel && setStatus(sel, 'shortlisted'), c: () => sel && setStatus(sel, 'contacted'),
     x: () => sel && setStatus(sel, 'ignored'), g: () => sel && writeDraft(sel, false),
+    f: () => sel?.status === 'contacted' && writeFollowup(sel),
     o: () => sel && safeUrl(sel.url) && window.open(sel.url, '_blank', 'noopener'), '/': () => $('#q').focus(),
   };
   if (keys[e.key]) { e.preventDefault(); keys[e.key](); }
