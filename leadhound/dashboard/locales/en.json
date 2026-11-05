@@ -572,5 +572,6 @@
  "add.contact": "Contact (optional)",
  "add.save": "Save lead",
  "add.saved": "Lead saved",
- "src.added": "Added by you"
+ "src.added": "Added by you",
+ "demo.banner": "Demo: made-up sample leads, and sending is off. Searching works for real. Your own leads live in the normal app."
 }

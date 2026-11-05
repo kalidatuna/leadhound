@@ -50,6 +50,8 @@ svg{width:1.2em;height:1.2em;flex:none}
 .mut{color:var(--mut)}.sm{font-size:12.5px}.bad{color:var(--bad)}.row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}.grow{flex:1}
 h1,h2,h3{font-family:var(--display);font-weight:500;letter-spacing:-.015em}
 
+.demobar{background:var(--gold);color:var(--gold-on);text-align:center;font-weight:600;font-size:13.5px;padding:8px 16px;text-wrap:balance}
+
 /* ---------- header ---------- */
 .top{display:flex;flex-wrap:wrap;align-items:center;gap:4px 6px;padding:14px 28px;max-width:1040px;width:100%;margin:0 auto;flex:none}
 body[data-view=leads] .top{max-width:1240px}  /* line up with the wider leads screen */

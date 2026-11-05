@@ -572,5 +572,6 @@
  "add.contact": "Contacto (opcional)",
  "add.save": "Guardar cliente",
  "add.saved": "Cliente guardado",
- "src.added": "Añadido por ti"
+ "src.added": "Añadido por ti",
+ "demo.banner": "Demo: clientes de ejemplo inventados y el envío está desactivado. La búsqueda funciona de verdad. Tus clientes reales están en la app normal."
 }

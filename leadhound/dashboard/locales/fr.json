@@ -572,5 +572,6 @@
  "add.contact": "Contact (facultatif)",
  "add.save": "Enregistrer",
  "add.saved": "Prospect enregistré",
- "src.added": "Ajouté par vous"
+ "src.added": "Ajouté par vous",
+ "demo.banner": "Démo : prospects fictifs et envoi désactivé. La recherche fonctionne pour de vrai. Vos vrais prospects sont dans l'app normale."
 }

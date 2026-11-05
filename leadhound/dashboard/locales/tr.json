@@ -572,5 +572,6 @@
  "add.contact": "İletişim (isteğe bağlı)",
  "add.save": "Kaydet",
  "add.saved": "Kişi kaydedildi",
- "src.added": "Sizin eklediğiniz"
+ "src.added": "Sizin eklediğiniz",
+ "demo.banner": "Demo: uydurma örnek kişiler, gönderim kapalı. Arama gerçekten çalışır. Gerçek kişileriniz normal uygulamada."
 }

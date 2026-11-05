@@ -572,5 +572,6 @@
  "add.contact": "Kontakt (optional)",
  "add.save": "Speichern",
  "add.saved": "Kontakt gespeichert",
- "src.added": "Von dir hinzugefügt"
+ "src.added": "Von dir hinzugefügt",
+ "demo.banner": "Demo: erfundene Beispielkontakte, Senden ist aus. Die Suche funktioniert wirklich. Deine echten Kontakte sind in der normalen App."
 }

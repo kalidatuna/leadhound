@@ -572,5 +572,6 @@
  "add.contact": "Contato (opcional)",
  "add.save": "Salvar contato",
  "add.saved": "Contato salvo",
- "src.added": "Adicionado por você"
+ "src.added": "Adicionado por você",
+ "demo.banner": "Demo: contatos de exemplo inventados e o envio está desligado. A busca funciona de verdade. Seus contatos reais ficam no app normal."
 }

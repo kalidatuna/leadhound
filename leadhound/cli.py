@@ -185,6 +185,47 @@ def cmd_license(a, cfg):
     return 0
 
 
+def cmd_demo(a, cfg):
+    from . import demo
+    from .dashboard.server import serve
+    cfg_path, db = demo.paths_for_demo(reset=a.reset)
+    n = demo.seed(cfg_path, db)
+    print(f"leadhound demo: {n or 'your earlier'} sample leads in {demo.folder()} (your real leads are not touched; "
+          "sending is off). Start over with: leadhound demo --reset")
+    serve(db, cfg_path, a.port, open_browser=not a.no_browser, demo=True)
+    return 0
+
+
+def cmd_trends(a, cfg):
+    """What clients asked for lately, from your own lead database: a table you can paste into a post."""
+    from collections import Counter
+    store = Store(a.db)
+    since = time.time() - a.days * 86400
+    leads = [l for l in store.query(limit=100000, include_ignored=True) if (l.created_at or l.first_seen) >= since and l.kind != "business"
+             and l.source not in ("added", "manual")]  # only public posts, not ones you added yourself
+    if not leads:
+        print(f"no hiring posts from the last {a.days} days yet. Run a search first: leadhound scan")
+        return 1
+    by_source = Counter(l.source for l in leads)
+    tags = Counter()
+    for l in leads:
+        tags.update({s.strip().lower() for s in l.extra.get("skills", []) if s.strip()})
+    with_budget = sum(1 for l in leads if l.budget)
+    print(f"## Freelance demand, last {a.days} days\n")
+    print(f"{len(leads)} hiring posts and client projects, {round(100 * with_budget / len(leads))}% with a stated budget.\n")
+    print("| Where | Posts |\n|---|---|")
+    names = {"freelancer": "Freelancer.com", "reddit": "Reddit", "hn": "Hacker News", "github": "GitHub bounties",
+             "himalayas": "Himalayas", "mastodon": "Mastodon", "rss": "Job boards"}
+    for src, n in by_source.most_common():
+        print(f"| {names.get(src, src)} | {n} |")
+    if tags:
+        print("\n| Most requested skill | Posts |\n|---|---|")
+        for tag, n in tags.most_common(a.top):
+            print(f"| {tag} | {n} |")
+    print("\nCounted by leadhound from public sources (Freelancer.com, Reddit, Hacker News, GitHub, Himalayas, job boards).")
+    return 0
+
+
 def cmd_serve(a, cfg):
     from .dashboard.server import serve
     serve(a.db, a.config, a.port, open_browser=not a.no_browser, cloud=a.cloud)
@@ -267,6 +308,17 @@ def build_parser() -> argparse.ArgumentParser:
     q.add_argument("token")
     q.add_argument("--public", default="")
     p.set_defaults(fn=cmd_license)
+
+    p = sub.add_parser("demo", help="try the app with sample leads (separate folder; sending is off)")
+    p.add_argument("--port", type=int, default=8790)
+    p.add_argument("--no-browser", action="store_true")
+    p.add_argument("--reset", action="store_true", help="start the demo over with fresh sample leads")
+    p.set_defaults(fn=cmd_demo)
+
+    p = sub.add_parser("trends", help="what clients asked for lately, as a Markdown table (from your own searches)")
+    p.add_argument("--days", type=int, default=30)
+    p.add_argument("--top", type=int, default=15, help="how many skills to list")
+    p.set_defaults(fn=cmd_trends)
 
     p = sub.add_parser("serve", help="open the local dashboard")
     p.add_argument("--port", type=int, default=8787)

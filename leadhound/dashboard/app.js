@@ -121,6 +121,7 @@ async function boot() {
   paintMode();
   modeBtn.addEventListener('click', () => { setMode(mode === 'simple' ? 'advanced' : 'simple'); show(mode === 'simple' ? 'today' : 'leads'); });
   moreMenu();
+  if (state.meta.demo) document.body.prepend(el('div', { class: 'demobar', role: 'status' }, t('demo.banner')));
   on('goto', show);
   on('open-settings', () => { setMode('advanced'); show('settings'); });
   on('job', j => { lastJob = j; paintJobPill(); });

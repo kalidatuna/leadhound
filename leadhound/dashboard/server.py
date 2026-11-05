@@ -55,8 +55,8 @@ class HttpError(Exception):
 class Ctx:
     """Everything a request needs; one per server."""
 
-    def __init__(self, store, config_path, token, port, jobs, auth=None, fetcher_factory=Fetcher):
-        self.store, self.config_path, self.token, self.port = store, config_path, token, port
+    def __init__(self, store, config_path, token, port, jobs, auth=None, fetcher_factory=Fetcher, demo=False):
+        self.store, self.config_path, self.token, self.port, self.demo = store, config_path, token, port, demo
         self.jobs, self.auth, self.fetcher_factory = jobs, auth, fetcher_factory
         self.lock = threading.Lock()
         self.license = licensing.License(os.path.join(os.path.dirname(os.path.abspath(config_path)), "license.json"))
@@ -78,7 +78,7 @@ def build_routes(c: Ctx) -> list:
                      "sources": list(SOURCES), "statuses": list(STATUSES), "kinds": list(KINDS),
                      "languages": LANGUAGES, "currencies": sorted(CURRENCIES), "professions": profiles.summary(),
                      "llm_ready": cfg.llm_provider != "none", "hosted_ai": bool(licensing.SERVER), "profession": cfg.profession,
-                     "config_path": c.config_path, "db_path": store_path(store)}
+                     "config_path": c.config_path, "db_path": store_path(store), "demo": c.demo}
 
     def pro(feature: str):
         try:
@@ -235,7 +235,12 @@ def build_routes(c: Ctx) -> list:
     def lead_channels(m, q, b):
         return 200, sending.channels_for(need_lead(int(m.group(1))), c.accounts.public())
 
+    def no_demo():
+        if c.demo:
+            raise HttpError(400, "Sending is turned off in the demo. Your own leadhound sends from your own accounts.")
+
     def lead_send(m, q, b):  # network call: unlocked, store access is locked by hand
+        no_demo()
         with c.lock:
             lead = need_lead(int(m.group(1)))
         try:
@@ -268,6 +273,7 @@ def build_routes(c: Ctx) -> list:
         if not spec:
             raise HttpError(404, "unknown platform")
         if action == "connect":
+            no_demo()
             try:
                 who = sending.connect(c.accounts, pid, b.get("fields") or {}, bool(c.auth))
             except SendError as e:
@@ -426,7 +432,7 @@ def make_handler(c: Ctx):
                 c.auth.logout(self._session())
                 return self._send(200, {"ok": True}, headers={"Set-Cookie": "lh_session=; Path=/; Max-Age=0"})
             if method == "GET" and u.path == "/api/ping":  # lets a second launch find this one; reveals only the version
-                return self._send(200, {"leadhound": __version__, "cloud": bool(c.auth)})
+                return self._send(200, {"leadhound": __version__, "cloud": bool(c.auth), "demo": c.demo})
             if not self._authed():
                 return self._send(401, {"error": "please sign in"})
             if not secrets.compare_digest(self.headers.get("X-Leadhound-Token", ""), c.token):
@@ -476,7 +482,7 @@ def store_path(store: Store) -> str:
 
 
 def make_server(db_path: str, config_path: str, port: int = 8787, fetcher_factory=None,
-                host: str = "127.0.0.1", password: str | None = None):
+                host: str = "127.0.0.1", password: str | None = None, demo: bool = False):
     store = Store(db_path)
     token = secrets.token_urlsafe(24)
     auth = Auth(password) if password else None
@@ -484,7 +490,7 @@ def make_server(db_path: str, config_path: str, port: int = 8787, fetcher_factor
     jm = JobManager(db_path, config_path, fetcher_factory=factory, cloud=bool(auth))
     httpd = ThreadingHTTPServer((host, port), BaseHTTPRequestHandler)
     # build the handler after binding so the Host allow-list uses the real port (port 0 = any free port)
-    ctx = Ctx(store, config_path, token, httpd.server_address[1], jm, auth, factory)
+    ctx = Ctx(store, config_path, token, httpd.server_address[1], jm, auth, factory, demo)
     ctx.stop = httpd.shutdown
     jm.on_done.append(lambda job: alerts.after_auto_search(ctx, job))
     httpd.RequestHandlerClass = make_handler(ctx)
@@ -495,14 +501,14 @@ def make_server(db_path: str, config_path: str, port: int = 8787, fetcher_factor
     return httpd, token
 
 
-def find_running(port: int = 8787, tries: int = 20) -> int | None:
-    """Port of a leadhound already running on this computer, if any."""
+def find_running(port: int = 8787, tries: int = 20, demo: bool = False) -> int | None:
+    """Port of a leadhound already running on this computer, if any (the demo and your real one are told apart)."""
     import urllib.request
     for p in range(port, port + tries):
         try:
             with urllib.request.urlopen(f"http://127.0.0.1:{p}/api/ping", timeout=0.4) as r:
                 info = json.loads(r.read(500))
-            if info.get("leadhound") and not info.get("cloud"):
+            if info.get("leadhound") and not info.get("cloud") and bool(info.get("demo")) == demo:
                 return p
         except Exception:
             continue
@@ -519,7 +525,8 @@ def bind(db_path: str, config_path: str, port: int, tries: int = 20, **kw):
     raise OSError(f"no free port in {port}-{port + tries - 1}")
 
 
-def serve(db_path: str, config_path: str, port: int = 8787, open_browser: bool = True, cloud: bool = False) -> None:
+def serve(db_path: str, config_path: str, port: int = 8787, open_browser: bool = True, cloud: bool = False,
+          demo: bool = False) -> None:
     if cloud:
         password = os.environ.get("LEADHOUND_PASSWORD", "")
         if len(password) < 8:
@@ -528,12 +535,12 @@ def serve(db_path: str, config_path: str, port: int = 8787, open_browser: bool =
         print(f"leadhound (cloud mode) listening on port {httpd.server_address[1]}", flush=True)
         open_browser = False
     else:
-        running = find_running(port) if open_browser else None
+        running = find_running(port, demo=demo) if open_browser else None
         if running:  # double-clicked twice: just show the window that is already there
             print(f"leadhound is already running at http://127.0.0.1:{running}/, opening it.", flush=True)
             webbrowser.open(f"http://127.0.0.1:{running}/")
             return
-        httpd, _ = bind(db_path, config_path, port)
+        httpd, _ = bind(db_path, config_path, port, demo=demo)
         url = f"http://127.0.0.1:{httpd.server_address[1]}/"
         print(f"leadhound is running at {url}  (close this window or press Ctrl+C to stop)", flush=True)
         if open_browser:

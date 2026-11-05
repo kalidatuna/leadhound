@@ -293,6 +293,64 @@ class AlertTest(unittest.TestCase):
         self.assertTrue(jm.current.to_dict()["auto"])
 
 
+class DemoTest(unittest.TestCase):
+    def test_seed_once_with_history_and_sending_off(self):
+        from leadhound import demo
+        with tempfile.TemporaryDirectory() as d:
+            conf, db = os.path.join(d, "config.ini"), os.path.join(d, "demo.db")
+            self.assertEqual(demo.seed(conf, db), 12)
+            self.assertEqual(demo.seed(conf, db), 0)  # never adds twice
+            s = Store(db)
+            st = s.stats()
+            self.assertEqual((st["total"], st["by_status"]["won"], st["by_status"]["replied"]), (12, 1, 1))
+            self.assertEqual(len(s.followups_due(3, 2)), 2)  # two contacted leads waiting for a follow-up
+            self.assertGreaterEqual(s.insights()["contacted"], 4)
+            from urllib.parse import urlparse
+            hosts = {urlparse(u).hostname for l in s.query(limit=50, include_ignored=True)
+                     for u in (l.url, l.extra.get("website") or "https://x.example")}
+            self.assertTrue(all(h.endswith(".example") for h in hosts), hosts)  # made-up leads never link to real sites
+            dental = next(l for l in s.query(kind="business") if l.title == "Smile Dental Vake")
+            self.assertIn(i18n.msg("ka", "b.subject"), draft.make_draft(dental, config.load(conf))[0])  # written in Georgian
+            s.close()
+            httpd, token = make_server(db, conf, 0, demo=True)
+            threading.Thread(target=httpd.serve_forever, daemon=True).start()
+            try:
+                c = http.client.HTTPConnection("127.0.0.1", httpd.server_address[1], timeout=10)
+                hdr = {"Host": f"127.0.0.1:{httpd.server_address[1]}", "X-Leadhound-Token": token, "Content-Type": "application/json"}
+                c.request("GET", "/api/meta", headers=hdr)
+                self.assertTrue(json.loads(c.getresponse().read())["demo"])
+                c.request("POST", "/api/leads/1/send", json.dumps({"channel": "email", "to": "x@y.example", "body": "hi"}), hdr)
+                r = c.getresponse()
+                self.assertEqual(r.status, 400)
+                self.assertIn("turned off in the demo", json.loads(r.read())["error"])
+                c.close()
+            finally:
+                httpd.shutdown()
+                httpd.server_close()
+                httpd.ctx.store.close()
+
+    def test_trends_table(self):
+        import contextlib
+        import io
+        from leadhound import cli
+        with tempfile.TemporaryDirectory() as d:
+            db = os.path.join(d, "t.db")
+            s = Store(db)
+            now = time.time()
+            s.upsert(lead("1", source="freelancer", created_at=now - DAY, budget="$100", extra={"skills": ["WordPress", "PHP"]}))
+            s.upsert(lead("2", source="freelancer", created_at=now - DAY, extra={"skills": ["WordPress"]}))
+            s.upsert(lead("3", source="added", created_at=now))  # yours, not public: left out
+            s.upsert(lead("4", created_at=now - 90 * DAY))  # too old
+            s.close()
+            out = io.StringIO()
+            with contextlib.redirect_stdout(out):
+                self.assertEqual(cli.main(["--db", db, "--config", os.path.join(d, "c.ini"), "trends"]), 0)
+            text = out.getvalue()
+            self.assertIn("2 hiring posts and client projects, 50% with a stated budget.", text)
+            self.assertIn("| Freelancer.com | 2 |", text)
+            self.assertIn("| wordpress | 2 |", text)
+
+
 class Api(unittest.TestCase):
     def setUp(self):
         self.tmp = tempfile.TemporaryDirectory()
