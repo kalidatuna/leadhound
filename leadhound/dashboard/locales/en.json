@@ -545,5 +545,11 @@
  "rep.check": "Check for replies",
  "rep.checking": "Checking your inbox…",
  "rep.found": "{n} lead(s) replied. They moved to Replied.",
- "rep.none": "No new replies yet ({n} checked)."
+ "rep.none": "No new replies yet ({n} checked).",
+ "ins.title": "What works",
+ "ins.row": "{replied} of {contacted} replied",
+ "ins.won": "{n} won",
+ "ins.best": "{src} gets you the most replies: {rate}% of {n} messages.",
+ "ins.weak": "No replies from {src} after {n} messages. Make those messages more personal, or turn the source off in Settings.",
+ "ins.score": "Leads scoring 60 or more replied {hi}% of the time, others {lo}%. Spend your messages on high scores."
 }

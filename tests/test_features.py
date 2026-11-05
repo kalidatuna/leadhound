@@ -111,6 +111,29 @@ class ProofTest(unittest.TestCase):
             self.assertEqual(config.load(os.path.join(d, "c.ini")).proof, ["a, b: one", "c: two"])
 
 
+class InsightTest(unittest.TestCase):
+    def test_reply_rates_and_tips_state_their_numbers(self):
+        s = Store(":memory:")
+        for i in range(10):  # reddit: 10 messages, no reply
+            lid, _ = s.upsert(lead(f"r{i}", score=40))
+            s.update(lid, status="contacted")
+        for i in range(4):  # freelancer: 4 messages, 2 replies (one won), all high scores
+            lid, _ = s.upsert(lead(f"f{i}", source="freelancer", score=80))
+            s.update(lid, status="contacted")
+            if i == 0:
+                s.update(lid, status="won")
+            if i == 1:
+                s.log(lid, "replied", "email")
+        s.upsert(lead("never"))  # not contacted: not counted
+        ins = s.insights()
+        self.assertEqual(ins["contacted"], 14)
+        self.assertEqual([(x["source"], x["contacted"], x["replied"], x["won"], x["rate"]) for x in ins["sources"]],
+                         [("freelancer", 4, 2, 1, 50), ("reddit", 10, 0, 0, 0)])
+        self.assertEqual(ins["tips"], [["best", {"src": "freelancer", "rate": 50, "n": 4}],
+                                       ["weak", {"src": "reddit", "n": 10}]])  # high band has only 4: no score tip yet
+        self.assertEqual(Store(":memory:").insights(), {"contacted": 0, "sources": [], "tips": []})
+
+
 class FakeImap:
     """Answers SEARCH FROM "x" SINCE d from a fixed set of senders. Records what it was asked."""
 

@@ -545,5 +545,11 @@
  "rep.check": "Verificar respostas",
  "rep.checking": "Verificando sua caixa…",
  "rep.found": "{n} contato(s) responderam. Foram para Respondeu.",
- "rep.none": "Ainda sem respostas novas ({n} verificados)."
+ "rep.none": "Ainda sem respostas novas ({n} verificados).",
+ "ins.title": "O que funciona",
+ "ins.row": "{replied} de {contacted} responderam",
+ "ins.won": "{n} fechados",
+ "ins.best": "{src} traz mais respostas: {rate}% de {n} mensagens.",
+ "ins.weak": "Nenhuma resposta de {src} após {n} mensagens. Deixe as mensagens mais pessoais ou desligue a fonte nas Configurações.",
+ "ins.score": "Contatos com 60 ou mais responderam {hi}% das vezes; os outros, {lo}%. Use suas mensagens nas notas altas."
 }

@@ -8,7 +8,7 @@ import { renderCompose } from './compose.js';
 import { SEND, LINK, TOTAL, acct, platIcon, platName, readyCount, sendCount } from './accounts.js';
 
 const root = $('#view-today');
-let leads = [], stats = {}, fups = [], job = null, step = 0, pick = null, pickFu = false, found = null, busy = false, wasRunning = false;
+let leads = [], stats = {}, fups = [], ins = null, job = null, step = 0, pick = null, pickFu = false, found = null, busy = false, wasRunning = false;
 const running = () => job && job.status === 'running';
 const goal = () => state.cfg.daily_goal || 5;
 const rate = n => [1, 2, 3, 4, 5].map(i => el('i', { class: i <= n ? 'on' : '' }));
@@ -97,8 +97,9 @@ function slide() {
 }
 
 async function refresh() {
-  try { [leads, stats, fups] = await Promise.all([api('/api/leads?status=new&sort=score&limit=60'), api('/api/stats'), api('/api/followups')]); } catch (e) { return toast(e.message, 'err'); }
-  paintSteps(); paintHero(); paintFollowups(); paintGoal(); paintBest(); paintWeek(); paintSources(); paintConnect(); paintCity();
+  try { [leads, stats, fups] = await Promise.all([api('/api/leads?status=new&sort=score&limit=60'), api('/api/stats'), api('/api/followups')]);
+    ins = await api('/api/insights').catch(() => null); } catch (e) { return toast(e.message, 'err'); }
+  paintSteps(); paintHero(); paintFollowups(); paintGoal(); paintBest(); paintWeek(); paintSources(); paintInsights(); paintConnect(); paintCity();
   if (step === 1) paintGrid();
 }
 
@@ -156,7 +157,8 @@ function tiles() {
       el('p', { id: 'goalp' })),
     el('div', { class: 'tile t-best', id: 'best' }),
     el('div', { class: 'tile t-week' }, el('h4', {}, t('today.week')), el('div', { class: 'wk' }, el('b', { class: 'num', id: 'weekn' }), el('span', {}, t('today.week_sent'))), el('div', { class: 'bars', id: 'bars' })),
-    el('div', { class: 'tile t-src' }, el('h4', {}, t('today.sources')), el('div', { class: 'srcs', id: 'srcs' }), el('p', {}, t('today.sources_text'))));
+    el('div', { class: 'tile t-src' }, el('h4', {}, t('today.sources')), el('div', { class: 'srcs', id: 'srcs' }), el('p', {}, t('today.sources_text'))),
+    el('div', { class: 'tile t-ins', id: 'ins', hidden: true }));
 }
 
 const C = 2 * Math.PI * 44;
@@ -202,6 +204,22 @@ function paintSources() {
   const all = [['Freelancer.com', c.freelancer], ['Reddit', c.reddit_subreddits.length > 0], ['Hacker News', c.hn], ['GitHub', c.github], ['Mastodon', c.mastodon], [t('src.osm'), !!place]];
   $('#srcs').replaceChildren(...all.map(([n, on_]) => el('button', { class: 'srcchip' + (on_ ? '' : ' off'), onclick: () => emit('open-settings') }, el('i'), n)),
     el('button', { class: 'srcchip add', onclick: () => emit('open-settings') }, t('today.add_feed')));
+}
+
+// What works: reply rate per source, and tips that say the numbers behind them. Shown after 3 messages.
+function paintInsights() {
+  const box = $('#ins');
+  if (!box) return;
+  box.hidden = !ins || ins.contacted < 3;
+  if (box.hidden) return;
+  const tip = ([key, a]) => el('li', {}, icon('check'), t('ins.' + key, { ...a, src: a.src ? srcName(a.src) : '' }));
+  box.replaceChildren(el('h4', {}, t('ins.title')),
+    el('div', { class: 'insrows' }, ins.sources.slice(0, 6).map(s => {
+      const bar = el('i', {}); bar.style.setProperty('--w', Math.max(2, s.rate) + '%');
+      return el('div', { class: 'insrow' }, el('b', {}, srcName(s.source)), el('span', { class: 'insbar' }, bar),
+        el('span', { class: 'num' }, s.rate + '%'), el('small', {}, t('ins.row', { replied: s.replied, contacted: s.contacted }), s.won ? ' · ' + t('ins.won', { n: s.won }) : ''));
+    })),
+    ins.tips.length > 0 && el('ul', { class: 'instips' }, ins.tips.map(tip)));
 }
 
 function connectBar() {

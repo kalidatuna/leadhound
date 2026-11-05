@@ -288,6 +288,7 @@ def build_routes(c: Ctx) -> list:
 
     return [
         ("GET", r"/api/meta", meta), ("GET", r"/api/stats", lambda m, q, b: (200, store.stats())),
+        ("GET", r"/api/insights", lambda m, q, b: (200, store.insights())),
         ("GET", r"/api/leads", leads_list), ("GET", r"/api/leads/(\d+)", lead_get),
         ("POST", r"/api/leads/(\d+)", lead_update), ("POST", r"/api/leads/(\d+)/draft", lead_draft, False),
         ("GET", r"/api/followups", followups), ("POST", r"/api/replies", replies_check, False), ("POST", r"/api/leads/(\d+)/followup", lead_followup),

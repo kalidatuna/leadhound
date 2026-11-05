@@ -545,5 +545,11 @@
  "rep.check": "Nach Antworten suchen",
  "rep.checking": "Posteingang wird geprüft…",
  "rep.found": "{n} Kontakt(e) haben geantwortet und sind jetzt unter Geantwortet.",
- "rep.none": "Noch keine neuen Antworten ({n} geprüft)."
+ "rep.none": "Noch keine neuen Antworten ({n} geprüft).",
+ "ins.title": "Was funktioniert",
+ "ins.row": "{replied} von {contacted} haben geantwortet",
+ "ins.won": "{n} gewonnen",
+ "ins.best": "{src} bringt dir die meisten Antworten: {rate} % von {n} Nachrichten.",
+ "ins.weak": "Keine Antwort von {src} nach {n} Nachrichten. Schreib persönlicher oder schalte die Quelle in den Einstellungen ab.",
+ "ins.score": "Kontakte mit 60 oder mehr Punkten antworteten zu {hi} %, die anderen zu {lo} %. Schreib vor allem den hohen Treffern."
 }

@@ -210,6 +210,38 @@ class Store:
                 out.append((lead, {**self.outreach(r["id"]), "days": int((now - r["last"]) // 86400)}))
         return out
 
+    def insights(self) -> dict:
+        """What works: per source, how many leads you wrote to, how many answered and how many you won,
+        plus plain tips. Every tip states the numbers behind it, like the score reasons do."""
+        rows = self.db.execute(
+            "SELECT l.source, l.score, l.status, MAX(a.kind = 'replied') got_reply FROM leads l "
+            "JOIN activity a ON a.lead_id = l.id WHERE a.kind IN ('contacted', 'replied') GROUP BY l.id").fetchall()
+        by: dict[str, dict] = {}
+        bands = {"hi": [0, 0], "lo": [0, 0]}  # [contacted, replied] for scores >= 60 and below
+        for r in rows:
+            replied = bool(r["got_reply"]) or r["status"] in ("replied", "won")
+            s = by.setdefault(r["source"], {"source": r["source"], "contacted": 0, "replied": 0, "won": 0})
+            s["contacted"] += 1
+            s["replied"] += replied
+            s["won"] += r["status"] == "won"
+            band = bands["hi" if r["score"] >= 60 else "lo"]
+            band[0] += 1
+            band[1] += replied
+        sources = sorted(by.values(), key=lambda s: (-s["replied"] / s["contacted"], -s["contacted"]))
+        for s in sources:
+            s["rate"] = round(100 * s["replied"] / s["contacted"])
+        tips = []
+        tried = [s for s in sources if s["contacted"] >= 3]
+        if tried and tried[0]["replied"]:
+            tips.append(["best", {"src": tried[0]["source"], "rate": tried[0]["rate"], "n": tried[0]["contacted"]}])
+        for s in sources:
+            if s["contacted"] >= 8 and not s["replied"]:
+                tips.append(["weak", {"src": s["source"], "n": s["contacted"]}])
+        (hc, hr), (lc, lr) = bands["hi"], bands["lo"]
+        if hc >= 5 and lc >= 5 and hr / hc > lr / lc:
+            tips.append(["score", {"hi": round(100 * hr / hc), "lo": round(100 * lr / lc)}])
+        return {"contacted": len(rows), "sources": sources, "tips": tips}
+
     def sent_per_day(self, days: int) -> list[int]:
         """Messages marked as sent (first messages and follow-ups) per local day, oldest first, ending with today."""
         midnight = datetime.now().replace(hour=0, minute=0, second=0, microsecond=0)

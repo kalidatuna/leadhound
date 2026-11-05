@@ -545,5 +545,11 @@
  "rep.check": "检查回复",
  "rep.checking": "正在检查收件箱…",
  "rep.found": "{n} 个线索已回复，已移到“已回复”。",
- "rep.none": "暂无新回复（已检查 {n} 个）。"
+ "rep.none": "暂无新回复（已检查 {n} 个）。",
+ "ins.title": "什么有效",
+ "ins.row": "{contacted} 人中 {replied} 人回复",
+ "ins.won": "赢得 {n} 个",
+ "ins.best": "{src} 带来的回复最多：{n} 条消息中 {rate}% 得到回复。",
+ "ins.weak": "在 {src} 发了 {n} 条消息仍无回复。让消息更个性化，或在设置中关闭这个来源。",
+ "ins.score": "60 分及以上的线索回复率为 {hi}%，其他为 {lo}%。把消息花在高分线索上。"
 }

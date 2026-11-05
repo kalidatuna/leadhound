@@ -545,5 +545,11 @@
  "rep.check": "Yanıtları kontrol et",
  "rep.checking": "Gelen kutusu kontrol ediliyor…",
  "rep.found": "{n} kişi yanıt verdi. Yanıtladı'ya taşındılar.",
- "rep.none": "Henüz yeni yanıt yok ({n} kontrol edildi)."
+ "rep.none": "Henüz yeni yanıt yok ({n} kontrol edildi).",
+ "ins.title": "Ne işe yarıyor",
+ "ins.row": "{contacted} kişiden {replied} yanıt",
+ "ins.won": "{n} kazanıldı",
+ "ins.best": "En çok yanıtı {src} getiriyor: {n} mesajın %{rate}'i.",
+ "ins.weak": "{n} mesajdan sonra {src} tarafından yanıt yok. Mesajları daha kişisel yapın ya da kaynağı Ayarlar'dan kapatın.",
+ "ins.score": "60 ve üzeri puanlı kişiler %{hi} oranında yanıt verdi, diğerleri %{lo}. Mesajlarınızı yüksek puanlılara ayırın."
 }

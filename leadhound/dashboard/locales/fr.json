@@ -545,5 +545,11 @@
  "rep.check": "Chercher des réponses",
  "rep.checking": "Vérification de votre boîte…",
  "rep.found": "{n} prospect(s) ont répondu. Ils sont passés dans Répondu.",
- "rep.none": "Pas encore de nouvelle réponse ({n} vérifiés)."
+ "rep.none": "Pas encore de nouvelle réponse ({n} vérifiés).",
+ "ins.title": "Ce qui marche",
+ "ins.row": "{replied} sur {contacted} ont répondu",
+ "ins.won": "{n} gagnés",
+ "ins.best": "{src} vous apporte le plus de réponses : {rate} % de {n} messages.",
+ "ins.weak": "Aucune réponse de {src} après {n} messages. Personnalisez-les davantage, ou désactivez la source dans les Réglages.",
+ "ins.score": "Les prospects notés 60 ou plus ont répondu dans {hi} % des cas, les autres {lo} %. Privilégiez les meilleures notes."
 }

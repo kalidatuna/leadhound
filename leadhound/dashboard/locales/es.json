@@ -545,5 +545,11 @@
  "rep.check": "Buscar respuestas",
  "rep.checking": "Revisando tu bandeja…",
  "rep.found": "{n} cliente(s) respondieron. Pasaron a Respondió.",
- "rep.none": "Aún no hay respuestas nuevas ({n} revisados)."
+ "rep.none": "Aún no hay respuestas nuevas ({n} revisados).",
+ "ins.title": "Qué funciona",
+ "ins.row": "{replied} de {contacted} respondieron",
+ "ins.won": "{n} ganados",
+ "ins.best": "{src} te da más respuestas: {rate}% de {n} mensajes.",
+ "ins.weak": "Ninguna respuesta de {src} tras {n} mensajes. Hazlos más personales o desactiva la fuente en Ajustes.",
+ "ins.score": "Los clientes con 60 o más respondieron el {hi}% de las veces; el resto, el {lo}%. Dedica tus mensajes a las puntuaciones altas."
 }
