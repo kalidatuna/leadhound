@@ -94,7 +94,7 @@ def defaults(pid: str) -> dict:
         "profession": p.id, "skills": list(p.skills), "pitch": p.pitch, "freelancer_categories": list(p.freelancer),
         "reddit_subreddits": list(p.subreddits), "rss_feeds": list(p.feeds), "github": p.github,
         "github_labels": list(p.github_labels) or ["bounty"], "github_languages": list(p.github_languages),
-        "mastodon_tags": list(p.mastodon_tags), "categories": list(p.local) or ["restaurant", "dentist"],
+        "mastodon_tags": list(p.mastodon_tags), "categories": list(p.local),
     }
 
 
