@@ -274,12 +274,17 @@ function canWriteFollowup(l, o) {
 
 async function writeFollowup(l, checkEligibility = false) {
   try {
+    if (sel?.id !== l.id) return;
     if (checkEligibility) {
       const { outreach } = await api('/api/leads/' + l.id);
-      if (!canWriteFollowup(l, outreach)) return;
+      if (sel?.id !== l.id || !canWriteFollowup(l, outreach)) return;
     }
-    $('#draft').value = (await api(`/api/leads/${l.id}/followup`, { action: 'draft' })).draft;
-    $('#draft').focus();
+    const { draft } = await api(`/api/leads/${l.id}/followup`, { action: 'draft' });
+    if (sel?.id !== l.id) return;
+    const field = $('#draft');
+    if (!field) return;
+    field.value = draft;
+    field.focus();
   } catch (e) { toast(e.message, 'err'); }
 }
 
