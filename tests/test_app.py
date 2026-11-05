@@ -4,6 +4,7 @@ import io
 import os
 import tempfile
 import unittest
+from unittest.mock import patch
 from datetime import datetime, timezone
 
 from helpers import NOW, FakeFetcher, cfg
@@ -93,6 +94,41 @@ class CLITest(unittest.TestCase):
         with contextlib.redirect_stdout(out), contextlib.redirect_stderr(io.StringIO()):
             code = cli.main(["--db", self.db, "--config", self.ini, *args])
         return code, out.getvalue()
+
+    def test_followups_empty(self):
+        code, out = self.run_cli("followups")
+        self.assertEqual(code, 0)
+        self.assertIn("no follow-ups due", out)
+        self.assertNotIn("leadhound scan", out)
+
+    def test_followups_respects_config_and_does_not_change_outreach(self):
+        config.save(cfg(follow_up_days=7, follow_up_max=1), self.ini)
+        s = Store(self.db)
+        with patch("leadhound.store.time.time", return_value=NOW):
+            for eid, days, action in (("oldest", 10, ""), ("due", 8, ""),
+                                      ("recent", 4, ""), ("replied", 9, "replied"),
+                                      ("stopped", 9, "nofollow"), ("maxed", 9, "followup")):
+                lid, _ = s.upsert(lead(eid, budget="$100"))
+                s.update(lid, status="contacted")
+                if action == "replied":
+                    s.update(lid, status=action)
+                elif action:
+                    s.log(lid, action)
+                s.db.execute("UPDATE activity SET at = ? WHERE lead_id = ?", (NOW - days * 86400, lid))
+            s.db.commit()
+            before = [tuple(row) for row in s.db.execute("SELECT * FROM activity ORDER BY id")]
+            code, out = self.run_cli("followups")
+            self.assertEqual(code, 0)
+            self.assertIn("Lead oldest", out)
+            self.assertIn("Lead due", out)
+            self.assertIn("[$100]", out)
+            self.assertLess(out.index("Lead oldest"), out.index("Lead due"))
+            for eid in ("a", "recent", "replied", "stopped", "maxed"):
+                self.assertNotIn(f"Lead {eid}", out)
+            self.assertEqual(before, [tuple(row) for row in s.db.execute("SELECT * FROM activity ORDER BY id")])
+            config.save(cfg(follow_up_max=0), self.ini)
+            self.assertIn("no follow-ups due", self.run_cli("followups")[1])
+        s.close()
 
     def test_flow(self):
         self.assertEqual(self.run_cli("init")[0], 0)
