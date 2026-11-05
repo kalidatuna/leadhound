@@ -380,6 +380,18 @@ class Api(unittest.TestCase):
 
 
 class FollowupApiTest(Api):
+    def test_followup_draft_requires_eligible_lead(self):
+        path = f"/api/leads/{self.lid}/followup"
+        self.assertEqual(self.req("POST", path, {"action": "draft"})[0], 409)
+        self.assertEqual(self.req("POST", f"/api/leads/{self.lid}", {"status": "contacted"})[0], 200)
+        self.assertEqual(self.req("POST", "/api/config", {"follow_up_max": 0})[0], 200)
+        self.assertEqual(self.req("POST", path, {"action": "draft"})[0], 409)
+        self.assertEqual(self.req("POST", "/api/config", {"follow_up_max": 1})[0], 200)
+        self.httpd.ctx.store.log(self.lid, "followup")
+        self.assertEqual(self.req("POST", path, {"action": "draft"})[0], 409)
+        self.httpd.ctx.store.log(self.lid, "nofollow")
+        self.assertEqual(self.req("POST", path, {"action": "draft"})[0], 409)
+
     def test_follow_up_flow(self):
         self.assertEqual(self.req("POST", f"/api/leads/{self.lid}", {"status": "contacted", "draft": "first message"})[0], 200)
         self.assertEqual(self.req("GET", "/api/followups")[1], [])
