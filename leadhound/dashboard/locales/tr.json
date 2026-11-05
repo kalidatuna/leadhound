@@ -538,5 +538,8 @@
  "set.fu_days_hint": "Yanıtsız gün sayısı",
  "set.fu_max": "Kişi başına takip",
  "set.fu_max_hint": "Zamanı gelince Bugün'de görünür",
- "set.fu_off": "Asla"
+ "set.fu_off": "Asla",
+ "set.proof": "Çalışmanızdan örnekler",
+ "set.proof_hint": "Satır başına bir tane: anahtar kelimeler, iki nokta ve bağlantılı tek bir cümle. En uygun olanı İngilizce mesajlara ve yapay zekâ taslaklarına eklenir.",
+ "set.proof_ph": "wordpress, randevu: Bir diş kliniğinin WordPress sitesini online randevuyla yeniledim: https://…"
 }

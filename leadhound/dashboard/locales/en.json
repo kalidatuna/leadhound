@@ -538,5 +538,8 @@
  "set.fu_days_hint": "Days without a reply",
  "set.fu_max": "Follow-ups per lead",
  "set.fu_max_hint": "Shown on Today when they are due",
- "set.fu_off": "Never"
+ "set.fu_off": "Never",
+ "set.proof": "Proof of your work",
+ "set.proof_hint": "One per line: keywords, a colon, then one sentence with a link. The best match goes into English messages and AI drafts.",
+ "set.proof_ph": "wordpress, booking: Rebuilt a dental clinic's WordPress site with online booking: https://…"
 }

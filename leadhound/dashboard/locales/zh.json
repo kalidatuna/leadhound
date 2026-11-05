@@ -538,5 +538,8 @@
  "set.fu_days_hint": "未回复的天数",
  "set.fu_max": "每个线索的跟进次数",
  "set.fu_max_hint": "到期时显示在“今天”",
- "set.fu_off": "从不"
+ "set.fu_off": "从不",
+ "set.proof": "你的作品证明",
+ "set.proof_hint": "每行一条：关键词、冒号，然后是一句带链接的话。最匹配的一条会加入英文消息和 AI 草稿。",
+ "set.proof_ph": "wordpress, 预约: 为一家牙科诊所重做了带在线预约的 WordPress 网站: https://…"
 }

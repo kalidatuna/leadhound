@@ -19,7 +19,7 @@ AUTO_SCAN_HOURS = (0, 6, 12, 24)
 # (section, key, kind). kind: str | list | lines | bool | float | int
 SCHEMA = [
     ("profile", "name", "str"), ("profile", "profession", "str"), ("profile", "pitch", "str"),
-    ("profile", "skills", "list"), ("profile", "avoid", "list"), ("profile", "portfolio", "str"),
+    ("profile", "skills", "list"), ("profile", "avoid", "list"), ("profile", "portfolio", "str"), ("profile", "proof", "lines"),
     ("profile", "currency", "str"), ("profile", "min_budget", "float"), ("profile", "min_rate", "float"),
     ("profile", "signature", "str"), ("profile", "draft_language", "str"), ("profile", "daily_goal", "int"),
     ("sources", "freelancer", "bool"), ("sources", "freelancer_categories", "list"),
@@ -42,6 +42,7 @@ class Config:
     skills: list = field(default_factory=lambda: ["python", "javascript", "wordpress"])
     avoid: list = field(default_factory=lambda: ["unpaid", "equity only", "rev share", "for exposure"])
     portfolio: str = ""
+    proof: list = field(default_factory=list)  # "keywords: one sentence about work you did, with a link", one per line
     currency: str = "USD"
     min_budget: float = 0
     min_rate: float = 0

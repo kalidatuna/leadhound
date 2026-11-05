@@ -538,5 +538,8 @@
  "set.fu_days_hint": "Jours sans réponse",
  "set.fu_max": "Relances par prospect",
  "set.fu_max_hint": "Affichées dans Aujourd'hui le moment venu",
- "set.fu_off": "Jamais"
+ "set.fu_off": "Jamais",
+ "set.proof": "Preuves de votre travail",
+ "set.proof_hint": "Une par ligne : des mots-clés, deux-points, puis une phrase avec un lien. La plus pertinente est ajoutée aux messages en anglais et aux brouillons IA.",
+ "set.proof_ph": "wordpress, réservation : Refonte du site WordPress d'un cabinet dentaire avec réservation en ligne : https://…"
 }

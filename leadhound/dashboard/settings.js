@@ -42,7 +42,8 @@ function draw() {
         field(t('set.currency'), '', el('select', { id: 's-currency' }, options(state.meta.currencies.map(c => [c, c]), cfg.currency))),
         field(t('set.min_budget'), t('set.zero_hint'), i('min_budget', 'number', { min: 0 })),
         field(t('set.min_rate'), t('set.zero_hint'), i('min_rate', 'number', { min: 0 }))),
-      field(t('set.portfolio'), t('set.portfolio_hint'), i('portfolio'))),
+      field(t('set.portfolio'), t('set.portfolio_hint'), i('portfolio')),
+      field(t('set.proof'), t('set.proof_hint'), el('textarea', { id: 's-proof', rows: 3, placeholder: t('set.proof_ph'), value: (cfg.proof || []).join('\n') }))),
     el('div', { class: 'card' }, el('h2', {}, t('set.where')),
       check('freelancer', 'Freelancer.com', t('set.freelancer_hint')),
       field(t('set.freelancer_cats'), t('set.freelancer_cats_hint'), i('freelancer_categories', 'text', { value: list(cfg.freelancer_categories) })),
@@ -76,7 +77,7 @@ function collect() {
   const c = id => $('#s-' + id).checked;
   return {
     name: v('name'), signature: v('signature'), pitch: v('pitch'), skills: v('skills'), avoid: v('avoid'), profession: v('profession'),
-    currency: v('currency'), min_budget: v('min_budget'), min_rate: v('min_rate'), portfolio: v('portfolio'), draft_language: v('draft_language'),
+    currency: v('currency'), min_budget: v('min_budget'), min_rate: v('min_rate'), portfolio: v('portfolio'), proof: v('proof'), draft_language: v('draft_language'),
     freelancer: c('freelancer'), freelancer_categories: v('freelancer_categories'), reddit_subreddits: v('reddit_subreddits'),
     hn: c('hn'), github: c('github'), github_labels: v('github_labels'), github_languages: v('github_languages'),
     mastodon: c('mastodon'), mastodon_instances: v('mastodon_instances'), mastodon_tags: v('mastodon_tags'), rss_feeds: v('rss_feeds'),

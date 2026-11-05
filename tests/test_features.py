@@ -85,6 +85,29 @@ class FollowupDraftTest(unittest.TestCase):
             self.assertTrue(text.startswith(i18n.msg(lang, "b.subject") + ":"), lang)
 
 
+class ProofTest(unittest.TestCase):
+    PROOF = ["wordpress, booking: Rebuilt a dental clinic site with online booking: https://x.dev/clinic",
+             "logo, brand: Designed logos for 30 cafes", "no separator here", "empty:  "]
+
+    def test_the_best_matching_line_goes_into_english_drafts_only(self):
+        c = cfg(proof=self.PROOF)
+        wp = lead(title="[Hiring] WordPress booking plugin fix")
+        self.assertEqual(draft.pick_proof(wp, c), "Rebuilt a dental clinic site with online booking: https://x.dev/clinic")
+        self.assertIn("https://x.dev/clinic\n", draft.make_draft(wp, c)[0])
+        self.assertEqual(draft.pick_proof(lead(title="Need a brand refresh and logo"), c), "Designed logos for 30 cafes.")
+        self.assertEqual(draft.pick_proof(lead(title="Translate a menu"), c), "")  # unrelated proof reads like spam
+        es = draft.make_draft(wp, cfg(proof=self.PROOF, draft_language="es"))[0]
+        self.assertNotIn("Rebuilt", es)
+        self.assertIn("Rebuilt a dental clinic", draft.llm_prompt(wp, c, "es"))
+
+    def test_settings_round_trip(self):
+        c = config.from_dict(config.Config(), {"proof": "a, b: one\n\nc: two"})
+        self.assertEqual(c.proof, ["a, b: one", "c: two"])
+        with tempfile.TemporaryDirectory() as d:
+            config.save(c, os.path.join(d, "c.ini"))
+            self.assertEqual(config.load(os.path.join(d, "c.ini")).proof, ["a, b: one", "c: two"])
+
+
 class Api(unittest.TestCase):
     def setUp(self):
         self.tmp = tempfile.TemporaryDirectory()

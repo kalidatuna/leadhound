@@ -538,5 +538,8 @@
  "set.fu_days_hint": "Tage ohne Antwort",
  "set.fu_max": "Nachfragen pro Kontakt",
  "set.fu_max_hint": "Erscheinen unter Heute, wenn sie fällig sind",
- "set.fu_off": "Nie"
+ "set.fu_off": "Nie",
+ "set.proof": "Belege deiner Arbeit",
+ "set.proof_hint": "Eine pro Zeile: Stichwörter, Doppelpunkt, dann ein Satz mit Link. Der beste Treffer kommt in englische Nachrichten und KI-Entwürfe.",
+ "set.proof_ph": "wordpress, buchung: WordPress-Seite einer Zahnarztpraxis mit Online-Buchung neu gebaut: https://…"
 }
