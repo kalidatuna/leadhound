@@ -32,6 +32,9 @@ function draw() {
       el('p', { class: 'mut sm' }, t('set.profession_hint')),
       el('div', { class: 'two' }, field(t('set.name'), '', i('name')), field(t('set.signature'), t('set.signature_hint'), i('signature'))),
       field(t('set.daily_goal'), t('set.daily_goal_hint'), i('daily_goal', 'number', { min: 1, max: 50 })),
+      el('div', { class: 'two' },
+        field(t('set.fu_days'), t('set.fu_days_hint'), el('select', { id: 's-follow_up_days' }, options([2, 3, 5, 7, 14].map(d => [d, t('set.days', { n: d })]), cfg.follow_up_days))),
+        field(t('set.fu_max'), t('set.fu_max_hint'), el('select', { id: 's-follow_up_max' }, options([[0, t('set.fu_off')], [1, '1'], [2, '2'], [3, '3']], cfg.follow_up_max)))),
       field(t('set.pitch'), t('set.pitch_hint'), i('pitch')),
       field(t('set.skills'), t('set.skills_hint'), i('skills', 'text', { value: list(cfg.skills) })),
       field(t('set.avoid'), t('set.avoid_hint'), i('avoid', 'text', { value: list(cfg.avoid) })),
@@ -77,7 +80,7 @@ function collect() {
     freelancer: c('freelancer'), freelancer_categories: v('freelancer_categories'), reddit_subreddits: v('reddit_subreddits'),
     hn: c('hn'), github: c('github'), github_labels: v('github_labels'), github_languages: v('github_languages'),
     mastodon: c('mastodon'), mastodon_instances: v('mastodon_instances'), mastodon_tags: v('mastodon_tags'), rss_feeds: v('rss_feeds'),
-    daily_goal: +v('daily_goal') || 5, max_age_days: +v('max_age_days'), auto_scan_hours: +v('auto_scan_hours'), llm_provider: v('llm_provider'), llm_model: v('llm_model'),
+    daily_goal: +v('daily_goal') || 5, follow_up_days: +v('follow_up_days'), follow_up_max: +v('follow_up_max'), max_age_days: +v('max_age_days'), auto_scan_hours: +v('auto_scan_hours'), llm_provider: v('llm_provider'), llm_model: v('llm_model'),
     llm_base_url: v('llm_base_url'), max_businesses: +v('max_businesses'), radius_m: +v('radius_m'),
   };
 }

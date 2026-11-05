@@ -521,5 +521,22 @@
  "theme.auto": "跟随系统",
  "theme.light": "浅色",
  "theme.dark": "深色",
- "prog.details": "详情"
+ "prog.details": "详情",
+ "fup.title": "待跟进",
+ "fup.text": "你几天前联系过这些人，他们还没回复。一条简短礼貌的跟进常常能换来回复。",
+ "fup.row": "{days} 天前联系 · 第 {n} 次跟进（共 {max} 次）",
+ "fup.write": "写跟进",
+ "fup.stop": "不再跟进",
+ "fup.stopped": "不再提醒此线索",
+ "fup.sent": "跟进已发送",
+ "fup.mark": "复制并标记已跟进",
+ "fup.h": "跟进",
+ "fup.status": "首条消息在 {days} 天前 · 已发送 {n}/{max} 次跟进",
+ "fup.off": "此线索的提醒已关闭。",
+ "fup.badge": "跟进",
+ "set.fu_days": "多久后跟进",
+ "set.fu_days_hint": "未回复的天数",
+ "set.fu_max": "每个线索的跟进次数",
+ "set.fu_max_hint": "到期时显示在“今天”",
+ "set.fu_off": "从不"
 }

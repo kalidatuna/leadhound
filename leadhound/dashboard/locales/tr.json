@@ -521,5 +521,22 @@
  "theme.auto": "Bilgisayarla aynı",
  "theme.light": "Açık",
  "theme.dark": "Koyu",
- "prog.details": "Ayrıntılar"
+ "prog.details": "Ayrıntılar",
+ "fup.title": "Takip zamanı",
+ "fup.text": "Bu kişilere birkaç gün önce yazdınız ve yanıt gelmedi. Kısa ve kibar bir hatırlatma çoğu zaman yanıtı getirir.",
+ "fup.row": "{days} gün önce yazıldı · takip {n} / {max}",
+ "fup.write": "Takip mesajı yaz",
+ "fup.stop": "Takibi bırak",
+ "fup.stopped": "Bu kişi için hatırlatma yok",
+ "fup.sent": "Takip mesajı gönderildi",
+ "fup.mark": "Kopyala ve gönderildi olarak işaretle",
+ "fup.h": "Takip",
+ "fup.status": "İlk mesaj {days} gün önce · {n} / {max} takip gönderildi",
+ "fup.off": "Bu kişi için hatırlatmalar kapalı.",
+ "fup.badge": "Takip",
+ "set.fu_days": "Takip zamanı",
+ "set.fu_days_hint": "Yanıtsız gün sayısı",
+ "set.fu_max": "Kişi başına takip",
+ "set.fu_max_hint": "Zamanı gelince Bugün'de görünür",
+ "set.fu_off": "Asla"
 }

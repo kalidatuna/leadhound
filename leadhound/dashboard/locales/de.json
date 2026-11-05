@@ -521,5 +521,22 @@
  "theme.auto": "Wie der Computer",
  "theme.light": "Hell",
  "theme.dark": "Dunkel",
- "prog.details": "Details"
+ "prog.details": "Details",
+ "fup.title": "Fällige Nachfragen",
+ "fup.text": "Du hast diesen Leuten vor ein paar Tagen geschrieben und noch keine Antwort. Eine kurze, freundliche Nachfrage bringt oft die Antwort.",
+ "fup.row": "Vor {days} Tagen kontaktiert · Nachfrage {n} von {max}",
+ "fup.write": "Nachfrage schreiben",
+ "fup.stop": "Nicht mehr nachfragen",
+ "fup.stopped": "Keine Erinnerungen mehr für diesen Kontakt",
+ "fup.sent": "Nachfrage gesendet",
+ "fup.mark": "Kopieren & Nachfrage als gesendet markieren",
+ "fup.h": "Nachfrage",
+ "fup.status": "Erste Nachricht vor {days} Tagen · {n} von {max} Nachfragen gesendet",
+ "fup.off": "Erinnerungen sind für diesen Kontakt aus.",
+ "fup.badge": "Nachfrage",
+ "set.fu_days": "Nachfragen nach",
+ "set.fu_days_hint": "Tage ohne Antwort",
+ "set.fu_max": "Nachfragen pro Kontakt",
+ "set.fu_max_hint": "Erscheinen unter Heute, wenn sie fällig sind",
+ "set.fu_off": "Nie"
 }

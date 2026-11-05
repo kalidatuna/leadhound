@@ -70,4 +70,9 @@ M = {
     "why.site_issues": "{n} problema(s) no site, gravidade {sev}", "why.critical": "problemas críticos encontrados",
     "why.site_healthy": "o site parece bem", "why.not_audited": "tem site (ainda não verificado)",
     "why.public_email": "e-mail público", "why.public_phone": "telefone público", "why.no_contact": "sem contato público",
+    # follow-ups to a lead that has not answered
+    "fu.subject": "Retomando contato: {name}",
+    "fu.line": "Só retomando minha mensagem sobre \"{title}\". Continuo disponível e feliz em ajudar.",
+    "fu.ask": "Seria mais fácil responder algumas perguntas por mensagem ou fazer uma ligação rápida?",
+    "fu.last": "Se não for o momento certo, sem problema. É só me avisar e não escrevo de novo.",
 }

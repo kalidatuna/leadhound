@@ -27,6 +27,7 @@ SCHEMA = [
     ("sources", "github_labels", "list"), ("sources", "github_languages", "list"),
     ("sources", "mastodon", "bool"), ("sources", "mastodon_instances", "list"), ("sources", "mastodon_tags", "list"),
     ("sources", "rss_feeds", "lines"), ("sources", "max_age_days", "int"), ("sources", "auto_scan_hours", "int"),
+    ("outreach", "follow_up_days", "int"), ("outreach", "follow_up_max", "int"),
     ("local", "categories", "list"), ("local", "radius_m", "int"), ("local", "max_businesses", "int"),
     ("llm", "llm_provider", "str"), ("llm", "llm_model", "str"), ("llm", "llm_base_url", "str"),
 ]
@@ -60,6 +61,8 @@ class Config:
     rss_feeds: list = field(default_factory=list)
     max_age_days: int = 21
     auto_scan_hours: int = 0
+    follow_up_days: int = 3  # days without a reply before a follow-up is due
+    follow_up_max: int = 2  # follow-ups per lead; 0 = never remind
     categories: list = field(default_factory=lambda: ["restaurant", "dentist"])
     radius_m: int = 3000
     max_businesses: int = 60
@@ -163,7 +166,8 @@ def to_dict(cfg: Config) -> dict:
 SLUG_RX = re.compile(r"^[A-Za-z0-9][A-Za-z0-9-]{0,60}$")
 HOST_RX = re.compile(r"^[a-z0-9]([a-z0-9-]*[a-z0-9])?(\.[a-z0-9]([a-z0-9-]*[a-z0-9])?)+$")
 TAG_RX = re.compile(r"^\w{1,60}$")
-RANGES = {"daily_goal": (1, 50), "max_age_days": (1, 90), "radius_m": (100, 20000), "max_businesses": (1, 300), "auto_scan_hours": (0, 24)}
+RANGES = {"daily_goal": (1, 50), "max_age_days": (1, 90), "radius_m": (100, 20000), "max_businesses": (1, 300), "auto_scan_hours": (0, 24),
+          "follow_up_days": (1, 30), "follow_up_max": (0, 5)}
 KINDS = {key: kind for _, key, kind in SCHEMA}
 
 

@@ -110,6 +110,21 @@ def template_business(lead: Lead, cfg, lang: str = "en") -> str:
     return "\n".join(body)
 
 
+def make_followup(lead: Lead, cfg, n: int) -> str:
+    """The n-th follow-up (1 or more) to a lead that has not answered, in the lead's language. Short and easy to ignore."""
+    lang = draft_language(lead, cfg)
+    title = re.sub(r"^\[[^\]]*\]\s*", "", lead.title).strip()[:90]
+    lines = []
+    if lead.kind == "business":
+        lines += [f"{msg(lang, 'b.subject')}: {msg(lang, 'fu.subject', name=lead.title)}", "", msg(lang, "b.hello", name=lead.title)]
+    else:
+        name = _name(lead.author)
+        lines.append(msg(lang, "p.hi", name=name) if name else msg(lang, "p.hi_anon"))
+    lines += ["", msg(lang, "fu.line", title=title), msg(lang, "fu.last" if n >= max(1, cfg.follow_up_max) else "fu.ask"),
+              "", cfg.signature or cfg.name]
+    return "\n".join(lines)
+
+
 def llm_prompt(lead: Lead, cfg, lang: str) -> str:
     evidence = lead.body[:2500]
     if lead.kind == "business":

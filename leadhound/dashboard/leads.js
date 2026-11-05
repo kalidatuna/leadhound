@@ -182,6 +182,7 @@ function renderDetail() {
     el('div', { class: 'stagebar' }, STAGES.map(k => el('button', { class: 'chip' + (l.status === k ? ' on' : ''), onclick: () => setStatus(l, k) }, t('stage.' + k)))),
     l.contact && el('h3', {}, t('h.contact')), l.contact && contactRows(l),
     el('h3', {}, t('h.message')), messageBox(l),
+    l.status === 'contacted' && el('div', { id: 'fu-box' }),
     el('h3', {}, t('h.why', { score: l.score })),
     el('ul', { class: 'why' }, why.map(([p, text]) => el('li', { class: p != null && p < 0 ? 'neg' : '' }, text))),
     l.extra.audit && auditBox(l.extra.audit),
@@ -190,6 +191,7 @@ function renderDetail() {
   ];
   d.replaceChildren(...sections.flat(Infinity).filter(Boolean));
   d.scrollTop = 0;
+  if (l.status === 'contacted') followupBox(l);
   clearTimeout(autoTimer);
   if (!l.draft && l.status !== 'ignored' && !autoTried.has(l.id)) {  // short wait so j/k through the list does not write every draft
     autoTimer = setTimeout(() => { if (sel?.id === l.id && !l.draft) { autoTried.add(l.id); writeDraft(l, false); } }, 450);
@@ -207,6 +209,25 @@ function messageBox(l) {
       el('button', { class: 'btn', disabled: !l.draft, onclick: async () => toast(await copyText(l.draft) ? t('copied') : t('copy_blocked')) }, t('copy')),
       el('button', { class: 'btn', disabled: !l.draft, onclick: async () => { if (await copyText(l.draft)) setStatus(l, 'contacted'); } }, t('msg.copy_mark')),
       mail && el('a', { class: 'btn', href: mail }, t('msg.email'))));
+}
+
+async function followupBox(l) {
+  let o;
+  try { o = (await api('/api/leads/' + l.id)).outreach; } catch { return; }
+  const box = $('#fu-box');
+  if (!box || sel?.id !== l.id || !o.contacted_at) return;
+  const max = state.cfg.follow_up_max, days = Math.floor((Date.now() / 1000 - o.contacted_at) / 86400);
+  const act = (action, msg) => async () => {
+    try { await api(`/api/leads/${l.id}/followup`, { action }); toast(msg); followupBox(l); } catch (e) { toast(e.message, 'err'); }
+  };
+  box.replaceChildren(el('h3', {}, t('fup.h')),
+    el('p', { class: 'mut' }, o.stopped || !max ? t('fup.off') : t('fup.status', { days, n: o.followups, max })),
+    !o.stopped && max > 0 && o.followups < max && el('div', { class: 'row' },
+      el('button', { class: 'btn', onclick: async () => {
+        try { $('#draft').value = (await api(`/api/leads/${l.id}/followup`, { action: 'draft' })).draft; $('#draft').focus(); } catch (e) { toast(e.message, 'err'); }
+      } }, t('fup.write')),
+      el('button', { class: 'btn', onclick: async () => { if (await copyText($('#draft').value)) act('sent', t('fup.sent'))(); } }, t('fup.mark')),
+      el('button', { class: 'btn ghost', onclick: act('stop', t('fup.stopped')) }, t('fup.stop'))));
 }
 
 function auditBox(a) {

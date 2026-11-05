@@ -75,4 +75,9 @@ M = {
     "why.site_issues": "{n} website issue(s), severity {sev}", "why.critical": "critical problems found",
     "why.site_healthy": "website looks healthy", "why.not_audited": "has a website (not checked yet)",
     "why.public_email": "public email", "why.public_phone": "public phone", "why.no_contact": "no public contact found",
+    # follow-ups to a lead that has not answered
+    "fu.subject": "Following up: {name}",
+    "fu.line": "Just following up on my message about \"{title}\". I'm still available and happy to help.",
+    "fu.ask": "Would a few quick questions by message or a short call be easier?",
+    "fu.last": "If the timing isn't right, no problem. Just let me know and I won't write again.",
 }

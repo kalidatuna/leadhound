@@ -70,4 +70,9 @@ M = {
     "why.site_issues": "网站有 {n} 个问题，严重度 {sev}", "why.critical": "发现严重问题",
     "why.site_healthy": "网站看起来没问题", "why.not_audited": "有网站（尚未检查）",
     "why.public_email": "公开邮箱", "why.public_phone": "公开电话", "why.no_contact": "没有公开联系方式",
+    # follow-ups to a lead that has not answered
+    "fu.subject": "跟进：{name}",
+    "fu.line": "跟进一下我关于“{title}”的消息。我仍然有空，很乐意帮忙。",
+    "fu.ask": "用消息问几个简单问题，或者简短通个电话，会不会更方便？",
+    "fu.last": "如果现在时机不合适也没关系。告诉我一声，我就不再打扰。",
 }

@@ -70,4 +70,9 @@ M = {
     "why.site_issues": "sitede {n} sorun, önem {sev}", "why.critical": "kritik sorunlar bulundu",
     "why.site_healthy": "site sağlıklı görünüyor", "why.not_audited": "web sitesi var (henüz kontrol edilmedi)",
     "why.public_email": "herkese açık e-posta", "why.public_phone": "herkese açık telefon", "why.no_contact": "herkese açık iletişim yok",
+    # follow-ups to a lead that has not answered
+    "fu.subject": "Hatırlatma: {name}",
+    "fu.line": "\"{title}\" hakkındaki mesajımı hatırlatmak istedim. Hâlâ müsaitim ve yardımcı olmaktan memnuniyet duyarım.",
+    "fu.ask": "Mesajla birkaç kısa soru ya da kısa bir görüşme daha kolay olur mu?",
+    "fu.last": "Zamanlama uygun değilse sorun değil. Haber verin, bir daha yazmam.",
 }

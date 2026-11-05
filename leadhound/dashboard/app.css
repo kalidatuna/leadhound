@@ -199,6 +199,11 @@ details>summary{cursor:pointer;color:var(--mut);font-weight:600}
 .cb-i{display:flex;gap:6px;flex-wrap:wrap}.mark{display:grid;place-items:center;width:38px;height:38px;border-radius:50%;background:var(--card);color:var(--mut);box-shadow:inset 0 0 0 1px var(--hair)}
 .mark svg{width:18px;height:18px}.mark:not(.on) svg{color:var(--mut)!important}.mark.on{box-shadow:inset 0 0 0 1.5px var(--gold)}
 
+.fups{margin-top:16px}.fups h4{display:flex;align-items:center;gap:10px}.fups .sd{margin:-8px 0 14px}
+.furows{display:grid}.furow{display:flex;align-items:center;gap:10px;padding:12px 0;border-top:1px solid var(--hair)}
+.fut{flex:1;min-width:0}.fut b{display:block;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.fut small{color:var(--mut);font-size:13px}
+@media(max-width:760px){.furow{flex-wrap:wrap}.fut{flex-basis:100%}}
+
 /* matches */
 .grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}
 .post{position:relative;padding:24px;display:flex;flex-direction:column;gap:10px;transition:transform .28s var(--ease),opacity .28s}
@@ -216,7 +221,7 @@ details>summary{cursor:pointer;color:var(--mut);font-weight:600}
 /* compose */
 .compose{display:grid;grid-template-columns:272px minmax(0,1fr);gap:16px}
 .mini{display:flex;flex-direction:column;border-radius:var(--r);padding:24px;background:var(--soft);box-shadow:0 0 0 1px var(--hair);min-width:0}
-.mini h3{font:500 22px/1.14 var(--display);letter-spacing:-.015em;margin:12px 0 4px;overflow-wrap:anywhere}.mini p{margin:0;color:var(--mut);font-size:14.5px}.mini .src{color:var(--ink)}
+.mini h3{font:500 22px/1.14 var(--display);letter-spacing:-.015em;margin:12px 0 4px;overflow-wrap:anywhere}.mini p{margin:0;color:var(--mut);font-size:14.5px}.mini .src{color:var(--ink)}.mini .src.fresh{color:var(--on)}
 .facts{display:grid;gap:11px;margin:16px 0}.facts div{display:flex;justify-content:space-between;align-items:center;gap:12px;font-size:14.5px}.facts dt{color:var(--mut)}.facts dd{margin:0;font-weight:600;display:flex;align-items:center;gap:8px;text-align:end}.facts .rate{margin:0}
 .tips{margin-top:auto;padding-top:18px;border-top:1px solid color-mix(in oklch,var(--ink) 14%,transparent)}.tips h5{font:600 11px/1 var(--body);letter-spacing:.16em;text-transform:uppercase;color:var(--mut);margin:0 0 14px}
 .tips ul{list-style:none;margin:0;padding:0;display:grid;gap:11px}.tips li{display:flex;gap:10px;font-size:14.5px;color:var(--mut);text-wrap:pretty}.tips li svg{margin-top:2px;color:var(--gold-ink)}

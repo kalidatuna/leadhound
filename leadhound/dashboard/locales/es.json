@@ -521,5 +521,22 @@
  "theme.auto": "Como el ordenador",
  "theme.light": "Claro",
  "theme.dark": "Oscuro",
- "prog.details": "Detalles"
+ "prog.details": "Detalles",
+ "fup.title": "Seguimientos pendientes",
+ "fup.text": "Les escribiste hace unos días y no han respondido. Un seguimiento breve y amable suele conseguir la respuesta.",
+ "fup.row": "Contactado hace {days} días · seguimiento {n} de {max}",
+ "fup.write": "Escribir seguimiento",
+ "fup.stop": "No hacer más seguimiento",
+ "fup.stopped": "Sin más recordatorios para este cliente",
+ "fup.sent": "Seguimiento enviado",
+ "fup.mark": "Copiar y marcar seguimiento enviado",
+ "fup.h": "Seguimiento",
+ "fup.status": "Primer mensaje hace {days} días · {n} de {max} seguimientos enviados",
+ "fup.off": "Los recordatorios están desactivados para este cliente.",
+ "fup.badge": "Seguimiento",
+ "set.fu_days": "Hacer seguimiento tras",
+ "set.fu_days_hint": "Días sin respuesta",
+ "set.fu_max": "Seguimientos por cliente",
+ "set.fu_max_hint": "Aparecen en Hoy cuando toca",
+ "set.fu_off": "Nunca"
 }

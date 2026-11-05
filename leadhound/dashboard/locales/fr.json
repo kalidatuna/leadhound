@@ -521,5 +521,22 @@
  "theme.auto": "Comme l'ordinateur",
  "theme.light": "Clair",
  "theme.dark": "Sombre",
- "prog.details": "Détails"
+ "prog.details": "Détails",
+ "fup.title": "Relances à faire",
+ "fup.text": "Vous leur avez écrit il y a quelques jours sans réponse. Une relance courte et polie obtient souvent la réponse.",
+ "fup.row": "Contacté il y a {days} jours · relance {n} sur {max}",
+ "fup.write": "Écrire une relance",
+ "fup.stop": "Ne plus relancer",
+ "fup.stopped": "Plus de rappels pour ce prospect",
+ "fup.sent": "Relance envoyée",
+ "fup.mark": "Copier et marquer la relance envoyée",
+ "fup.h": "Relance",
+ "fup.status": "Premier message il y a {days} jours · {n} relance(s) sur {max}",
+ "fup.off": "Les rappels sont désactivés pour ce prospect.",
+ "fup.badge": "Relance",
+ "set.fu_days": "Relancer après",
+ "set.fu_days_hint": "Jours sans réponse",
+ "set.fu_max": "Relances par prospect",
+ "set.fu_max_hint": "Affichées dans Aujourd'hui le moment venu",
+ "set.fu_off": "Jamais"
 }

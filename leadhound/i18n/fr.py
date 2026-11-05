@@ -70,4 +70,9 @@ M = {
     "why.site_issues": "{n} problème(s) sur le site, gravité {sev}", "why.critical": "problèmes critiques trouvés",
     "why.site_healthy": "le site semble en bon état", "why.not_audited": "a un site (pas encore vérifié)",
     "why.public_email": "e-mail public", "why.public_phone": "téléphone public", "why.no_contact": "aucun contact public",
+    # follow-ups to a lead that has not answered
+    "fu.subject": "Suite à mon message : {name}",
+    "fu.line": "Je reviens vers vous au sujet de mon message sur « {title} ». Je suis toujours disponible et ravi d'aider.",
+    "fu.ask": "Serait-il plus simple d'échanger quelques questions par message ou de faire un court appel ?",
+    "fu.last": "Si ce n'est pas le bon moment, aucun souci. Dites-le-moi et je ne vous relancerai plus.",
 }

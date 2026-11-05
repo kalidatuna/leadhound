@@ -22,7 +22,7 @@ from pathlib import Path
 from urllib.parse import parse_qs, urlparse
 
 from .. import __version__, accounts as accts, config, i18n, licensing, paths, profiles, sending, updates
-from ..draft import make_draft
+from ..draft import make_draft, make_followup
 from ..jobs import AutoScanner, JobBusy, JobManager
 from ..langs import LANGUAGES
 from ..models import KINDS, STATUSES
@@ -95,7 +95,26 @@ def build_routes(c: Ctx) -> list:
         lead = store.get(int(m.group(1)))
         if not lead:
             raise HttpError(404, "lead not found")
-        return 200, asdict(lead)
+        return 200, {**asdict(lead), "outreach": store.outreach(lead.id)}
+
+    def followups(m, q, b):
+        cfg = c.cfg()
+        due = store.followups_due(cfg.follow_up_days, cfg.follow_up_max)
+        return 200, [{**asdict(l), "outreach": {**info, "max": cfg.follow_up_max}} for l, info in due]
+
+    def lead_followup(m, q, b):
+        lead = need_lead(int(m.group(1)))
+        action, cfg = b.get("action"), c.cfg()
+        if action == "draft":
+            n = store.outreach(lead.id)["followups"] + 1
+            return 200, {"draft": make_followup(lead, cfg, n), "n": n}
+        if action == "sent":
+            store.log(lead.id, "followup", str(b.get("via", "manual")))
+        elif action == "stop":
+            store.log(lead.id, "nofollow")
+        else:
+            raise HttpError(400, "unknown action")
+        return 200, store.outreach(lead.id)
 
     def lead_update(m, q, b):
         lid = int(m.group(1))
@@ -208,7 +227,10 @@ def build_routes(c: Ctx) -> list:
         except SendError as e:
             raise HttpError(e.code, str(e))
         with c.lock:
-            store.update(lead.id, status="contacted", draft=b["body"], via=res["via"])
+            if b.get("followup"):  # a nudge to someone you already wrote to: keep the first message as the draft
+                store.log(lead.id, "followup", res["via"])
+            else:
+                store.update(lead.id, status="contacted", draft=b["body"], via=res["via"])
         return 200, res
 
     def accounts_get(m, q, b):
@@ -259,6 +281,7 @@ def build_routes(c: Ctx) -> list:
         ("GET", r"/api/meta", meta), ("GET", r"/api/stats", lambda m, q, b: (200, store.stats())),
         ("GET", r"/api/leads", leads_list), ("GET", r"/api/leads/(\d+)", lead_get),
         ("POST", r"/api/leads/(\d+)", lead_update), ("POST", r"/api/leads/(\d+)/draft", lead_draft, False),
+        ("GET", r"/api/followups", followups), ("POST", r"/api/leads/(\d+)/followup", lead_followup),
         ("GET", r"/api/leads/(\d+)/channels", lead_channels), ("POST", r"/api/leads/(\d+)/send", lead_send, False),
         ("GET", r"/api/plan", plan_get, False), ("POST", r"/api/plan", plan_post, False),
         ("GET", r"/api/accounts", accounts_get), ("POST", r"/api/accounts/([a-z]+)", account_post, False),

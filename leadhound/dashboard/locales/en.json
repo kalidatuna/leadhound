@@ -521,5 +521,22 @@
  "theme.auto": "Same as computer",
  "theme.light": "Light",
  "theme.dark": "Dark",
- "prog.details": "Details"
+ "prog.details": "Details",
+ "fup.title": "Follow-ups due",
+ "fup.text": "You wrote to these people a few days ago and they haven't answered. A short, polite follow-up often gets the reply.",
+ "fup.row": "Contacted {days} days ago · follow-up {n} of {max}",
+ "fup.write": "Write follow-up",
+ "fup.stop": "Stop following up",
+ "fup.stopped": "No more reminders for this lead",
+ "fup.sent": "Follow-up sent",
+ "fup.mark": "Copy & mark follow-up sent",
+ "fup.h": "Follow-up",
+ "fup.status": "First message {days} days ago · {n} of {max} follow-ups sent",
+ "fup.off": "Reminders are off for this lead.",
+ "fup.badge": "Follow-up",
+ "set.fu_days": "Follow up after",
+ "set.fu_days_hint": "Days without a reply",
+ "set.fu_max": "Follow-ups per lead",
+ "set.fu_max_hint": "Shown on Today when they are due",
+ "set.fu_off": "Never"
 }

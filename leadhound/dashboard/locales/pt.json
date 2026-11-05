@@ -521,5 +521,22 @@
  "theme.auto": "Igual ao computador",
  "theme.light": "Claro",
  "theme.dark": "Escuro",
- "prog.details": "Detalhes"
+ "prog.details": "Detalhes",
+ "fup.title": "Follow-ups pendentes",
+ "fup.text": "Você escreveu para essas pessoas há alguns dias e elas não responderam. Um follow-up curto e educado costuma trazer a resposta.",
+ "fup.row": "Contatado há {days} dias · follow-up {n} de {max}",
+ "fup.write": "Escrever follow-up",
+ "fup.stop": "Parar os follow-ups",
+ "fup.stopped": "Sem mais lembretes para este contato",
+ "fup.sent": "Follow-up enviado",
+ "fup.mark": "Copiar e marcar follow-up enviado",
+ "fup.h": "Follow-up",
+ "fup.status": "Primeira mensagem há {days} dias · {n} de {max} follow-ups enviados",
+ "fup.off": "Os lembretes estão desligados para este contato.",
+ "fup.badge": "Follow-up",
+ "set.fu_days": "Fazer follow-up após",
+ "set.fu_days_hint": "Dias sem resposta",
+ "set.fu_max": "Follow-ups por contato",
+ "set.fu_max_hint": "Aparecem em Hoje quando for a hora",
+ "set.fu_off": "Nunca"
 }
