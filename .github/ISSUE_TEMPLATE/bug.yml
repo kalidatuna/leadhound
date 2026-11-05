@@ -1,0 +1,30 @@
+name: Something is broken
+description: A search fails, a screen looks wrong, a message is sent wrong, or the app won't start.
+labels: [bug]
+body:
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened, and what did you expect?
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: How can we see it?
+      description: The clicks or command that lead to it. Copy the search Details log if a search failed.
+  - type: input
+    id: version
+    attributes:
+      label: leadhound version and how you installed it
+      placeholder: "0.5.0, Windows app (or pipx, installer, Docker...)"
+    validations:
+      required: true
+  - type: input
+    id: system
+    attributes:
+      label: Computer and browser
+      placeholder: "Windows 11, Chrome 131"
+  - type: markdown
+    attributes:
+      value: "Please remove email addresses, tokens and app passwords from anything you paste."

@@ -1,0 +1,18 @@
+name: Fix a translation
+description: A word or sentence that sounds wrong in your language.
+labels: [translation, good first issue]
+body:
+  - type: dropdown
+    id: lang
+    attributes:
+      label: Language
+      options: [Español, Português, Français, Deutsch, Русский, ქართული, Türkçe, العربية, हिन्दी, 中文, Other]
+    validations:
+      required: true
+  - type: textarea
+    id: fix
+    attributes:
+      label: What it says now, and what it should say
+      description: "Where you saw it helps: app screen, message draft, website finding or score reason. Or just open a pull request: app text is in leadhound/dashboard/locales/<lang>.json, messages in leadhound/i18n/<lang>.py."
+    validations:
+      required: true

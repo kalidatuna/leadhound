@@ -30,6 +30,9 @@ def _finding(code: str, severity: int, **args) -> Finding:
 
 def _business(eid, name, category, city, country, website="", lang="", findings=(), contact="", booking=False, tech=()):
     extra = {"website": website, "category": category, "booking_relevant": booking, "country": country, "city": city}
+    parts = [c.strip() for c in contact.split(",") if c.strip()]
+    extra.update({k: v for k, v in (("email", next((c for c in parts if "@" in c), "")),
+                                    ("phone", next((c for c in parts if "@" not in c), ""))) if v})  # as OpenStreetMap lists them
     if website:
         extra["audit"] = AuditResult(url=website, final_url=website, status=200, seconds=1.4, findings=list(findings),
                                      tech=list(tech), lang=lang).to_dict()
@@ -46,10 +49,10 @@ def sample_leads(now: float) -> list[Lead]:
                   "Please share similar work. Deadline in 3 weeks.",
              contact="bid on Freelancer.com", signals=["client project post"],
              extra={"skills": ["WordPress", "PHP", "Website Design"], "category": "WordPress"}),
-        Lead(source="reddit", external_id="demo-2", kind="post", title="[Hiring] Logo and brand kit for a small coffee roaster",
+        Lead(source="reddit", external_id="demo-2", kind="post", title="[Hiring] Shopify store is slow, need a fix this week",
              url="https://www.reddit.example/r/forhire/comments/demo2/", author="u/beanroaster", created_at=now - 5 * h,
-             budget="$400", body="Paid gig. Looking to hire a designer for a logo, colours and a label template. "
-                                 "Email hello@roaster.example with your portfolio.",
+             budget="$400", body="Paid gig for our small coffee roastery. Looking to hire a developer to speed up the Shopify "
+                                 "theme and fix the checkout on phones. Email hello@roaster.example with similar work.",
              contact="hello@roaster.example, reddit DM: u/beanroaster"),
         Lead(source="reddit", external_id="demo-3", kind="post", title="[Hiring] Python script to clean 40k rows of CSV data",
              url="https://www.reddit.example/r/forhire/comments/demo3/", author="u/opsdata", created_at=now - 26 * h,
@@ -88,9 +91,10 @@ def sample_leads(now: float) -> list[Lead]:
 
 
 DEMO_CONFIG = dict(name="Alex", signature="Alex · alex.example", profession="developer",
-                   skills=["wordpress", "python", "shopify", "logo", "csv"], portfolio="https://alex.example",
+                   skills=["wordpress", "python", "shopify", "csv"], portfolio="https://alex.example",
                    proof=["wordpress, booking: Rebuilt a clinic's WordPress site with online booking: https://alex.example/clinic",
-                          "csv, python: Cleaned and merged 120k supplier rows for a wholesaler: https://alex.example/data"],
+                          "csv, python: Cleaned and merged 120k supplier rows for a wholesaler: https://alex.example/data",
+                          "shopify, checkout: Cut a Shopify store's mobile load time from 7 s to 2 s: https://alex.example/shop"],
                    min_budget=150, min_rate=25, mastodon=True, categories=["dentist", "cafe", "hotel"])
 
 

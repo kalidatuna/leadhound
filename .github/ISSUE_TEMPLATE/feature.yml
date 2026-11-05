@@ -1,0 +1,15 @@
+name: Idea or feature
+description: Something that would help you find or win clients.
+labels: [idea]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: What are you trying to do?
+      description: Describe the situation, not only the solution. "I freelance as a ... and I lose time on ..."
+    validations:
+      required: true
+  - type: textarea
+    id: idea
+    attributes:
+      label: What would help?
