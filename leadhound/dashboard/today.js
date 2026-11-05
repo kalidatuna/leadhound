@@ -6,7 +6,6 @@ import { runQueue, defaultSources } from './find.js';
 import { srcName, ageText, reasonLine, isNew } from './leads.js';
 import { renderCompose } from './compose.js';
 import { SEND, LINK, TOTAL, acct, platIcon, platName, readyCount, sendCount } from './accounts.js';
-import { isPro, loadPlan, openPlan, plan } from './plan.js';
 
 const root = $('#view-today');
 let leads = [], stats = {}, job = null, step = 0, pick = null, found = null, busy = false, wasRunning = false;
@@ -30,7 +29,6 @@ export function initToday() {
   on('job-done', j => {
     const added = Object.values(j.result?.new || {}).reduce((a, b) => a + b, 0);
     if (j.status === 'done' && j.kind !== 'update') found = { added };
-    loadPlan().then(paintHero);  // the free search counter moved
     refresh();
   });
   on('profile-changed', refresh);
@@ -112,10 +110,9 @@ function hero() {
 }
 
 function findNow() {
-  if (!isPro() && plan().searches_left === 0) return openPlan();  // today's free searches are used
   const jobs = [{ kind: 'scan', params: { sources: defaultSources() } }];
   const place = store.get('lh-place');
-  if (isPro() && place && state.cfg.categories.length) jobs.push({ kind: 'local', params: { place, categories: state.cfg.categories, website: 'no', audit: false, limit: 40 } });
+  if (place && state.cfg.categories.length) jobs.push({ kind: 'local', params: { place, categories: state.cfg.categories, website: 'no', audit: false, limit: 40 } });
   runQueue(jobs, true);
 }
 
@@ -127,8 +124,7 @@ function paintHero() {
   const empty = !stats.total && !busy_;
   $('#h0').textContent = found ? (found.added ? t('today.found', { new: found.added, total: n }) : t('today.found0')) : empty ? t('today.empty_title') : t('today.hero_title');
   $('#h0p').textContent = found ? (found.added && leads[0] ? t('today.found_text', { score: leads[0].score }) : t('today.found_text0')) : empty ? t('today.empty_text') : t('today.hero_text');
-  const left = plan().searches_left;
-  $('#prog').textContent = busy_ ? (job.log[job.log.length - 1] || '') : !isPro() && left != null ? t('plan.searches_left', { n: left }) : '';
+  $('#prog').textContent = busy_ ? (job.log[job.log.length - 1] || '') : '';
   acts.replaceChildren(...[el('button', { class: 'cta', disabled: busy_, onclick: findNow }, busy_ ? el('span', { class: 'spin' }) : icon('search'), busy_ ? t('today.finding') : t('today.find_btn')),
     busy_ && el('button', { class: 'cta ghost', onclick: () => api(`/api/jobs/${job.id}/cancel`, {}) }, t('stop')),
     !busy_ && n > 0 && found && el('button', { class: 'cta ghost', onclick: () => show(1) }, t('today.see'), icon('arrow'))].filter(Boolean));
@@ -220,7 +216,6 @@ function paintGrid() {
     return;
   }
   grid.replaceChildren(...[...leads.slice(0, 40).map((l, i) => post(l, i)),
-    !isPro() && (stats.by_status || {}).new > leads.length && el('div', { class: 'more rise', style: '--i:2' }, el('b', {}, t('plan.badge')), el('p', {}, t('plan.upgrade_matches', { n: leads.length, total: stats.by_status.new })), el('button', { class: 'btn primary', onclick: openPlan }, t('plan.upgrade_btn'))),
     leads.length % 2 === 1 && el('div', { class: 'more rise', style: '--i:3' }, el('b', {}, t('today.more_title')), el('p', {}, t('today.more_text')), el('button', { class: 'btn', onclick: () => { show(0); findNow(); } }, icon('search'), t('today.search_again')))].filter(Boolean));
 }
 

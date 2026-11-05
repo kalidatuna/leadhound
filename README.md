@@ -62,7 +62,15 @@ Each account has a daily cap (10 for email and Mastodon, 5 for GitHub and Reddit
 
 ## Free and Pro
 
-Everything works for free: searching, matches, drafts, and opening Gmail, Outlook, WhatsApp and more with your message ready (3 searches a day, your top 10 matches). Every install gets a **free taste** (7 uses), then a **7-day Pro trial** after a quick email sign-up (one trial per person). **Pro** unlocks sending from your connected accounts, unlimited searches and matches, AI-written messages, the local business finder with website checks, and automatic search. Pro is a license key checked offline. The sign-up and the optional hosted AI talk to the seller's license server and send only your email, a device code, and (for AI) the text of the lead. Sellers: see [docs/SELLING.md](docs/SELLING.md).
+**Free has no limits on anything you do yourself**, and needs no account: every source, all your matches, the local business finder, website checks, drafts, follow-ups, sending from your own connected accounts, and AI drafts with your own key (Claude, OpenAI) or a local model.
+
+**Pro** pays for the things that run for you or cost money to provide:
+
+- **leadhound AI**: AI-written messages with no API key.
+- **Automatic search** every 6, 12 or 24 hours, with an email of the best new matches.
+- **Reply detection**: leadhound checks your inbox and moves leads that answered to *Replied*.
+
+You can try Pro a few times for free, then start a **7-day trial** with an email sign-up (one per person). Pro is a license key checked offline. The sign-up and the hosted AI talk to the seller's license server and send only your email, a device code, and (for AI) the text of the lead. Sellers: see [docs/SELLING.md](docs/SELLING.md).
 
 ## Advanced
 

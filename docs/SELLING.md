@@ -1,8 +1,8 @@
 # Selling leadhound Pro (Gumroad)
 
-leadhound is free to use and MIT licensed. Pro unlocks sending from connected accounts, unlimited searches and matches,
-hosted AI messages, the local business finder with website checks, and automatic search. Everyone gets a free taste
-(7 uses), then a 7-day trial after an email sign-up. You host one small [license server](LICENSE_SERVER.md).
+leadhound is free to use and MIT licensed, with no limits on anything the user does themselves. Pro adds the hosted AI
+messages, automatic search with an email digest, and reply detection. Everyone gets a free taste of Pro (7 uses), then a
+7-day trial after an email sign-up. You host one small [license server](LICENSE_SERVER.md).
 
 **Honest limit:** the code is open, so a developer can remove the local checks. The server stops the ordinary routes
 (resetting the trial, reinstalling, sharing) and holds the AI behind payment. Do not promise more than that.

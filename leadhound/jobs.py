@@ -185,8 +185,9 @@ class JobManager:
 class AutoScanner:
     """Runs a full search every N hours (Settings > auto search) while leadhound is running."""
 
-    def __init__(self, jobs: JobManager, state_path: str, interval: float = 60):
+    def __init__(self, jobs: JobManager, state_path: str, interval: float = 60, allowed=lambda: True):
         self.jobs, self.state_path, self.interval = jobs, state_path, interval
+        self.allowed = allowed  # automatic search is a Pro feature: stops by itself when Pro or the trial ends
         self._stop = threading.Event()
 
     def _last(self) -> float:
@@ -207,7 +208,7 @@ class AutoScanner:
         """Start a scan if one is due. Returns True if it started one."""
         now = now or time.time()
         hours = config.load(self.jobs.config_path).auto_scan_hours
-        if not hours or now - self._last() < hours * 3600:
+        if not hours or now - self._last() < hours * 3600 or not self.allowed():
             return False
         try:
             job = self.jobs.start("scan", {})

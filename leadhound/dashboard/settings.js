@@ -2,6 +2,7 @@
 import { $, api, el, emit, state, toast, openModal, closeModal } from './util.js';
 import { t, LANG, setLang, catName } from './i18n.js';
 import { runQueue, rememberPlace, startJob, defaultSources } from './find.js';
+import { proTag } from './plan.js';
 
 const root = $('#view-settings');
 const list = v => (v || []).join(', ');
@@ -52,7 +53,7 @@ function draw() {
       field(t('set.rss'), t('set.rss_hint'), el('textarea', { id: 's-rss_feeds', rows: 3, value: (cfg.rss_feeds || []).join('\n') })),
       el('div', { class: 'two' },
         field(t('set.max_age'), '', el('select', { id: 's-max_age_days' }, options([7, 14, 21, 30, 60].map(d => [d, t('set.days', { n: d })]), cfg.max_age_days))),
-        field(t('set.auto'), t('set.auto_hint'), el('select', { id: 's-auto_scan_hours' }, options([[0, t('set.auto_off')], [6, t('set.auto_every', { n: 6 })], [12, t('set.auto_every', { n: 12 })], [24, t('set.auto_daily')]], cfg.auto_scan_hours)))),
+        field([t('set.auto'), ' ', proTag()], t('set.auto_hint'), el('select', { id: 's-auto_scan_hours' }, options([[0, t('set.auto_off')], [6, t('set.auto_every', { n: 6 })], [12, t('set.auto_every', { n: 12 })], [24, t('set.auto_daily')]], cfg.auto_scan_hours)))),
       el('p', { class: 'mut' }, key('GitHub', cfg.keys.github), ' · ', t('set.gh_token_hint'))),
     el('div', { class: 'card' }, el('h2', {}, t('set.ai')), el('p', {}, t('set.ai_desc')),
       field(t('set.provider'), '', el('select', { id: 's-llm_provider' }, options([['none', t('prov.none')], ...(state.meta.hosted_ai ? [['leadhound', t('prov.leadhound')]] : []), ['anthropic', t('prov.anthropic')], ['openai', t('prov.openai')]], cfg.llm_provider))),

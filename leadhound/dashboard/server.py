@@ -87,7 +87,7 @@ def build_routes(c: Ctx) -> list:
     def leads_list(m, q, b):
         leads = store.query(status=q.get("status") or None, kind=q.get("kind") or None,
                             source=q.get("source") or None, min_score=int(q.get("min", 0) or 0),
-                            search=q.get("q", ""), limit=max(1, min(int(q.get("limit", 300)), 1000, c.license.max_leads())),
+                            search=q.get("q", ""), limit=max(1, min(int(q.get("limit", 300)), 1000)),
                             sort=q.get("sort", "score"))
         return 200, [asdict(l) for l in leads]
 
@@ -107,10 +107,7 @@ def build_routes(c: Ctx) -> list:
         for k in ("notes", "draft"):
             if k in fields and (not isinstance(fields[k], str) or len(fields[k]) > 20000):
                 raise HttpError(400, f"{k} must be text under 20000 characters")
-        was = store.get(lid).status
         store.update(lid, **fields)
-        if fields.get("status") == "contacted" and was != "contacted":
-            c.license.count_use()
         return 200, asdict(store.get(lid))
 
     def lead_draft(m, q, b):  # runs unlocked: an LLM call can take a minute and must not freeze the app
@@ -118,12 +115,13 @@ def build_routes(c: Ctx) -> list:
             lead = store.get(int(m.group(1)))
         if not lead:
             raise HttpError(404, "lead not found")
-        if b.get("llm"):
-            pro("ai")
         cfg = c.cfg()
-        token = c.license.ai_token() if cfg.llm_provider == "leadhound" else None
+        hosted = bool(b.get("llm")) and cfg.llm_provider == "leadhound"
+        if hosted:  # your own AI key or a local model is free; the hosted AI costs the seller money
+            pro("ai")
+        token = c.license.ai_token() if hosted else None
         text, engine = make_draft(lead, cfg, use_llm=bool(b.get("llm")), ai_token=token)
-        if b.get("llm"):
+        if hosted:
             c.license.count_use()
         with c.lock:
             store.update(lead.id, draft=text)
@@ -163,21 +161,12 @@ def build_routes(c: Ctx) -> list:
         return 200, config.to_dict(new)
 
     def job_start(m, q, b):
-        kind = str(b.get("kind", ""))
-        if kind in ("local", "audit"):
-            pro("business")
         try:
             job = c.jobs.start(str(b.get("kind", "")), b.get("params") or {})
         except JobBusy as e:
             raise HttpError(409, str(e))
         except (ValueError, TypeError) as e:
             raise HttpError(400, str(e))
-        if kind == "scan":
-            try:
-                c.license.use_search()
-            except licensing.ProRequired:
-                c.jobs.cancel(job.id)
-                raise HttpError(402, "You used today's free searches. Upgrade for unlimited searches.")
         return 200, job.to_dict()
 
     def job_get(m, q, b):
@@ -211,7 +200,6 @@ def build_routes(c: Ctx) -> list:
         return 200, sending.channels_for(need_lead(int(m.group(1))), c.accounts.public())
 
     def lead_send(m, q, b):  # network call: unlocked, store access is locked by hand
-        pro("send")
         with c.lock:
             lead = need_lead(int(m.group(1)))
         try:
@@ -221,7 +209,6 @@ def build_routes(c: Ctx) -> list:
             raise HttpError(e.code, str(e))
         with c.lock:
             store.update(lead.id, status="contacted", draft=b["body"], via=res["via"])
-            c.license.count_use()
         return 200, res
 
     def accounts_get(m, q, b):
@@ -233,7 +220,6 @@ def build_routes(c: Ctx) -> list:
         if not spec:
             raise HttpError(404, "unknown platform")
         if action == "connect":
-            pro("send")
             try:
                 who = sending.connect(c.accounts, pid, b.get("fields") or {}, bool(c.auth))
             except SendError as e:
@@ -453,7 +439,8 @@ def make_server(db_path: str, config_path: str, port: int = 8787, fetcher_factor
     httpd.RequestHandlerClass = make_handler(ctx)
     httpd.jobs = jm
     httpd.ctx = ctx
-    httpd.auto = AutoScanner(jm, os.path.join(os.path.dirname(os.path.abspath(config_path)), "state.json"))
+    httpd.auto = AutoScanner(jm, os.path.join(os.path.dirname(os.path.abspath(config_path)), "state.json"),
+                             allowed=ctx.license.is_pro)
     return httpd, token
 
 
