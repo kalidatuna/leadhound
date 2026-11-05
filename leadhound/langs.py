@@ -33,6 +33,7 @@ CLIENT_RX = re.compile("|".join([
 # Someone offers their own services or wants a job: competitor or job seeker, not a client
 SEEKER_RX = re.compile("|".join([
     r"\bfor hire\b", r"\bhire me\b", r"#?open ?to ?work\b", r"\blooking for (a )?(new )?(job|work|gig|role|position|opportunit)",
+    r"\b(seeking|looking for)\b.{0,40}\b(tutors?|teachers?|instructors?|educators?)\b.{0,20}\b(position|job|work|role|opportunit)",
     r"\b(i am|i'm) (available|a freelance)", r"\bmy (portfolio|services|rates)\b", r"\bseeking (work|employment)\b",
     r"\bbusco (trabajo|empleo)\b", r"\bprocuro (emprego|trabalho)\b", r"\bje cherche (un )?(emploi|travail|poste)\b",
     r"\bsuche (arbeit|job|stelle)\b", r"\bищу работу\b", r"\biş arıyorum\b",
